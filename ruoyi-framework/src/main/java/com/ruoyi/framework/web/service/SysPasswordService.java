@@ -1,5 +1,6 @@
 package com.ruoyi.framework.web.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,9 @@ import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.exception.user.UserPasswordNotMatchException;
 import com.ruoyi.common.exception.user.UserPasswordRetryLimitExceedException;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.utils.ServletUtils;
+import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.utils.ip.IpUtils;
 import com.ruoyi.framework.security.context.AuthenticationContextHolder;
 
 /**
@@ -21,6 +25,8 @@ import com.ruoyi.framework.security.context.AuthenticationContextHolder;
 @Component
 public class SysPasswordService
 {
+    private static final String DEVICE_ID_HEADER = "X-Device-Id";
+
     @Autowired
     private RedisCache redisCache;
 
@@ -41,33 +47,77 @@ public class SysPasswordService
         return CacheConstants.PWD_ERR_CNT_KEY + username;
     }
 
+    private String getIpCacheKey(String ip)
+    {
+        return CacheConstants.PWD_ERR_IP_CNT_KEY + ip;
+    }
+
+    private String getDeviceCacheKey(String deviceId)
+    {
+        return CacheConstants.PWD_ERR_DEVICE_CNT_KEY + deviceId;
+    }
+
+    private String getDeviceId()
+    {
+        HttpServletRequest request = ServletUtils.getRequest();
+        String deviceId = request == null ? null : request.getHeader(DEVICE_ID_HEADER);
+        if (StringUtils.isNotEmpty(deviceId))
+        {
+            return deviceId;
+        }
+        String userAgent = request == null ? null : request.getHeader("User-Agent");
+        return StringUtils.defaultIfEmpty(userAgent, "unknown-device");
+    }
+
+    private boolean isLocked(String key)
+    {
+        Integer retryCount = redisCache.getCacheObject(key);
+        return retryCount != null && retryCount >= maxRetryCount;
+    }
+
+    private void checkLocked(String username, String ip, String deviceId)
+    {
+        if (isLocked(getCacheKey(username))
+                || isLocked(getIpCacheKey(ip))
+                || isLocked(getDeviceCacheKey(deviceId)))
+        {
+            throw new UserPasswordRetryLimitExceedException(maxRetryCount, lockTime);
+        }
+    }
+
+    private void increaseRetryCount(String key)
+    {
+        Integer retryCount = redisCache.getCacheObject(key);
+        retryCount = retryCount == null ? 1 : retryCount + 1;
+        redisCache.setCacheObject(key, retryCount, lockTime, TimeUnit.MINUTES);
+        if (retryCount >= maxRetryCount)
+        {
+            throw new UserPasswordRetryLimitExceedException(maxRetryCount, lockTime);
+        }
+    }
+
     public void validate(SysUser user)
     {
         Authentication usernamePasswordAuthenticationToken = AuthenticationContextHolder.getContext();
         String username = usernamePasswordAuthenticationToken.getName();
         String password = usernamePasswordAuthenticationToken.getCredentials().toString();
+        String ip = IpUtils.getIpAddr();
+        String deviceId = getDeviceId();
 
-        Integer retryCount = redisCache.getCacheObject(getCacheKey(username));
-
-        if (retryCount == null)
-        {
-            retryCount = 0;
-        }
-
-        if (retryCount >= Integer.valueOf(maxRetryCount).intValue())
-        {
-            throw new UserPasswordRetryLimitExceedException(maxRetryCount, lockTime);
-        }
+        checkLocked(username, ip, deviceId);
 
         if (!matches(user, password))
         {
-            retryCount = retryCount + 1;
-            redisCache.setCacheObject(getCacheKey(username), retryCount, lockTime, TimeUnit.MINUTES);
+            increaseRetryCount(getCacheKey(username));
+            increaseRetryCount(getIpCacheKey(ip));
+            increaseRetryCount(getDeviceCacheKey(deviceId));
             throw new UserPasswordNotMatchException();
         }
         else
         {
             clearLoginRecordCache(username);
+            clearLoginRecordCacheByKey(getIpCacheKey(ip));
+            clearLoginRecordCacheByKey(getDeviceCacheKey(deviceId));
         }
     }
 
@@ -81,6 +131,14 @@ public class SysPasswordService
         if (redisCache.hasKey(getCacheKey(loginName)))
         {
             redisCache.deleteObject(getCacheKey(loginName));
+        }
+    }
+
+    private void clearLoginRecordCacheByKey(String key)
+    {
+        if (redisCache.hasKey(key))
+        {
+            redisCache.deleteObject(key);
         }
     }
 }
