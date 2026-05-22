@@ -229,7 +229,8 @@ export default {
         userName: undefined,
         phonenumber: undefined,
         status: undefined,
-        deptId: undefined
+        deptId: undefined,
+        roleId: undefined
       },
       // 列信息
       columns: {
@@ -268,13 +269,25 @@ export default {
     }
   },
   created() {
+    this.applyRouteScope()
     this.getList()
     this.getDeptTree()
     this.getConfigKey("sys.user.initPassword").then(response => {
       this.initPassword = response.msg
     })
   },
+  watch: {
+    $route() {
+      this.applyRouteScope()
+      this.handleQuery()
+    }
+  },
   methods: {
+    /** 根据路由入口自动切换角色筛选 */
+    applyRouteScope() {
+      const roleId = Number(this.$route.query.roleId)
+      this.queryParams.roleId = Number.isFinite(roleId) && roleId > 0 ? roleId : undefined
+    },
     /** 查询用户列表 */
     getList() {
       this.loading = true
@@ -352,6 +365,7 @@ export default {
       this.dateRange = []
       this.resetForm("queryForm")
       this.queryParams.deptId = undefined
+      this.applyRouteScope()
       this.$refs.deptTreeRef.setCurrentKey(null)
       this.handleQuery()
     },
