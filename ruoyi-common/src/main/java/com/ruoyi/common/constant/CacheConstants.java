@@ -43,4 +43,14 @@ public class CacheConstants
      * 登录账户密码错误次数 redis key
      */
     public static final String PWD_ERR_CNT_KEY = "pwd_err_cnt:";
+
+    /**
+     * 登录IP密码错误次数 redis key
+     */
+    public static final String PWD_ERR_IP_CNT_KEY = "pwd_err_cnt:ip:";
+
+    /**
+     * 登录设备密码错误次数 redis key
+     */
+    public static final String PWD_ERR_DEVICE_CNT_KEY = "pwd_err_cnt:device:";
 }
