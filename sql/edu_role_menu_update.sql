@@ -82,3 +82,26 @@ select 4, 4 where not exists (select 1 from sys_user_role where user_id = 4 and 
 insert into edu_student_profile (user_id, signature, todo_items, learning_history, learning_notes, favorites, wrong_questions, discussions, create_by, create_time)
 select 4, '认真学习，持续进步', '完成 Java Web 课程实验和数据库作业', '已完成 Java Web 第 1~6 章学习', '本周重点复习过滤器和拦截器', '收藏：Spring Security 登录流程图', '错题：数据库范式综合题', '讨论：期末项目模块分工', 'admin', sysdate()
 where not exists (select 1 from edu_student_profile where user_id = 4);
+
+insert into sys_role (role_id, role_name, role_key, role_sort, data_scope, menu_check_strictly, dept_check_strictly, status, del_flag, create_by, create_time, update_by, update_time, remark)
+select 5, '游客', 'visitor', 5, 2, 1, 1, '0', '0', 'admin', sysdate(), '', null, '游客角色'
+where not exists (select 1 from sys_role where role_id = 5);
+
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+select '2300', '账号管理', '0', '4', 'account', '', '', '', 0, 0, 'M', '0', '0', '', 'user', 'admin', sysdate(), '', null, '账号管理目录'
+where not exists (select 1 from sys_menu where menu_id = '2300');
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+select '2301', '全部账号', '2300', '1', 'all', 'system/user/index', '{"roleId":0}', '', 0, 0, 'C', '0', '0', 'system:user:list', 'user', 'admin', sysdate(), '', null, '全部账号菜单'
+where not exists (select 1 from sys_menu where menu_id = '2301');
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+select '2302', '学生账号', '2300', '2', 'student', 'system/user/index', '{"roleId":4}', '', 0, 0, 'C', '0', '0', 'system:user:list', 'peoples', 'admin', sysdate(), '', null, '学生账号菜单'
+where not exists (select 1 from sys_menu where menu_id = '2302');
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+select '2303', '教师账号', '2300', '3', 'teacher', 'system/user/index', '{"roleId":3}', '', 0, 0, 'C', '0', '0', 'system:user:list', 'post', 'admin', sysdate(), '', null, '教师账号菜单'
+where not exists (select 1 from sys_menu where menu_id = '2303');
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+select '2304', '管理员账号', '2300', '4', 'admin', 'system/user/index', '{"roleId":1}', '', 0, 0, 'C', '0', '0', 'system:user:list', 'admin', 'admin', sysdate(), '', null, '管理员账号菜单'
+where not exists (select 1 from sys_menu where menu_id = '2304');
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+select '2305', '游客账号', '2300', '5', 'visitor', 'system/user/index', '{"roleId":5}', '', 0, 0, 'C', '0', '0', 'system:user:list', 'message', 'admin', sysdate(), '', null, '游客账号菜单'
+where not exists (select 1 from sys_menu where menu_id = '2305');

@@ -43,6 +43,11 @@ public class SysMenuServiceImpl implements ISysMenuService
 
     public static final Long MENU_ROOT_ID = 0L;
 
+    /**
+     * 学习平台菜单从该编号开始，管理员侧边栏仅展示这一段业务菜单
+     */
+    private static final long PLATFORM_MENU_MIN_ID = 2000L;
+
     @Autowired
     private SysMenuMapper menuMapper;
 
@@ -142,12 +147,27 @@ public class SysMenuServiceImpl implements ISysMenuService
         if (SecurityUtils.isAdmin(userId))
         {
             menus = menuMapper.selectMenuTreeAll();
+            menus = filterPlatformMenus(menus);
         }
         else
         {
             menus = menuMapper.selectMenuTreeByUserId(userId);
         }
         return getChildPerms(menus, MENU_ROOT_ID);
+    }
+
+    /**
+     * 过滤掉若依默认菜单，只保留学习平台相关菜单
+     */
+    private List<SysMenu> filterPlatformMenus(List<SysMenu> menus)
+    {
+        if (menus == null)
+        {
+            return new ArrayList<>();
+        }
+        return menus.stream()
+                .filter(menu -> menu.getMenuId() != null && menu.getMenuId() >= PLATFORM_MENU_MIN_ID)
+                .collect(Collectors.toList());
     }
 
     /**
