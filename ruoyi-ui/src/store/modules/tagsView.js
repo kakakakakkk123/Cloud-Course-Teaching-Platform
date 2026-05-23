@@ -102,6 +102,12 @@ const mutations = {
   DEL_ALL_CACHED_VIEWS: state => {
     state.cachedViews = []
   },
+  RESET_TAGS_VIEW: state => {
+    state.visitedViews = []
+    state.cachedViews = []
+    state.iframeViews = []
+    clearVisitedViews()
+  },
   UPDATE_VISITED_VIEW: (state, view) => {
     for (let v of state.visitedViews) {
       if (v.path === view.path) {
@@ -265,6 +271,9 @@ const actions = {
       commit('ADD_VISITED_VIEW', view)
     })
   },
+  resetTagsView({ commit }) {
+    commit('RESET_TAGS_VIEW')
+  }
 }
 
 export default {

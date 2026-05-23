@@ -3,32 +3,19 @@
     <div class="hero">
       <div class="hero__text">
         <p class="eyebrow">云课教学平台</p>
-        <h1>让课程、作业、笔记和账号管理都更清晰</h1>
-        <p class="summary">
-          这是你们小组的中文在线课程教学平台首页，覆盖学生注册、教师管理、个人中心与账户安全等核心功能。
-        </p>
+        <h1>{{ heroTitle }}</h1>
+        <p class="summary">{{ heroSummary }}</p>
         <div class="stats">
-          <div class="stat">
-            <strong>学生</strong>
-            <span>自主注册、登录、资料维护</span>
-          </div>
-          <div class="stat">
-            <strong>教师</strong>
-            <span>账号管理、重置、禁用、删除</span>
-          </div>
-          <div class="stat">
-            <strong>系统</strong>
-            <span>加盐哈希、冻结保护、验证码</span>
+          <div v-for="item in stats" :key="item.title" class="stat">
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.desc }}</span>
           </div>
         </div>
       </div>
       <div class="hero__card">
-        <h3>平台定位</h3>
+        <h3>{{ sideTitle }}</h3>
         <ul>
-          <li>中文界面</li>
-          <li>教学账户体系</li>
-          <li>个人学习档案</li>
-          <li>教师管理后台</li>
+          <li v-for="item in sideItems" :key="item">{{ item }}</li>
         </ul>
       </div>
     </div>
@@ -43,14 +30,59 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+
 export default {
   name: 'Index',
-  data() {
-    return {
-      features: [
-        { title: '学生账户', desc: '支持自主注册、登录与个人资料修改。' },
-        { title: '教师管理', desc: '可重置密码、禁用和删除学生账号。' },
-        { title: '安全保护', desc: '密码加密存储，支持冻结和异常提示。' }
+  computed: {
+    ...mapGetters(['roles']),
+    isTeacherOrAdmin() {
+      return this.roles.includes('teacher') || this.roles.includes('admin')
+    },
+    heroTitle() {
+      return this.isTeacherOrAdmin
+        ? '让课程、作业、学习档案和账号管理更清晰'
+        : '让课程、作业、笔记和个人学习档案更清晰'
+    },
+    heroSummary() {
+      return this.isTeacherOrAdmin
+        ? '面向教师与管理员的教学平台工作台，覆盖学生账户管理、教学组织和个人中心等核心功能。'
+        : '面向学生的学习平台首页，聚焦选课、学习进度、笔记沉淀和个人中心，不展示账号管理入口。'
+    },
+    stats() {
+      if (this.isTeacherOrAdmin) {
+        return [
+          { title: '学生账户', desc: '支持导入、重置密码、启停与状态维护。' },
+          { title: '教学组织', desc: '按学院、专业、班级维护教学成员结构。' },
+          { title: '系统安全', desc: '支持密码策略、验证码与异常登录保护。' }
+        ]
+      }
+      return [
+        { title: '我的课程', desc: '查看在学课程、进度状态与课程安排。' },
+        { title: '学习沉淀', desc: '整理笔记、错题与收藏内容，形成个人档案。' },
+        { title: '个人中心', desc: '维护资料、头像与学习画像，不包含账号管理。' }
+      ]
+    },
+    sideTitle() {
+      return this.isTeacherOrAdmin ? '工作台定位' : '学习中心定位'
+    },
+    sideItems() {
+      return this.isTeacherOrAdmin
+        ? ['中文界面', '教学账户体系', '个人学习档案', '教师管理后台']
+        : ['课程学习入口', '笔记与错题沉淀', '个人学习档案', '安全资料维护']
+    },
+    features() {
+      if (this.isTeacherOrAdmin) {
+        return [
+          { title: '账号管理', desc: '集中维护学生账户、批量导入和状态控制。' },
+          { title: '教学管理', desc: '围绕课程、班级和学生名单开展教学组织。' },
+          { title: '安全保护', desc: '密码加密存储，支持登录保护和身份校验。' }
+        ]
+      }
+      return [
+        { title: '我的学习', desc: '围绕课程进度、学习记录和内容沉淀展开。' },
+        { title: '个人中心', desc: '维护基础资料、头像、密码和学习档案。' },
+        { title: '学习安全', desc: '账号具备密码修改、验证码与登录保护能力。' }
       ]
     }
   }
