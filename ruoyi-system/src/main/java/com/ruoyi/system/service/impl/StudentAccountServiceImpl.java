@@ -65,6 +65,8 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         String password = StringUtils.trim(registerBody.getPassword());
         String studentNo = StringUtils.trim(registerBody.getStudentNo());
         String nickName = StringUtils.trim(registerBody.getNickName());
+        String grade = StringUtils.trim(registerBody.getGrade());
+        String phonenumber = StringUtils.trim(registerBody.getPhonenumber());
         String email = StringUtils.trim(registerBody.getEmail());
 
         if (!studentRegisterEnabled())
@@ -87,12 +89,22 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         {
             return "昵称不能为空。";
         }
+        if (StringUtils.isEmpty(phonenumber))
+        {
+            return "手机号码不能为空。";
+        }
+
+        if (StringUtils.isEmpty(grade))
+        {
+            return "年级不能为空。";
+        }
 
         SysUser user = new SysUser();
         user.setUserName(username);
         user.setDeptId(STUDENT_DEFAULT_DEPT_ID);
         user.setStudentNo(studentNo);
         user.setNickName(nickName);
+        user.setPhonenumber(phonenumber);
         user.setEmail(email);
 
         if (!userService.checkUserNameUnique(user))
@@ -102,6 +114,10 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         if (!userService.checkStudentNoUnique(user))
         {
             return "该学号已被注册。";
+        }
+        if (!userService.checkPhoneUnique(user))
+        {
+            return "手机号码已存在。";
         }
         if (StringUtils.isNotEmpty(user.getEmail()) && !userService.checkEmailUnique(user))
         {
@@ -126,6 +142,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
 
         StudentProfile profile = new StudentProfile();
         profile.setUserId(user.getUserId());
+        profile.setGrade(grade);
         profile.setCreateBy(username);
         accountMapper.insertStudentProfile(profile);
         return StringUtils.EMPTY;

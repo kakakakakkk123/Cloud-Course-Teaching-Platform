@@ -7,6 +7,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap id="StudentProfileResult" type="StudentProfile">
         <id property="profileId" column="profile_id" />
         <result property="userId" column="user_id" />
+        <result property="grade" column="grade" />
         <result property="signature" column="signature" />
         <result property="todoItems" column="todo_items" />
         <result property="learningHistory" column="learning_history" />
@@ -24,6 +25,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap id="StudentUserResult" type="SysUser">
         <id property="userId" column="user_id" />
         <result property="deptId" column="dept_id" />
+        <result property="grade" column="grade" />
         <result property="userName" column="user_name" />
         <result property="nickName" column="nick_name" />
         <result property="studentNo" column="student_no" />
@@ -41,10 +43,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateBy" column="update_by" />
         <result property="updateTime" column="update_time" />
         <result property="remark" column="remark" />
+        <association property="dept" javaType="SysDept">
+            <result property="deptName" column="dept_name" />
+        </association>
     </resultMap>
 
     <select id="selectStudentProfileByUserId" parameterType="Long" resultMap="StudentProfileResult">
-        select profile_id, user_id, signature, todo_items, learning_history, learning_notes, favorites,
+        select profile_id, user_id, grade, signature, todo_items, learning_history, learning_notes, favorites,
                wrong_questions, discussions, create_by, create_time, update_by, update_time, remark
         from edu_student_profile
         where user_id = #{userId}
@@ -52,10 +57,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <insert id="insertStudentProfile" parameterType="StudentProfile" useGeneratedKeys="true" keyProperty="profileId">
         insert into edu_student_profile (
-            user_id, signature, todo_items, learning_history, learning_notes, favorites,
+            user_id, grade, signature, todo_items, learning_history, learning_notes, favorites,
             wrong_questions, discussions, create_by, remark, create_time
         ) values (
-            #{userId}, #{signature}, #{todoItems}, #{learningHistory}, #{learningNotes}, #{favorites},
+            #{userId}, #{grade}, #{signature}, #{todoItems}, #{learningHistory}, #{learningNotes}, #{favorites},
             #{wrongQuestions}, #{discussions}, #{createBy}, #{remark}, sysdate()
         )
     </insert>
@@ -63,6 +68,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="updateStudentProfile" parameterType="StudentProfile">
         update edu_student_profile
         <set>
+            grade = #{grade},
             signature = #{signature},
             todo_items = #{todoItems},
             learning_history = #{learningHistory},
@@ -78,12 +84,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <select id="selectStudentList" parameterType="SysUser" resultMap="StudentUserResult">
-        select distinct u.user_id, u.dept_id, u.user_name, u.nick_name, u.student_no, u.email, u.avatar,
+        select distinct u.user_id, u.dept_id, sp.grade, d.dept_name, u.user_name, u.nick_name, u.student_no, u.email, u.avatar,
                u.phonenumber, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.pwd_update_date,
                u.create_by, u.create_time, u.update_by, u.update_time, u.remark
         from sys_user u
                  inner join sys_user_role ur on u.user_id = ur.user_id
                  inner join sys_role r on ur.role_id = r.role_id
+                 left join edu_student_profile sp on u.user_id = sp.user_id
+                 left join sys_dept d on u.dept_id = d.dept_id
         where u.del_flag = '0'
           and r.role_key = 'student'
         <if test="userName != null and userName != ''">
@@ -111,12 +119,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectStudentByUserId" parameterType="Long" resultMap="StudentUserResult">
-        select distinct u.user_id, u.dept_id, u.user_name, u.nick_name, u.student_no, u.email, u.avatar,
+        select distinct u.user_id, u.dept_id, sp.grade, d.dept_name, u.user_name, u.nick_name, u.student_no, u.email, u.avatar,
                u.phonenumber, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.pwd_update_date,
                u.create_by, u.create_time, u.update_by, u.update_time, u.remark
         from sys_user u
                  inner join sys_user_role ur on u.user_id = ur.user_id
                  inner join sys_role r on ur.role_id = r.role_id
+                 left join edu_student_profile sp on u.user_id = sp.user_id
+                 left join sys_dept d on u.dept_id = d.dept_id
         where u.user_id = #{userId}
           and u.del_flag = '0'
           and r.role_key = 'student'

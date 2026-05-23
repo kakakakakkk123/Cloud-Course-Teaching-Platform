@@ -1,26 +1,33 @@
 <template>
-  <el-drawer title="用户信息详情" :visible.sync="visible" direction="rtl" size="68%" append-to-body :before-close="handleClose" custom-class="detail-drawer">
+  <el-drawer
+    title="用户信息详情"
+    :visible.sync="visible"
+    direction="rtl"
+    size="68%"
+    append-to-body
+    :before-close="handleClose"
+    custom-class="detail-drawer"
+  >
     <div v-loading="loading" class="drawer-content">
-      <!-- 基本信息 -->
       <h4 class="section-header">基本信息</h4>
       <el-row :gutter="20" class="mb8">
         <el-col :span="12">
           <div class="info-item">
-            <label class="info-label">用户名称：</label>
+            <label class="info-label">用户昵称：</label>
             <span class="info-value plaintext">{{ info.nickName }}</span>
           </div>
         </el-col>
         <el-col :span="12">
           <div class="info-item">
-            <label class="info-label">归属部门：</label>
-            <span class="info-value plaintext">{{ (info.dept && info.dept.deptName) }}</span>
+            <label class="info-label">用户身份：</label>
+            <span class="info-value plaintext">{{ roleNames || "未分配" }}</span>
           </div>
         </el-col>
       </el-row>
       <el-row :gutter="20" class="mb8">
         <el-col :span="12">
           <div class="info-item">
-            <label class="info-label">手机号码：</label>
+            <label class="info-label">手机号：</label>
             <span class="info-value plaintext">{{ info.phonenumber }}</span>
           </div>
         </el-col>
@@ -42,7 +49,9 @@
           <div class="info-item">
             <label class="info-label">用户状态：</label>
             <span class="info-value plaintext">
-              <el-tag size="small" :type="info.status === '0' ? 'success' : 'danger'">{{ info.status === '0' ? '正常' : '停用' }}</el-tag>
+              <el-tag size="small" :type="info.status === '0' ? 'success' : 'danger'">
+                {{ info.status === "0" ? "正常" : "停用" }}
+              </el-tag>
             </span>
           </div>
         </el-col>
@@ -51,7 +60,7 @@
         <el-col :span="12">
           <div class="info-item">
             <label class="info-label">岗位：</label>
-            <span class="info-value plaintext">{{ postNames || '无岗位' }}</span>
+            <span class="info-value plaintext">{{ postNames || "无岗位" }}</span>
           </div>
         </el-col>
         <el-col :span="12">
@@ -61,15 +70,7 @@
           </div>
         </el-col>
       </el-row>
-      <el-row :gutter="20" class="mb8">
-        <el-col :span="24">
-          <div class="info-item full-width">
-            <label class="info-label">角色：</label>
-            <span class="info-value plaintext">{{ roleNames || '无角色' }}</span>
-          </div>
-        </el-col>
-      </el-row>
-      <!-- 其他信息 -->
+
       <h4 class="section-header">其他信息</h4>
       <el-row :gutter="20" class="mb8">
         <el-col :span="12">
@@ -126,11 +127,11 @@
 </template>
 
 <script>
-import { getUser } from '@/api/system/user'
+import { getUser } from "@/api/system/user"
 
 export default {
-  name: 'UserViewDrawer',
-  dicts: ['sys_user_sex'],
+  name: "UserViewDrawer",
+  dicts: ["sys_user_sex"],
   data() {
     return {
       visible: false,
@@ -142,29 +143,39 @@ export default {
   },
   computed: {
     sexLabel() {
-      return this.selectDictLabel(this.dict.type.sys_user_sex, this.info.sex) || '-'
+      return this.selectDictLabel(this.dict.type.sys_user_sex, this.info.sex) || "-"
     },
     postNames() {
-      if (!this.postOptions.length) return ''
+      if (!this.postOptions.length) {
+        return ""
+      }
       const ids = this.info.postIds || []
-      return this.postOptions.filter(p => ids.includes(p.postId)).map(p => p.postName).join('、') || ''
+      return this.postOptions
+        .filter(item => ids.includes(item.postId))
+        .map(item => item.postName)
+        .join("、")
     },
     roleNames() {
-      if (!this.roleOptions.length) return ''
+      if (!this.roleOptions.length) {
+        return ""
+      }
       const ids = this.info.roleIds || []
-      return this.roleOptions.filter(r => ids.includes(r.roleId)).map(r => r.roleName).join('、') || ''
+      return this.roleOptions
+        .filter(item => ids.includes(item.roleId))
+        .map(item => item.roleName)
+        .join("、")
     }
   },
   methods: {
     open(userId) {
       this.visible = true
       this.loading = true
-      getUser(userId).then(res => {
-        this.info = res.data || {}
-        this.postOptions = res.posts || []
-        this.roleOptions = res.roles || []
-        this.info.postIds = res.postIds || []
-        this.info.roleIds = res.roleIds || []
+      getUser(userId).then(response => {
+        this.info = response.data || {}
+        this.postOptions = response.posts || []
+        this.roleOptions = response.roles || []
+        this.info.postIds = response.postIds || []
+        this.info.roleIds = response.roleIds || []
       }).finally(() => {
         this.loading = false
       })

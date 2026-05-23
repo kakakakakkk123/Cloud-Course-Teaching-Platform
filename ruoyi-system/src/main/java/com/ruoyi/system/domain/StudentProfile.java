@@ -17,6 +17,8 @@ public class StudentProfile extends BaseEntity
 
     private Long userId;
 
+    private String grade;
+
     private String signature;
 
     private String todoItems;
@@ -49,6 +51,16 @@ public class StudentProfile extends BaseEntity
     public void setUserId(Long userId)
     {
         this.userId = userId;
+    }
+
+    public String getGrade()
+    {
+        return grade;
+    }
+
+    public void setGrade(String grade)
+    {
+        this.grade = grade;
     }
 
     public String getSignature()
@@ -127,6 +139,7 @@ public class StudentProfile extends BaseEntity
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("profileId", getProfileId())
                 .append("userId", getUserId())
+                .append("grade", getGrade())
                 .append("signature", getSignature())
                 .append("todoItems", getTodoItems())
                 .append("learningHistory", getLearningHistory())
