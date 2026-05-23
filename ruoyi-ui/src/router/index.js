@@ -7,28 +7,24 @@ Vue.use(Router)
 import Layout from '@/layout'
 
 /**
- * Note: 路由配置项
+ * 路由配置说明
  *
- * hidden: true                     // 当设置 true 的时候该路由不会再侧边栏出现 如401，login等页面，或者如一些编辑页面/edit/1
- * alwaysShow: true                 // 当你一个路由下面的 children 声明的路由大于1个时，自动会变成嵌套的模式--如组件页面
- *                                  // 只有一个时，会将那个子路由当做根路由显示在侧边栏--如引导页面
- *                                  // 若你想不管路由下面的 children 声明的个数都显示你的根路由
- *                                  // 你可以设置 alwaysShow: true，这样它就会忽略之前定义的规则，一直显示根路由
- * redirect: noRedirect             // 当设置 noRedirect 的时候该路由在面包屑导航中不可被点击
- * name:'router-name'               // 设定路由的名字，一定要填写不然使用<keep-alive>时会出现各种问题
- * query: '{"id": 1, "name": "ry"}' // 访问路由的默认传递参数
- * roles: ['admin', 'common']       // 访问路由的角色权限
- * permissions: ['a:a:a', 'b:b:b']  // 访问路由的菜单权限
- * meta : {
-    noCache: true                   // 如果设置为true，则不会被 <keep-alive> 缓存(默认 false)
-    title: 'title'                  // 设置该路由在侧边栏和面包屑中展示的名字
-    icon: 'svg-name'                // 设置该路由的图标，对应路径src/assets/icons/svg
-    breadcrumb: false               // 如果设置为false，则不会在breadcrumb面包屑中显示
-    activeMenu: '/system/user'      // 当路由设置了该属性，则会高亮相对应的侧边栏。
-  }
+ * hidden: true                     // 设置为 true 时该路由不会显示在侧边栏
+ * alwaysShow: true                 // 无论子路由数量如何都始终显示根菜单
+ * redirect: noRedirect             // 面包屑不可点击
+ * name: 'router-name'              // 路由名称，keep-alive 依赖它
+ * query: '{"id": 1}'               // 访问路由的默认参数
+ * roles: ['admin', 'teacher']      // 访问该路由所需角色
+ * permissions: ['a:a:a']           // 访问该路由所需菜单权限
+ * meta: {
+ *   noCache: true,                 // 不被 keep-alive 缓存
+ *   title: 'title',                // 侧边栏和面包屑显示名称
+ *   icon: 'svg-name',              // 图标
+ *   breadcrumb: false,             // 不显示在面包屑
+ *   activeMenu: '/system/user'     // 高亮对应侧边菜单
+ * }
  */
 
-// 公共路由
 export const constantRoutes = [
   {
     path: '/redirect',
@@ -86,18 +82,6 @@ export const constantRoutes = [
     ]
   },
   {
-    path: '/account-manage',
-    component: Layout,
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/system/user/index'),
-        name: 'AccountManage',
-        meta: { title: '账号管理', icon: 'user' }
-      }
-    ]
-  },
-  {
     path: '/lock',
     component: () => import('@/views/lock'),
     hidden: true,
@@ -119,8 +103,20 @@ export const constantRoutes = [
   }
 ]
 
-// 动态路由，基于用户权限动态去加载
 export const dynamicRoutes = [
+  {
+    path: '/account-manage',
+    component: Layout,
+    roles: ['teacher', 'admin'],
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/system/user/index'),
+        name: 'AccountManage',
+        meta: { title: '账号管理', icon: 'user' }
+      }
+    ]
+  },
   {
     path: '/system/user-auth',
     component: Layout,
@@ -193,20 +189,28 @@ export const dynamicRoutes = [
   }
 ]
 
-// 防止连续点击多次路由报错
 let routerPush = Router.prototype.push
 let routerReplace = Router.prototype.replace
-// push
+
 Router.prototype.push = function push(location) {
   return routerPush.call(this, location).catch(err => err)
 }
-// replace
-Router.prototype.replace = function push(location) {
+
+Router.prototype.replace = function replace(location) {
   return routerReplace.call(this, location).catch(err => err)
 }
 
-export default new Router({
-  mode: 'history', // 去掉url中的#
+const createRouter = () => new Router({
+  mode: 'history',
   scrollBehavior: () => ({ y: 0 }),
   routes: constantRoutes
 })
+
+const router = createRouter()
+
+export function resetRouter() {
+  const newRouter = createRouter()
+  router.matcher = newRouter.matcher
+}
+
+export default router

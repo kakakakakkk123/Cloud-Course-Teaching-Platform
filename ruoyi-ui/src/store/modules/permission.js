@@ -27,6 +27,13 @@ const permission = {
     SET_SIDEBAR_ROUTERS: (state, routes) => {
       state.sidebarRouters = routes
     },
+    RESET_PERMISSION: (state) => {
+      state.routes = []
+      state.addRoutes = []
+      state.defaultRoutes = []
+      state.topbarRouters = []
+      state.sidebarRouters = []
+    }
   },
   actions: {
     // 生成路由
@@ -38,13 +45,14 @@ const permission = {
           const rdata = JSON.parse(JSON.stringify(res.data))
           const sidebarRoutes = filterAsyncRouter(sdata)
           const rewriteRoutes = filterAsyncRouter(rdata, false, true)
-          const asyncRoutes = filterDynamicRoutes(dynamicRoutes)
+          const roleRoutes = filterDynamicRoutes(dynamicRoutes)
+          const visibleRoleRoutes = roleRoutes.filter(route => !route.hidden)
           rewriteRoutes.push({ path: '*', redirect: '/404', hidden: true })
-          router.addRoutes(asyncRoutes)
+          router.addRoutes(roleRoutes)
           commit('SET_ROUTES', rewriteRoutes)
-          commit('SET_SIDEBAR_ROUTERS', constantRoutes.concat(sidebarRoutes))
-          commit('SET_DEFAULT_ROUTES', sidebarRoutes)
-          commit('SET_TOPBAR_ROUTES', sidebarRoutes)
+          commit('SET_SIDEBAR_ROUTERS', constantRoutes.concat(visibleRoleRoutes, sidebarRoutes))
+          commit('SET_DEFAULT_ROUTES', visibleRoleRoutes.concat(sidebarRoutes))
+          commit('SET_TOPBAR_ROUTES', visibleRoleRoutes.concat(sidebarRoutes))
           resolve(rewriteRoutes)
         })
       })

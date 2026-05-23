@@ -1,5 +1,6 @@
 import store from '@/store'
 import router from '@/router'
+import { resetRouter } from '@/router'
 import cache from '@/plugins/cache'
 import { MessageBox, } from 'element-ui'
 import { login, logout, getInfo } from '@/api/login'
@@ -104,9 +105,16 @@ const user = {
     LogOut({ commit, state }) {
       return new Promise((resolve, reject) => {
         logout(state.token).then(() => {
+          resetRouter()
           commit('SET_TOKEN', '')
+          commit('SET_ID', '')
+          commit('SET_NAME', '')
+          commit('SET_NICK_NAME', '')
+          commit('SET_AVATAR', '')
           commit('SET_ROLES', [])
           commit('SET_PERMISSIONS', [])
+          commit('RESET_PERMISSION')
+          store.dispatch('tagsView/resetTagsView')
           removeToken()
           resolve()
         }).catch(error => {
@@ -118,7 +126,16 @@ const user = {
     // 前端 登出
     FedLogOut({ commit }) {
       return new Promise(resolve => {
+        resetRouter()
         commit('SET_TOKEN', '')
+        commit('SET_ID', '')
+        commit('SET_NAME', '')
+        commit('SET_NICK_NAME', '')
+        commit('SET_AVATAR', '')
+        commit('SET_ROLES', [])
+        commit('SET_PERMISSIONS', [])
+        commit('RESET_PERMISSION')
+        store.dispatch('tagsView/resetTagsView')
         removeToken()
         resolve()
       })
