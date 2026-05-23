@@ -77,6 +77,7 @@ public class SysRegisterService
         else
         {
             sysUser.setNickName(username);
+            sysUser.setPhonenumber(registerBody.getPhonenumber());
             sysUser.setPwdUpdateDate(DateUtils.getNowDate());
             sysUser.setPassword(SecurityUtils.encryptPassword(password));
             boolean regFlag = userService.registerUser(sysUser);

@@ -38,6 +38,21 @@
             <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
           </el-input>
         </el-form-item>
+        <el-form-item prop="grade">
+          <el-select v-model="registerForm.grade" placeholder="请选择年级" style="width: 100%">
+            <el-option
+              v-for="item in gradeOptions"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item prop="phonenumber">
+          <el-input v-model.trim="registerForm.phonenumber" placeholder="手机号">
+            <svg-icon slot="prefix" icon-class="phone" class="el-input__icon input-icon" />
+          </el-input>
+        </el-form-item>
         <el-form-item prop="email">
           <el-input v-model.trim="registerForm.email" placeholder="校内邮箱（可选）">
             <svg-icon slot="prefix" icon-class="email" class="el-input__icon input-icon" />
@@ -126,6 +141,7 @@ import defaultSettings from "@/settings"
 export default {
   mixins: [passwordRule],
   data() {
+    const currentYear = new Date().getFullYear()
     return {
       title: process.env.VUE_APP_TITLE,
       footerContent: defaultSettings.footerContent,
@@ -134,6 +150,8 @@ export default {
         username: "",
         studentNo: "",
         nickName: "",
+        grade: "",
+        phonenumber: "",
         email: "",
         emailCode: "",
         password: "",
@@ -144,7 +162,8 @@ export default {
       loading: false,
       emailCodeLoading: false,
       captchaEnabled: true,
-      registerEnabled: true
+      registerEnabled: true,
+      gradeOptions: Array.from({ length: 8 }, (_, index) => `${currentYear + 1 - index}级`)
     }
   },
   computed: {
@@ -161,6 +180,14 @@ export default {
         nickName: [
           { required: true, trigger: "blur", message: "请输入昵称" },
           { min: 2, max: 30, trigger: "blur", message: "昵称长度不能超过 30 个字符" }
+        ],
+        grade: [
+          { required: true, trigger: "blur", message: "请输入年级" },
+          { max: 20, trigger: "blur", message: "年级长度不能超过 20 个字符" }
+        ],
+        phonenumber: [
+          { required: true, trigger: "blur", message: "请输入手机号" },
+          { pattern: /^1[3-9]\d{9}$/, trigger: "blur", message: "请输入正确的手机号" }
         ],
         email: [
           { type: "email", trigger: ["blur", "change"], message: "请输入正确的邮箱地址" }

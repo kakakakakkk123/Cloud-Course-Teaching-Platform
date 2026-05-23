@@ -10,7 +10,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 /**
- * 启动时确保学生档案表存在，兼容旧库升级场景。
+ * Ensures the student profile table exists and is upgraded for older databases.
  */
 @Component
 public class StudentProfileTableInitializer implements ApplicationRunner
@@ -27,10 +27,11 @@ public class StudentProfileTableInitializer implements ApplicationRunner
     @Override
     public void run(ApplicationArguments args) throws Exception
     {
-        String sql = """
+        String createTableSql = """
                 create table if not exists edu_student_profile (
                   profile_id bigint(20) not null auto_increment comment '档案ID',
                   user_id bigint(20) not null comment '用户ID',
+                  grade varchar(20) default null comment '年级',
                   signature varchar(200) default '' comment '个性签名',
                   todo_items text comment '待办事项',
                   learning_history text comment '学习历史',
@@ -48,9 +49,12 @@ public class StudentProfileTableInitializer implements ApplicationRunner
                 ) engine=innodb auto_increment=1 comment = '学生档案表'
                 """;
 
+        String alterTableSql = "alter table edu_student_profile add column if not exists grade varchar(20) default null comment '年级' after user_id";
+
         try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement())
         {
-            statement.execute(sql);
+            statement.execute(createTableSql);
+            statement.execute(alterTableSql);
             log.info("student profile table checked");
         }
     }

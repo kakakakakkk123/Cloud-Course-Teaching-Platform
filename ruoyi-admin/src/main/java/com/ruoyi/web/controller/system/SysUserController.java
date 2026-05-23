@@ -56,7 +56,7 @@ public class SysUserController extends BaseController
     /**
      * 获取用户列表
      */
-    @PreAuthorize("@ss.hasPermi('system:user:list')")
+    @PreAuthorize("@ss.hasAnyRoles('teacher,admin')")
     @GetMapping("/list")
     public TableDataInfo list(SysUser user)
     {
@@ -66,7 +66,7 @@ public class SysUserController extends BaseController
     }
 
     @Log(title = "用户管理", businessType = BusinessType.EXPORT)
-    @PreAuthorize("@ss.hasPermi('system:user:export')")
+    @PreAuthorize("@ss.hasAnyRoles('teacher,admin')")
     @PostMapping("/export")
     public void export(HttpServletResponse response, SysUser user)
     {
@@ -76,7 +76,7 @@ public class SysUserController extends BaseController
     }
 
     @Log(title = "用户管理", businessType = BusinessType.IMPORT)
-    @PreAuthorize("@ss.hasPermi('system:user:import')")
+    @PreAuthorize("@ss.hasAnyRoles('teacher,admin')")
     @PostMapping("/importData")
     public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
     {
@@ -97,7 +97,7 @@ public class SysUserController extends BaseController
     /**
      * 根据用户编号获取详细信息
      */
-    @PreAuthorize("@ss.hasPermi('system:user:query')")
+    @PreAuthorize("@ss.hasAnyRoles('teacher,admin')")
     @GetMapping(value = { "/", "/{userId}" })
     public AjaxResult getInfo(@PathVariable(value = "userId", required = false) Long userId)
     {
@@ -119,7 +119,7 @@ public class SysUserController extends BaseController
     /**
      * 新增用户
      */
-    @PreAuthorize("@ss.hasPermi('system:user:add')")
+    @PreAuthorize("@ss.hasAnyRoles('teacher,admin')")
     @Log(title = "用户管理", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@Validated @RequestBody SysUser user)
@@ -150,7 +150,7 @@ public class SysUserController extends BaseController
     /**
      * 修改用户
      */
-    @PreAuthorize("@ss.hasPermi('system:user:edit')")
+    @PreAuthorize("@ss.hasAnyRoles('teacher,admin')")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@Validated @RequestBody SysUser user)
@@ -182,7 +182,7 @@ public class SysUserController extends BaseController
     /**
      * 删除用户
      */
-    @PreAuthorize("@ss.hasPermi('system:user:remove')")
+    @PreAuthorize("@ss.hasAnyRoles('teacher,admin')")
     @Log(title = "用户管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{userIds}")
     public AjaxResult remove(@PathVariable Long[] userIds)
@@ -191,17 +191,28 @@ public class SysUserController extends BaseController
         {
             return error("当前用户不能删除");
         }
+        for (Long userId : userIds)
+        {
+            if (isAdminAccount(userId))
+            {
+                return error("管理员账号不能删除");
+            }
+        }
         return toAjax(userService.deleteUserByIds(userIds));
     }
 
     /**
      * 重置密码
      */
-    @PreAuthorize("@ss.hasPermi('system:user:resetPwd')")
+    @PreAuthorize("@ss.hasAnyRoles('teacher,admin')")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @PutMapping("/resetPwd")
     public AjaxResult resetPwd(@RequestBody SysUser user)
     {
+        if (isAdminAccount(user.getUserId()))
+        {
+            return error("管理员账号不能重置密码");
+        }
         userService.checkUserAllowed(user);
         userService.checkUserDataScope(user.getUserId());
         user.setPassword(SecurityUtils.encryptPassword(user.getPassword()));
@@ -212,11 +223,15 @@ public class SysUserController extends BaseController
     /**
      * 状态修改
      */
-    @PreAuthorize("@ss.hasPermi('system:user:edit')")
+    @PreAuthorize("@ss.hasAnyRoles('teacher,admin')")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @PutMapping("/changeStatus")
     public AjaxResult changeStatus(@RequestBody SysUser user)
     {
+        if (isAdminAccount(user.getUserId()))
+        {
+            return error("管理员账号不能禁用");
+        }
         userService.checkUserAllowed(user);
         userService.checkUserDataScope(user.getUserId());
         user.setUpdateBy(getUsername());
@@ -255,10 +270,18 @@ public class SysUserController extends BaseController
     /**
      * 获取部门树列表
      */
-    @PreAuthorize("@ss.hasPermi('system:user:list')")
+    @PreAuthorize("@ss.hasAnyRoles('teacher,admin')")
     @GetMapping("/deptTree")
     public AjaxResult deptTree(SysDept dept)
     {
         return success(deptService.selectDeptTreeList(dept));
+    }
+
+    private boolean isAdminAccount(Long userId)
+    {
+        SysUser user = userService.selectUserById(userId);
+        return StringUtils.isNotNull(user)
+                && (user.isAdmin() || (StringUtils.isNotEmpty(user.getRoles())
+                && user.getRoles().stream().anyMatch(SysRole::isAdmin)));
     }
 }

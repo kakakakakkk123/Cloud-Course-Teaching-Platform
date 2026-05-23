@@ -25,6 +25,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateBy"      column="update_by"       />
         <result property="updateTime"    column="update_time"     />
         <result property="remark"        column="remark"          />
+        <result property="identityName"  column="identity_name"   />
+        <result property="grade"         column="grade"           />
         <association property="dept"     javaType="SysDept"         resultMap="deptResult" />
         <collection  property="roles"    javaType="java.util.List"  resultMap="RoleResult" />
     </resultMap>
@@ -59,8 +61,20 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </sql>
     
     <select id="selectUserList" parameterType="SysUser" resultMap="SysUserResult">
-		select u.user_id, u.dept_id, u.nick_name, u.user_name, u.student_no, u.email, u.avatar, u.phonenumber, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, d.dept_name, d.leader from sys_user u
+		select u.user_id, u.dept_id, sp.grade, u.nick_name, u.user_name, u.student_no, u.email, u.avatar, u.phonenumber, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark,
+		       d.dept_name, d.leader,
+		       group_concat(distinct case
+		           when r.role_key = 'admin' then '管理员'
+		           when r.role_key = 'teacher' then '教师'
+		           when r.role_key = 'student' then '学生'
+		           when r.role_key = 'visitor' then '游客'
+		           else r.role_name
+		       end order by r.role_sort separator '、') as identity_name
+		from sys_user u
 		left join sys_dept d on u.dept_id = d.dept_id
+		left join edu_student_profile sp on u.user_id = sp.user_id
+		left join sys_user_role ur on u.user_id = ur.user_id
+		left join sys_role r on r.role_id = ur.role_id
 		where u.del_flag = '0'
 		<if test="userId != null and userId != 0">
 			AND u.user_id = #{userId}
@@ -92,6 +106,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		</if>
 		<!-- 数据范围过滤 -->
 		${params.dataScope}
+		group by u.user_id, u.dept_id, sp.grade, u.nick_name, u.user_name, u.student_no, u.email, u.avatar, u.phonenumber,
+		         u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark,
+		         d.dept_name, d.leader
 	</select>
 	
 	<select id="selectAllocatedList" parameterType="SysUser" resultMap="SysUserResult">

@@ -100,6 +100,12 @@ public class SysUser extends BaseEntity
     /** 角色ID */
     private Long roleId;
 
+    /** 用户身份 */
+    private String identityName;
+
+    /** 年级 */
+    private String grade;
+
     public SysUser()
     {
 
@@ -325,6 +331,26 @@ public class SysUser extends BaseEntity
         this.roleId = roleId;
     }
 
+    public String getIdentityName()
+    {
+        return identityName;
+    }
+
+    public void setIdentityName(String identityName)
+    {
+        this.identityName = identityName;
+    }
+
+    public String getGrade()
+    {
+        return grade;
+    }
+
+    public void setGrade(String grade)
+    {
+        this.grade = grade;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -347,6 +373,7 @@ public class SysUser extends BaseEntity
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())
             .append("updateTime", getUpdateTime())
+            .append("grade", getGrade())
             .append("remark", getRemark())
             .append("dept", getDept())
             .toString();

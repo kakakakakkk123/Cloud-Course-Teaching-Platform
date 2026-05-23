@@ -84,6 +84,11 @@
       <el-table-column label="账号" prop="userName" />
       <el-table-column label="学号" prop="studentNo" />
       <el-table-column label="昵称" prop="nickName" />
+      <el-table-column label="班级" min-width="150">
+        <template slot-scope="scope">
+          {{ (scope.row.dept && scope.row.dept.deptName) || "-" }}
+        </template>
+      </el-table-column>
       <el-table-column label="邮箱" prop="email" />
       <el-table-column label="状态" prop="status">
         <template slot-scope="scope">

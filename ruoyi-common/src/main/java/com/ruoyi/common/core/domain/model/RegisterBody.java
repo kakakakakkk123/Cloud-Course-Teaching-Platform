@@ -18,9 +18,19 @@ public class RegisterBody extends LoginBody
     private String nickName;
 
     /**
+     * 年级
+     */
+    private String grade;
+
+    /**
      * 邮箱
      */
     private String email;
+
+    /**
+     * 手机号
+     */
+    private String phonenumber;
 
     private String emailCode;
 
@@ -44,6 +54,16 @@ public class RegisterBody extends LoginBody
         this.nickName = nickName;
     }
 
+    public String getGrade()
+    {
+        return grade;
+    }
+
+    public void setGrade(String grade)
+    {
+        this.grade = grade;
+    }
+
     public String getEmail()
     {
         return email;
@@ -52,6 +72,16 @@ public class RegisterBody extends LoginBody
     public void setEmail(String email)
     {
         this.email = email;
+    }
+
+    public String getPhonenumber()
+    {
+        return phonenumber;
+    }
+
+    public void setPhonenumber(String phonenumber)
+    {
+        this.phonenumber = phonenumber;
     }
 
     public String getEmailCode()

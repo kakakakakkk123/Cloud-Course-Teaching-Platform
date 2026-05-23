@@ -86,6 +86,18 @@ export const constantRoutes = [
     ]
   },
   {
+    path: '/account-manage',
+    component: Layout,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/system/user/index'),
+        name: 'AccountManage',
+        meta: { title: '账号管理', icon: 'user' }
+      }
+    ]
+  },
+  {
     path: '/lock',
     component: () => import('@/views/lock'),
     hidden: true,
