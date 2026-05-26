@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.EduCourseContentMapper">
+
+    <resultMap id="EduCourseContentResult" type="com.ruoyi.system.domain.course.EduCourseContent">
+        <id property="contentId" column="content_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="contentTitle" column="content_title"/>
+        <result property="contentType" column="content_type"/>
+        <result property="sourceType" column="source_type"/>
+        <result property="fileName" column="file_name"/>
+        <result property="fileUrl" column="file_url"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="linkUrl" column="link_url"/>
+        <result property="summary" column="summary"/>
+        <result property="contentBody" column="content_body"/>
+        <result property="durationSeconds" column="duration_seconds"/>
+        <result property="examId" column="exam_id"/>
+        <result property="isPreview" column="is_preview"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="publishStatus" column="publish_status"/>
+        <result property="viewCount" column="view_count"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="courseName" column="course_name"/>
+        <result property="examName" column="exam_name"/>
+    </resultMap>
+
+    <sql id="selectEduCourseContentVo">
+        select cc.content_id, cc.course_id, cc.parent_id, cc.content_title, cc.content_type, cc.source_type,
+               cc.file_name, cc.file_url, cc.cover_image, cc.link_url, cc.summary, cc.content_body,
+               cc.duration_seconds, cc.exam_id, cc.is_preview, cc.sort_order, cc.publish_status,
+               cc.view_count, cc.create_by, cc.create_time, cc.update_by, cc.update_time, cc.remark,
+               c.course_name, e.exam_name
+        from edu_course_content cc
+                 left join edu_course c on cc.course_id = c.course_id
+                 left join edu_exam e on cc.exam_id = e.exam_id
+    </sql>
+
+    <select id="selectEduCourseContentById" parameterType="Long" resultMap="EduCourseContentResult">
+        <include refid="selectEduCourseContentVo"/>
+        where cc.content_id = #{contentId}
+    </select>
+
+    <select id="selectEduCourseContentList" parameterType="com.ruoyi.system.domain.course.EduCourseContent" resultMap="EduCourseContentResult">
+        <include refid="selectEduCourseContentVo"/>
+        <where>
+            <if test="courseId != null">
+                and cc.course_id = #{courseId}
+            </if>
+            <if test="contentTitle != null and contentTitle != ''">
+                and cc.content_title like concat('%', #{contentTitle}, '%')
+            </if>
+            <if test="contentType != null and contentType != ''">
+                and cc.content_type = #{contentType}
+            </if>
+            <if test="publishStatus != null and publishStatus != ''">
+                and cc.publish_status = #{publishStatus}
+            </if>
+        </where>
+        order by cc.sort_order asc, cc.content_id asc
+    </select>
+
+    <select id="selectPublishedContentByCourseId" parameterType="Long" resultMap="EduCourseContentResult">
+        <include refid="selectEduCourseContentVo"/>
+        where cc.course_id = #{courseId}
+          and cc.publish_status = '1'
+        order by cc.sort_order asc, cc.content_id asc
+    </select>
+
+    <insert id="insertEduCourseContent" parameterType="com.ruoyi.system.domain.course.EduCourseContent" useGeneratedKeys="true" keyProperty="contentId">
+        insert into edu_course_content (
+            course_id, parent_id, content_title, content_type, source_type, file_name, file_url, cover_image,
+            link_url, summary, content_body, duration_seconds, exam_id, is_preview, sort_order, publish_status,
+            view_count, create_by, create_time, remark
+        ) values (
+            #{courseId}, #{parentId}, #{contentTitle}, #{contentType}, #{sourceType}, #{fileName}, #{fileUrl}, #{coverImage},
+            #{linkUrl}, #{summary}, #{contentBody}, #{durationSeconds}, #{examId}, #{isPreview}, #{sortOrder}, #{publishStatus},
+            0, #{createBy}, sysdate(), #{remark}
+        )
+    </insert>
+
+    <update id="updateEduCourseContent" parameterType="com.ruoyi.system.domain.course.EduCourseContent">
+        update edu_course_content
+        <set>
+            course_id = #{courseId},
+            parent_id = #{parentId},
+            content_title = #{contentTitle},
+            content_type = #{contentType},
+            source_type = #{sourceType},
+            file_name = #{fileName},
+            file_url = #{fileUrl},
+            cover_image = #{coverImage},
+            link_url = #{linkUrl},
+            summary = #{summary},
+            content_body = #{contentBody},
+            duration_seconds = #{durationSeconds},
+            exam_id = #{examId},
+            is_preview = #{isPreview},
+            sort_order = #{sortOrder},
+            publish_status = #{publishStatus},
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where content_id = #{contentId}
+    </update>
+
+    <delete id="deleteEduCourseContentById" parameterType="Long">
+        delete from edu_course_content where content_id = #{contentId}
+    </delete>
+
+    <delete id="deleteEduCourseContentByIds" parameterType="Long">
+        delete from edu_course_content
+        where content_id in
+        <foreach collection="array" item="contentId" open="(" separator="," close=")">
+            #{contentId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteEduCourseContentByCourseIds" parameterType="Long">
+        delete from edu_course_content
+        where course_id in
+        <foreach collection="array" item="courseId" open="(" separator="," close=")">
+            #{courseId}
+        </foreach>
+    </delete>
+
+</mapper>

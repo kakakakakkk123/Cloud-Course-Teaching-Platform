@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.EduCourseEnrollMapper">
+
+    <resultMap id="EduCourseEnrollResult" type="com.ruoyi.system.domain.course.EduCourseEnroll">
+        <id property="enrollId" column="enroll_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="enrollSource" column="enroll_source"/>
+        <result property="enrollStatus" column="enroll_status"/>
+        <result property="progressPercent" column="progress_percent"/>
+        <result property="lastStudyTime" column="last_study_time"/>
+        <result property="finishTime" column="finish_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <resultMap id="EduEnrolledCourseResult" type="com.ruoyi.system.domain.course.EduCourse">
+        <id property="courseId" column="course_id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="teacherId" column="teacher_id"/>
+        <result property="courseName" column="course_name"/>
+        <result property="courseSubtitle" column="course_subtitle"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="intro" column="intro"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="progressPercent" column="progress_percent"/>
+        <result property="lastContentTime" column="last_content_time"/>
+        <result property="enrollCount" column="enroll_count"/>
+        <result property="likeCount" column="like_count"/>
+    </resultMap>
+
+    <select id="selectEduCourseEnroll" resultMap="EduCourseEnrollResult">
+        select enroll_id, course_id, student_id, enroll_source, enroll_status, progress_percent,
+               last_study_time, finish_time, create_by, create_time, update_by, update_time, remark
+        from edu_course_enroll
+        where course_id = #{courseId}
+          and student_id = #{studentId}
+        limit 1
+    </select>
+
+    <insert id="insertEduCourseEnroll" parameterType="com.ruoyi.system.domain.course.EduCourseEnroll" useGeneratedKeys="true" keyProperty="enrollId">
+        insert into edu_course_enroll (
+            course_id, student_id, enroll_source, enroll_status, progress_percent,
+            last_study_time, finish_time, create_by, create_time, remark
+        ) values (
+            #{courseId}, #{studentId}, #{enrollSource}, #{enrollStatus}, #{progressPercent},
+            #{lastStudyTime}, #{finishTime}, #{createBy}, sysdate(), #{remark}
+        )
+    </insert>
+
+    <delete id="deleteEduCourseEnroll">
+        delete from edu_course_enroll
+        where course_id = #{courseId}
+          and student_id = #{studentId}
+    </delete>
+
+    <delete id="deleteEduCourseEnrollByCourseIds" parameterType="Long">
+        delete from edu_course_enroll
+        where course_id in
+        <foreach collection="array" item="courseId" open="(" separator="," close=")">
+            #{courseId}
+        </foreach>
+    </delete>
+
+    <select id="selectStudentEnrolledCourseList" parameterType="Long" resultMap="EduEnrolledCourseResult">
+        select c.course_id, c.category_id, c.teacher_id, c.course_name, c.course_subtitle, c.cover_image,
+               c.intro, c.last_content_time, c.enroll_count, c.like_count, e.progress_percent,
+               u.nick_name as teacher_name
+        from edu_course_enroll e
+                 inner join edu_course c on e.course_id = c.course_id
+                 left join sys_user u on c.teacher_id = u.user_id
+        where e.student_id = #{studentId}
+          and e.enroll_status = '1'
+          and c.del_flag = '0'
+        order by e.create_time desc
+    </select>
+
+</mapper>
