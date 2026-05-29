@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.EduQuestionBankMapper">
+
+    <resultMap id="EduQuestionBankResult" type="com.ruoyi.system.domain.exam.EduQuestionBank">
+        <id property="bankId" column="bank_id"/>
+        <result property="bankName" column="bank_name"/>
+        <result property="creatorId" column="creator_id"/>
+        <result property="visibility" column="visibility"/>
+        <result property="tags" column="tags"/>
+        <result property="questionCount" column="question_count"/>
+        <result property="usageCount" column="usage_count"/>
+        <result property="answerCount" column="answer_count"/>
+        <result property="correctRate" column="correct_rate"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="courseNames" column="course_names"/>
+    </resultMap>
+
+    <sql id="selectEduQuestionBankVo">
+        select b.bank_id, b.bank_name, b.creator_id, b.visibility, b.tags, b.question_count,
+               b.usage_count, b.answer_count, b.correct_rate, b.status, b.del_flag,
+               b.create_by, b.create_time, b.update_by, b.update_time, b.remark,
+               group_concat(distinct c.course_name order by c.course_id separator '、') as course_names
+        from edu_question_bank b
+        left join edu_question_bank_course bc on b.bank_id = bc.bank_id
+        left join edu_course c on bc.course_id = c.course_id and c.del_flag = '0'
+    </sql>
+
+    <select id="selectEduQuestionBankById" parameterType="Long" resultMap="EduQuestionBankResult">
+        <include refid="selectEduQuestionBankVo"/>
+        where b.bank_id = #{bankId}
+          and b.del_flag = '0'
+        group by b.bank_id
+    </select>
+
+    <select id="selectEduQuestionBankList" parameterType="com.ruoyi.system.domain.exam.EduQuestionBank" resultMap="EduQuestionBankResult">
+        <include refid="selectEduQuestionBankVo"/>
+        <where>
+            b.del_flag = '0'
+            <if test="bankName != null and bankName != ''">
+                and b.bank_name like concat('%', #{bankName}, '%')
+            </if>
+            <if test="creatorId != null">
+                and b.creator_id = #{creatorId}
+            </if>
+            <if test="visibility != null and visibility != ''">
+                and b.visibility = #{visibility}
+            </if>
+            <if test="status != null and status != ''">
+                and b.status = #{status}
+            </if>
+        </where>
+        group by b.bank_id
+        order by b.bank_id desc
+    </select>
+
+    <insert id="insertEduQuestionBank" parameterType="com.ruoyi.system.domain.exam.EduQuestionBank" useGeneratedKeys="true" keyProperty="bankId">
+        insert into edu_question_bank (
+            bank_name, creator_id, visibility, tags, question_count, usage_count, answer_count,
+            correct_rate, status, del_flag, create_by, create_time, remark
+        ) values (
+            #{bankName}, #{creatorId}, #{visibility}, #{tags}, 0, 0, 0, 0, #{status}, '0', #{createBy}, sysdate(), #{remark}
+        )
+    </insert>
+
+    <update id="updateEduQuestionBank" parameterType="com.ruoyi.system.domain.exam.EduQuestionBank">
+        update edu_question_bank
+        <set>
+            bank_name = #{bankName},
+            visibility = #{visibility},
+            tags = #{tags},
+            status = #{status},
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where bank_id = #{bankId}
+    </update>
+
+    <update id="deleteEduQuestionBankByIds" parameterType="Long">
+        update edu_question_bank
+        set del_flag = '2', update_time = sysdate()
+        where bank_id in
+        <foreach collection="array" item="bankId" open="(" separator="," close=")">
+            #{bankId}
+        </foreach>
+    </update>
+
+    <select id="selectCourseIdsByBankId" parameterType="Long" resultType="Long">
+        select course_id
+        from edu_question_bank_course
+        where bank_id = #{bankId}
+        order by id asc
+    </select>
+
+    <delete id="deleteBankCourseByBankId" parameterType="Long">
+        delete from edu_question_bank_course where bank_id = #{bankId}
+    </delete>
+
+    <insert id="batchInsertBankCourse">
+        insert into edu_question_bank_course (bank_id, course_id, create_time)
+        values
+        <foreach collection="courseIds" item="courseId" separator=",">
+            (#{bankId}, #{courseId}, sysdate())
+        </foreach>
+    </insert>
+
+</mapper>

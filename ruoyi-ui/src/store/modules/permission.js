@@ -47,13 +47,19 @@ const permission = {
           const rewriteRoutes = filterAsyncRouter(rdata, false, true)
           const roleRoutes = filterDynamicRoutes(dynamicRoutes)
           const visibleRoleRoutes = roleRoutes.filter(route => !route.hidden)
-          rewriteRoutes.push({ path: '*', redirect: '/404', hidden: true })
-          router.addRoutes(roleRoutes)
-          commit('SET_ROUTES', rewriteRoutes)
+          const accessRoutes = roleRoutes.concat(rewriteRoutes)
+          accessRoutes.push({ path: '*', redirect: '/404', hidden: true })
+          // 同步注册后台菜单路由和前端手写的隐藏角色路由，避免菜单可见但点击 404。
+          router.addRoutes(accessRoutes)
+          if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+            window.__ACCESS_ROUTES__ = accessRoutes
+            window.__SIDEBAR_ROUTES__ = constantRoutes.concat(visibleRoleRoutes, sidebarRoutes)
+          }
+          commit('SET_ROUTES', accessRoutes)
           commit('SET_SIDEBAR_ROUTERS', constantRoutes.concat(visibleRoleRoutes, sidebarRoutes))
           commit('SET_DEFAULT_ROUTES', visibleRoleRoutes.concat(sidebarRoutes))
           commit('SET_TOPBAR_ROUTES', visibleRoleRoutes.concat(sidebarRoutes))
-          resolve(rewriteRoutes)
+          resolve(accessRoutes)
         })
       })
     }

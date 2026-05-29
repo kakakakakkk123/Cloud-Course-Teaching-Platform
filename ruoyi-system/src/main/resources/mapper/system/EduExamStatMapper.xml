@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.EduExamStatMapper">
+
+    <resultMap id="EduExamRecordResult" type="com.ruoyi.system.domain.exam.EduExamRecord">
+        <id property="recordId" column="record_id"/>
+        <result property="examId" column="exam_id"/>
+        <result property="paperId" column="paper_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="attemptNo" column="attempt_no"/>
+        <result property="startTime" column="start_time"/>
+        <result property="submitTime" column="submit_time"/>
+        <result property="durationSeconds" column="duration_seconds"/>
+        <result property="recordStatus" column="record_status"/>
+        <result property="objectiveScore" column="objective_score"/>
+        <result property="subjectiveScore" column="subjective_score"/>
+        <result property="totalScore" column="total_score"/>
+        <result property="resultStatus" column="result_status"/>
+        <result property="checkedFlag" column="checked_flag"/>
+        <result property="studentUserName" column="student_user_name"/>
+        <result property="studentName" column="student_name"/>
+    </resultMap>
+
+    <select id="selectExamStatOverview" parameterType="Long" resultType="com.ruoyi.system.domain.exam.EduExamStatOverview">
+        select count(1) as participant_count,
+               sum(case when r.exam_status in ('2', '3') then 1 else 0 end) as submitted_count,
+               ifnull(round(avg(case when r.exam_status in ('2', '3') then r.total_score end), 2), 0) as average_score,
+               ifnull(round(sum(case when r.pass_flag = '1' then 1 else 0 end) / nullif(sum(case when r.exam_status in ('2', '3') then 1 else 0 end), 0) * 100, 2), 0) as pass_rate,
+               ifnull(max(r.total_score), 0) as highest_score,
+               sum(case when r.exam_status = '2' and r.checked_flag = '0' then 1 else 0 end) as pending_review_count
+        from edu_exam_record r
+        where r.exam_id = #{examId}
+    </select>
+
+    <select id="selectExamStatRecordList" parameterType="com.ruoyi.system.domain.exam.EduExamRecord" resultMap="EduExamRecordResult">
+        select r.record_id, r.exam_id, r.paper_id, r.course_id, r.student_id, r.attempt_no,
+               r.start_time, r.submit_time, r.duration_seconds, r.exam_status as record_status,
+               r.objective_score, r.subjective_score, r.total_score, r.pass_flag as result_status,
+               r.checked_flag, u.user_name as student_user_name, u.nick_name as student_name
+        from edu_exam_record r
+        left join sys_user u on r.student_id = u.user_id
+        <where>
+            r.exam_id = #{examId}
+            <if test="studentKeyword != null and studentKeyword != ''">
+                and (u.user_name like concat('%', #{studentKeyword}, '%')
+                    or u.nick_name like concat('%', #{studentKeyword}, '%'))
+            </if>
+            <if test="recordStatus != null and recordStatus != ''">
+                and r.exam_status = #{recordStatus}
+            </if>
+            <if test="resultStatus != null and resultStatus != ''">
+                and r.pass_flag = #{resultStatus}
+            </if>
+        </where>
+        order by r.record_id desc
+    </select>
+
+</mapper>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.EduPaperMapper">
+
+    <resultMap id="EduPaperResult" type="com.ruoyi.system.domain.exam.EduPaper">
+        <id property="paperId" column="paper_id"/>
+        <result property="paperName" column="paper_name"/>
+        <result property="creatorId" column="creator_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="bankId" column="bank_id"/>
+        <result property="paperDesc" column="paper_desc"/>
+        <result property="totalScore" column="total_score"/>
+        <result property="questionCount" column="question_count"/>
+        <result property="objectiveScore" column="objective_score"/>
+        <result property="subjectiveScore" column="subjective_score"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="courseName" column="course_name"/>
+        <result property="bankName" column="bank_name"/>
+    </resultMap>
+
+    <sql id="selectEduPaperVo">
+        select p.paper_id, p.paper_name, p.creator_id, p.course_id, p.bank_id, p.paper_desc,
+               p.total_score, p.question_count, p.objective_score, p.subjective_score,
+               p.status, p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time, p.remark,
+               c.course_name, b.bank_name
+        from edu_paper p
+        left join edu_course c on p.course_id = c.course_id
+        left join edu_question_bank b on p.bank_id = b.bank_id
+    </sql>
+
+    <select id="selectEduPaperById" parameterType="Long" resultMap="EduPaperResult">
+        <include refid="selectEduPaperVo"/>
+        where p.paper_id = #{paperId}
+          and p.del_flag = '0'
+    </select>
+
+    <select id="selectEduPaperList" parameterType="com.ruoyi.system.domain.exam.EduPaper" resultMap="EduPaperResult">
+        <include refid="selectEduPaperVo"/>
+        <where>
+            p.del_flag = '0'
+            <if test="paperName != null and paperName != ''">
+                and p.paper_name like concat('%', #{paperName}, '%')
+            </if>
+            <if test="creatorId != null">
+                and p.creator_id = #{creatorId}
+            </if>
+            <if test="courseId != null">
+                and p.course_id = #{courseId}
+            </if>
+            <if test="bankId != null">
+                and p.bank_id = #{bankId}
+            </if>
+            <if test="status != null and status != ''">
+                and p.status = #{status}
+            </if>
+        </where>
+        order by p.paper_id desc
+    </select>
+
+    <insert id="insertEduPaper" parameterType="com.ruoyi.system.domain.exam.EduPaper" useGeneratedKeys="true" keyProperty="paperId">
+        insert into edu_paper (
+            paper_name, creator_id, course_id, bank_id, paper_desc, total_score, question_count,
+            objective_score, subjective_score, status, del_flag, create_by, create_time, remark
+        ) values (
+            #{paperName}, #{creatorId}, #{courseId}, #{bankId}, #{paperDesc}, #{totalScore}, #{questionCount},
+            #{objectiveScore}, #{subjectiveScore}, #{status}, '0', #{createBy}, sysdate(), #{remark}
+        )
+    </insert>
+
+    <update id="updateEduPaper" parameterType="com.ruoyi.system.domain.exam.EduPaper">
+        update edu_paper
+        <set>
+            paper_name = #{paperName},
+            course_id = #{courseId},
+            bank_id = #{bankId},
+            paper_desc = #{paperDesc},
+            total_score = #{totalScore},
+            question_count = #{questionCount},
+            objective_score = #{objectiveScore},
+            subjective_score = #{subjectiveScore},
+            status = #{status},
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where paper_id = #{paperId}
+    </update>
+
+    <update id="deleteEduPaperByIds" parameterType="Long">
+        update edu_paper
+        set del_flag = '2', update_time = sysdate()
+        where paper_id in
+        <foreach collection="array" item="paperId" open="(" separator="," close=")">
+            #{paperId}
+        </foreach>
+    </update>
+
+</mapper>
