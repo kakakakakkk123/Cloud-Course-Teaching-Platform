@@ -28,6 +28,13 @@ public interface ISysDeptService
     public List<TreeSelect> selectDeptTreeList(SysDept dept);
 
     /**
+     * 查询注册页使用的学院/专业树
+     *
+     * @return 学院/专业树
+     */
+    public List<TreeSelect> selectRegisterDeptOptions();
+
+    /**
      * 构建前端所需要树结构
      * 
      * @param depts 部门列表

@@ -32,6 +32,16 @@ export function register(data) {
   })
 }
 
+export function getRegisterDeptOptions() {
+  return request({
+    url: '/registerDeptOptions',
+    headers: {
+      isToken: false
+    },
+    method: 'get'
+  })
+}
+
 export function sendRegisterEmailCode(data) {
   return request({
     url: '/registerEmailCode',
