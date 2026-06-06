@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.EduCourseBannerMapper">
+
+    <resultMap id="EduCourseBannerResult" type="com.ruoyi.system.domain.course.EduCourseBanner">
+        <id property="bannerId" column="banner_id"/>
+        <result property="bannerTitle" column="banner_title"/>
+        <result property="bannerImage" column="banner_image"/>
+        <result property="courseId" column="course_id"/>
+        <result property="jumpUrl" column="jump_url"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="status" column="status"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="courseName" column="course_name"/>
+    </resultMap>
+
+    <sql id="selectEduCourseBannerVo">
+        select b.banner_id, b.banner_title, b.banner_image, b.course_id, b.jump_url, b.sort_order,
+               b.status, b.start_time, b.end_time, b.create_by, b.create_time, b.update_by, b.update_time,
+               b.remark, c.course_name
+        from edu_course_banner b
+                 left join edu_course c on b.course_id = c.course_id
+    </sql>
+
+    <select id="selectEduCourseBannerById" parameterType="Long" resultMap="EduCourseBannerResult">
+        <include refid="selectEduCourseBannerVo"/>
+        where b.banner_id = #{bannerId}
+    </select>
+
+    <select id="selectEduCourseBannerList" parameterType="com.ruoyi.system.domain.course.EduCourseBanner" resultMap="EduCourseBannerResult">
+        <include refid="selectEduCourseBannerVo"/>
+        <where>
+            <if test="bannerTitle != null and bannerTitle != ''">
+                and b.banner_title like concat('%', #{bannerTitle}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                and b.status = #{status}
+            </if>
+            <if test="courseId != null">
+                and b.course_id = #{courseId}
+            </if>
+        </where>
+        order by b.sort_order asc, b.banner_id desc
+    </select>
+
+    <select id="selectActiveBannerList" resultMap="EduCourseBannerResult">
+        <include refid="selectEduCourseBannerVo"/>
+        where b.status = '0'
+          and (b.start_time is null or b.start_time &lt;= now())
+          and (b.end_time is null or b.end_time &gt;= now())
+        order by b.sort_order asc, b.banner_id desc
+    </select>
+
+    <insert id="insertEduCourseBanner" parameterType="com.ruoyi.system.domain.course.EduCourseBanner" useGeneratedKeys="true" keyProperty="bannerId">
+        insert into edu_course_banner (
+            banner_title, banner_image, course_id, jump_url, sort_order, status,
+            start_time, end_time, create_by, create_time, remark
+        ) values (
+            #{bannerTitle}, #{bannerImage}, #{courseId}, #{jumpUrl}, #{sortOrder}, #{status},
+            #{startTime}, #{endTime}, #{createBy}, sysdate(), #{remark}
+        )
+    </insert>
+
+    <update id="updateEduCourseBanner" parameterType="com.ruoyi.system.domain.course.EduCourseBanner">
+        update edu_course_banner
+        <set>
+            banner_title = #{bannerTitle},
+            banner_image = #{bannerImage},
+            course_id = #{courseId},
+            jump_url = #{jumpUrl},
+            sort_order = #{sortOrder},
+            status = #{status},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where banner_id = #{bannerId}
+    </update>
+
+    <delete id="deleteEduCourseBannerById" parameterType="Long">
+        delete from edu_course_banner where banner_id = #{bannerId}
+    </delete>
+
+    <delete id="deleteEduCourseBannerByIds" parameterType="Long">
+        delete from edu_course_banner
+        where banner_id in
+        <foreach collection="array" item="bannerId" open="(" separator="," close=")">
+            #{bannerId}
+        </foreach>
+    </delete>
+
+</mapper>

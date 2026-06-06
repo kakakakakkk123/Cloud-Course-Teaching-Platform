@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.EduQuestionMapper">
+
+    <resultMap id="EduQuestionResult" type="com.ruoyi.system.domain.exam.EduQuestion">
+        <id property="questionId" column="question_id"/>
+        <result property="bankId" column="bank_id"/>
+        <result property="creatorId" column="creator_id"/>
+        <result property="questionType" column="question_type"/>
+        <result property="difficultyLevel" column="difficulty_level"/>
+        <result property="score" column="score"/>
+        <result property="questionTitle" column="question_title"/>
+        <result property="answerJson" column="answer_json"/>
+        <result property="analysis" column="analysis"/>
+        <result property="attachmentUrl" column="attachment_url"/>
+        <result property="autoMarking" column="auto_marking"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="usageCount" column="usage_count"/>
+        <result property="answerCount" column="answer_count"/>
+        <result property="correctCount" column="correct_count"/>
+        <result property="bankName" column="bank_name"/>
+    </resultMap>
+
+    <resultMap id="EduQuestionOptionResult" type="com.ruoyi.system.domain.exam.EduQuestionOption">
+        <id property="optionId" column="option_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="optionLabel" column="option_label"/>
+        <result property="optionContent" column="option_content"/>
+        <result property="isCorrect" column="is_correct"/>
+        <result property="sortOrder" column="sort_order"/>
+    </resultMap>
+
+    <sql id="selectEduQuestionVo">
+        select q.question_id, q.bank_id, q.creator_id, q.question_type, q.difficulty_level, q.score,
+               q.question_title, q.answer_json, q.analysis, q.attachment_url, q.auto_marking, q.status,
+               q.del_flag, q.usage_count, q.answer_count, q.correct_count, q.create_by, q.create_time,
+               q.update_by, q.update_time, q.remark, b.bank_name
+        from edu_question q
+        left join edu_question_bank b on q.bank_id = b.bank_id
+    </sql>
+
+    <select id="selectEduQuestionById" parameterType="Long" resultMap="EduQuestionResult">
+        <include refid="selectEduQuestionVo"/>
+        where q.question_id = #{questionId}
+          and q.del_flag = '0'
+    </select>
+
+    <select id="selectEduQuestionList" parameterType="com.ruoyi.system.domain.exam.EduQuestion" resultMap="EduQuestionResult">
+        <include refid="selectEduQuestionVo"/>
+        <where>
+            q.del_flag = '0'
+            <if test="bankId != null">
+                and q.bank_id = #{bankId}
+            </if>
+            <if test="creatorId != null">
+                and q.creator_id = #{creatorId}
+            </if>
+            <if test="questionTitle != null and questionTitle != ''">
+                and q.question_title like concat('%', #{questionTitle}, '%')
+            </if>
+            <if test="questionType != null and questionType != ''">
+                and q.question_type = #{questionType}
+            </if>
+            <if test="difficultyLevel != null and difficultyLevel != ''">
+                and q.difficulty_level = #{difficultyLevel}
+            </if>
+            <if test="status != null and status != ''">
+                and q.status = #{status}
+            </if>
+        </where>
+        order by q.question_id desc
+    </select>
+
+    <insert id="insertEduQuestion" parameterType="com.ruoyi.system.domain.exam.EduQuestion" useGeneratedKeys="true" keyProperty="questionId">
+        insert into edu_question (
+            bank_id, creator_id, question_type, difficulty_level, score, question_title,
+            answer_json, analysis, attachment_url, auto_marking, status, del_flag, usage_count,
+            answer_count, correct_count, create_by, create_time, remark
+        ) values (
+            #{bankId}, #{creatorId}, #{questionType}, #{difficultyLevel}, #{score}, #{questionTitle},
+            #{answerJson}, #{analysis}, #{attachmentUrl}, #{autoMarking}, #{status}, '0', 0,
+            0, 0, #{createBy}, sysdate(), #{remark}
+        )
+    </insert>
+
+    <update id="updateEduQuestion" parameterType="com.ruoyi.system.domain.exam.EduQuestion">
+        update edu_question
+        <set>
+            bank_id = #{bankId},
+            question_type = #{questionType},
+            difficulty_level = #{difficultyLevel},
+            score = #{score},
+            question_title = #{questionTitle},
+            answer_json = #{answerJson},
+            analysis = #{analysis},
+            attachment_url = #{attachmentUrl},
+            auto_marking = #{autoMarking},
+            status = #{status},
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where question_id = #{questionId}
+    </update>
+
+    <update id="deleteEduQuestionByIds" parameterType="Long">
+        update edu_question
+        set del_flag = '2', update_time = sysdate()
+        where question_id in
+        <foreach collection="array" item="questionId" open="(" separator="," close=")">
+            #{questionId}
+        </foreach>
+    </update>
+
+    <select id="selectOptionListByQuestionId" parameterType="Long" resultMap="EduQuestionOptionResult">
+        select option_id, question_id, option_label, option_content, is_correct, sort_order
+        from edu_question_option
+        where question_id = #{questionId}
+        order by sort_order asc, option_id asc
+    </select>
+
+    <delete id="deleteOptionByQuestionId" parameterType="Long">
+        delete from edu_question_option where question_id = #{questionId}
+    </delete>
+
+    <insert id="batchInsertOption" parameterType="java.util.List">
+        insert into edu_question_option (
+            question_id, option_label, option_content, is_correct, sort_order
+        ) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.questionId}, #{item.optionLabel}, #{item.optionContent}, #{item.isCorrect}, #{item.sortOrder})
+        </foreach>
+    </insert>
+
+</mapper>

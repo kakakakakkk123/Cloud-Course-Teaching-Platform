@@ -61,6 +61,21 @@ public class SysDeptServiceImpl implements ISysDeptService
         return buildDeptTreeSelect(depts);
     }
 
+    @Override
+    public List<TreeSelect> selectRegisterDeptOptions()
+    {
+        SysDept query = new SysDept();
+        query.setStatus(UserConstants.DEPT_NORMAL);
+        List<SysDept> depts = deptMapper.selectDeptList(query);
+        SysDept teachingRoot = findTeachingRoot(buildDeptTree(depts));
+        if (StringUtils.isNull(teachingRoot))
+        {
+            return new ArrayList<TreeSelect>();
+        }
+        List<SysDept> filtered = retainDeptLevels(teachingRoot.getChildren(), 0, 1);
+        return filtered.stream().map(TreeSelect::new).collect(Collectors.toList());
+    }
+
     /**
      * 构建前端所需要树结构
      * 
@@ -360,5 +375,48 @@ public class SysDeptServiceImpl implements ISysDeptService
     private boolean hasChild(List<SysDept> list, SysDept t)
     {
         return getChildList(list, t).size() > 0;
+    }
+
+    private List<SysDept> retainDeptLevels(List<SysDept> nodes, int currentLevel, int maxLevel)
+    {
+        List<SysDept> result = new ArrayList<SysDept>();
+        for (SysDept node : nodes)
+        {
+            if ("教学组织".equals(node.getDeptName()))
+            {
+                result.addAll(retainDeptLevels(node.getChildren(), currentLevel, maxLevel));
+                continue;
+            }
+            SysDept copy = new SysDept();
+            copy.setDeptId(node.getDeptId());
+            copy.setParentId(node.getParentId());
+            copy.setDeptName(node.getDeptName());
+            copy.setStatus(node.getStatus());
+            if (currentLevel < maxLevel)
+            {
+                copy.setChildren(retainDeptLevels(node.getChildren(), currentLevel + 1, maxLevel));
+            }
+            result.add(copy);
+        }
+        return result;
+    }
+    private SysDept findTeachingRoot(List<SysDept> nodes)
+    {
+        for (SysDept node : nodes)
+        {
+            if (Long.valueOf(120L).equals(node.getDeptId()))
+            {
+                return node;
+            }
+            if (StringUtils.isNotEmpty(node.getChildren()))
+            {
+                SysDept matched = findTeachingRoot(node.getChildren());
+                if (StringUtils.isNotNull(matched))
+                {
+                    return matched;
+                }
+            }
+        }
+        return null;
     }
 }

@@ -1,6 +1,7 @@
 package com.ruoyi.web.controller.system;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,6 +14,7 @@ import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.web.service.EmailCodeService;
 import com.ruoyi.framework.web.service.SysRegisterService;
 import com.ruoyi.system.service.ISysConfigService;
+import com.ruoyi.system.service.ISysDeptService;
 import com.ruoyi.system.service.IStudentAccountService;
 
 /**
@@ -33,6 +35,15 @@ public class SysRegisterController extends BaseController
 
     @Autowired
     private EmailCodeService emailCodeService;
+
+    @Autowired
+    private ISysDeptService deptService;
+
+    @GetMapping("/registerDeptOptions")
+    public AjaxResult registerDeptOptions()
+    {
+        return success(deptService.selectRegisterDeptOptions());
+    }
 
     @PostMapping("/registerEmailCode")
     public AjaxResult registerEmailCode(@RequestBody EmailCodeBody body)

@@ -1,0 +1,31 @@
+[24156] 23 May 16:38:16.275 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+[24156] 23 May 16:38:16.275 # Redis version=5.0.14.1, bits=64, commit=ec77f72d, modified=0, pid=24156, just started
+[24156] 23 May 16:38:16.280 # Configuration loaded
+                _._                                                  
+           _.-``__ ''-._                                             
+      _.-``    `.  `_.  ''-._           Redis 5.0.14.1 (ec77f72d/0) 64 bit
+  .-`` .-```.  ```\/    _.,_ ''-._                                   
+ (    '      ,       .-`  | `,    )     Running in standalone mode
+ |`-._`-...-` __...-.``-._|'` _.-'|     Port: 6379
+ |    `-._   `._    /     _.-'    |     PID: 24156
+  `-._    `-._  `-./  _.-'    _.-'                                   
+ |`-._`-._    `-.__.-'    _.-'_.-'|                                  
+ |    `-._`-._        _.-'_.-'    |           http://redis.io        
+  `-._    `-._`-.__.-'_.-'    _.-'                                   
+ |`-._`-._    `-.__.-'    _.-'_.-'|                                  
+ |    `-._`-._        _.-'_.-'    |                                  
+  `-._    `-._`-.__.-'_.-'    _.-'                                   
+      `-._    `-.__.-'    _.-'                                       
+          `-._        _.-'                                           
+              `-.__.-'                                               
+
+[24156] 23 May 16:38:16.284 # Server initialized
+[24156] 23 May 16:38:16.285 * Ready to accept connections
+[24156] 23 May 16:43:17.074 * 10 changes in 300 seconds. Saving...
+[24156] 23 May 16:43:17.104 * Background saving started by pid 25976
+[24156] 23 May 16:43:17.215 # fork operation complete
+[24156] 23 May 16:43:17.232 * Background saving terminated with success
+[24156] 23 May 16:56:12.565 * 10 changes in 300 seconds. Saving...
+[24156] 23 May 16:56:12.591 * Background saving started by pid 25180
+[24156] 23 May 16:56:12.706 # fork operation complete
+[24156] 23 May 16:56:12.713 * Background saving terminated with success
