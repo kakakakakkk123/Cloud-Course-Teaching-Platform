@@ -10,21 +10,6 @@
       @node-click="handleTreeNodeClick"
       @refresh="resetTreeFilter"
     >
-      <template #actions>
-        <el-select
-          v-model="treeMode"
-          size="mini"
-          class="tree-mode-select"
-          @change="handleTreeModeChange"
-        >
-          <el-option
-            v-for="item in treeModeOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </template>
       <template #node="{ data }">
         <span class="account-tree-node">
           <i :class="data.children && data.children.length ? 'el-icon-folder-opened' : 'el-icon-document'" class="node-icon" />
@@ -291,16 +276,16 @@ export default {
   computed: {
     ...mapGetters(["roles"]),
     currentTreeTitle() {
-      return this.treeMode === "dept" ? "院系分类" : "身份分类"
+      return "院系分类"
     },
     currentTreeData() {
-      return this.treeMode === "dept" ? this.deptTreeOptions : this.identityOptions
+      return this.deptTreeOptions
     },
     currentTreeSearchPlaceholder() {
-      return this.treeMode === "dept" ? "请输入学院/专业/班级" : "请输入身份名称"
+      return "请输入学院/专业/班级"
     },
     currentTreeStorageKey() {
-      return this.treeMode === "dept" ? "account-dept-sidebar-width" : "identity-sidebar-width"
+      return "account-dept-sidebar-width"
     },
     isAdminRole() {
       return this.roles.includes("admin")
@@ -324,18 +309,6 @@ export default {
       userList: null,
       title: "",
       registerEnabled: false,
-      treeMode: "identity",
-      treeModeOptions: [
-        { label: "按身份分类", value: "identity" },
-        { label: "按学院分类", value: "dept" }
-      ],
-      identityOptions: [
-        { id: "role-0", roleId: 0, label: "全部账号" },
-        { id: "role-1", roleId: 1, label: "管理员" },
-        { id: "role-3", roleId: 3, label: "教师" },
-        { id: "role-4", roleId: 4, label: "学生" },
-        { id: "role-5", roleId: 5, label: "游客" }
-      ],
       deptOptions: undefined,
       deptTreeOptions: [],
       deptMetaMap: {},
@@ -403,7 +376,16 @@ export default {
   methods: {
     applyRouteScope() {
       const roleId = Number(this.$route.query.roleId)
-      this.queryParams.roleId = Number.isFinite(roleId) && roleId > 0 ? roleId : undefined
+      if (Number.isFinite(roleId) && roleId > 0) {
+        this.queryParams.roleId = roleId
+        return
+      }
+      const pathRoleMap = {
+        "/account/admin": 1,
+        "/account/teacher": 3,
+        "/account/student": 4
+      }
+      this.queryParams.roleId = pathRoleMap[this.$route.path] || undefined
     },
     getList() {
       this.loading = true
@@ -545,25 +527,17 @@ export default {
       })
     },
     handleTreeNodeClick(data) {
-      if (this.treeMode === "dept") {
-        this.queryParams.roleId = undefined
-        this.queryParams.deptId = data.deptId > 0 ? data.deptId : undefined
-      } else {
-        this.queryParams.deptId = undefined
-        this.queryParams.roleId = data.roleId > 0 ? data.roleId : undefined
-      }
+      this.applyRouteScope()
+      this.queryParams.deptId = data.deptId > 0 ? data.deptId : undefined
       this.handleQuery()
     },
     resetTreeFilter() {
       this.queryParams.deptId = undefined
-      this.queryParams.roleId = undefined
+      this.applyRouteScope()
       if (this.$refs.accountTreeRef) {
         this.$refs.accountTreeRef.setCurrentKey(null)
       }
       this.handleQuery()
-    },
-    handleTreeModeChange() {
-      this.resetTreeFilter()
     },
     refreshPolicies() {
       getRegisterEnabled().then(res => {

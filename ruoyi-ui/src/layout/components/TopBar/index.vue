@@ -1,5 +1,5 @@
 <template>
-  <el-menu class="topbar-menu" :default-active="activeMenu" :active-text-color="theme" mode="horizontal">
+  <el-menu class="topbar-menu" :default-active="activeMenu" :active-text-color="theme" mode="horizontal" @select="handleSelect">
     <sidebar-item :key="route.path + index" v-for="(route, index) in topMenus" :item="route" :base-path="route.path" />
 
     <el-submenu index="more" class="el-submenu__hide-arrow" v-if="moreRoutes.length > 0">
@@ -11,6 +11,7 @@
 
 <script>
 import SidebarItem from '../Sidebar/SidebarItem'
+import { isExternal } from '@/utils/validate'
 
 export default {
   components: { SidebarItem },
@@ -29,7 +30,7 @@ export default {
     },
     moreRoutes() {
       const sidebarRouters = this.$store.state.permission.sidebarRouters;
-      return sidebarRouters.filter((f) => !f.hidden).slice(this.visibleNumber, sidebarRouters.length - this.visibleNumber)
+      return sidebarRouters.filter((f) => !f.hidden).slice(this.visibleNumber)
     },
     // 默认激活的菜单
     activeMenu() {
@@ -54,6 +55,18 @@ export default {
     setVisibleNumber() {
       const width = document.body.getBoundingClientRect().width / 3
       this.visibleNumber = parseInt(width / 85)
+    },
+    handleSelect(key) {
+      if (!key || key === 'more') {
+        return
+      }
+      if (isExternal(key)) {
+        window.open(key, '_blank')
+        return
+      }
+      if (this.$route.path !== key) {
+        this.$router.push({ path: key }).catch(() => {})
+      }
     }
   }
 }
@@ -95,4 +108,3 @@ export default {
   color: #303133;
 }
 </style>
-

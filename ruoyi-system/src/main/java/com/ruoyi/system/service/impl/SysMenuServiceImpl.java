@@ -48,6 +48,10 @@ public class SysMenuServiceImpl implements ISysMenuService
      */
     private static final long PLATFORM_MENU_MIN_ID = 2000L;
 
+    private static final long LEARNING_MENU_MIN_ID = 2200L;
+
+    private static final long LEARNING_MENU_MAX_ID = 2299L;
+
     @Autowired
     private SysMenuMapper menuMapper;
 
@@ -167,6 +171,7 @@ public class SysMenuServiceImpl implements ISysMenuService
         }
         return menus.stream()
                 .filter(menu -> menu.getMenuId() != null && menu.getMenuId() >= PLATFORM_MENU_MIN_ID)
+                .filter(menu -> menu.getMenuId() < LEARNING_MENU_MIN_ID || menu.getMenuId() > LEARNING_MENU_MAX_ID)
                 .collect(Collectors.toList());
     }
 

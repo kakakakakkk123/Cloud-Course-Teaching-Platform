@@ -153,8 +153,8 @@ export default {
       // 校检文件类型
       if (this.fileType) {
         const fileName = file.name.split('.')
-        const fileExt = fileName[fileName.length - 1]
-        const isTypeOk = this.fileType.indexOf(fileExt) >= 0
+        const fileExt = fileName[fileName.length - 1].toLowerCase()
+        const isTypeOk = this.fileType.map(type => String(type).toLowerCase()).indexOf(fileExt) >= 0
         if (!isTypeOk) {
           this.$modal.msgError(`文件格式不正确，请上传${this.fileType.join("/")}格式文件!`)
           return false
@@ -167,7 +167,7 @@ export default {
       }
       // 校检文件大小
       if (this.fileSize) {
-        const isLt = file.size / 1024 / 1024 < this.fileSize
+        const isLt = file.size / 1024 / 1024 <= this.fileSize
         if (!isLt) {
           this.$modal.msgError(`上传文件大小不能超过 ${this.fileSize} MB!`)
           return false
@@ -189,7 +189,8 @@ export default {
     // 上传成功回调
     handleUploadSuccess(res, file) {
       if (res.code === 200) {
-        this.uploadList.push({ name: res.fileName, url: res.fileName })
+        this.uploadList.push({ name: res.originalFilename || res.newFileName || res.fileName, url: res.fileName })
+        this.$emit("success", res, file)
         this.uploadedSuccessfully()
       } else {
         this.number--
