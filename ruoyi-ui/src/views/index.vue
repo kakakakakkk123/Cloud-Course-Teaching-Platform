@@ -1,7 +1,7 @@
 <template>
   <div v-loading="loading" class="dashboard-home">
-    <div class="dashboard-shell">
-      <header class="portal-topbar">
+    <header class="portal-topbar">
+      <div class="portal-topbar__inner">
         <div class="portal-brand" @click="$router.push('/')">
           <div class="portal-brand__logo">
             <i class="el-icon-reading"></i>
@@ -28,7 +28,6 @@
         </nav>
 
         <div class="portal-topbar__actions">
-          <el-button class="secondary-action secondary-action--nav" @click="goCourseSquare">课程广场</el-button>
           <el-button
             v-if="isStudent"
             class="primary-action primary-action--nav"
@@ -44,8 +43,10 @@
             进入后台
           </el-button>
         </div>
-      </header>
+      </div>
+    </header>
 
+    <div class="dashboard-shell">
       <section class="dashboard-hero">
         <div class="dashboard-hero-grid"></div>
         <div class="dashboard-hero__glow dashboard-hero__glow--left"></div>
@@ -538,24 +539,28 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+$portal-page-bg:
+  radial-gradient(circle at 8% 8%, rgba(59, 130, 246, 0.14), transparent 26%),
+  radial-gradient(circle at 88% 24%, rgba(14, 165, 233, 0.12), transparent 24%),
+  radial-gradient(circle at 18% 62%, rgba(45, 212, 191, 0.1), transparent 20%),
+  linear-gradient(180deg, #f8fbff 0%, #eef6ff 54%, #f1f5f9 100%);
+$portal-surface-bg: rgba(248, 251, 255, 0.72);
+$portal-surface-border: rgba(147, 197, 253, 0.22);
+$portal-surface-shadow: 0 18px 38px rgba(37, 99, 235, 0.08);
+
 .dashboard-home {
   min-height: 100vh;
-  padding: clamp(16px, 2vw, 22px) clamp(12px, 1.8vw, 20px) 40px;
-  background: transparent;
+  padding: 0 0 40px;
+  background: $portal-page-bg;
 }
 
 .dashboard-shell {
   position: relative;
   min-height: 100vh;
-  max-width: 1460px;
-  margin: 0 auto;
-  background:
-    radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 28%),
-    radial-gradient(circle at right center, rgba(14, 165, 233, 0.1), transparent 24%),
-    linear-gradient(180deg, #f8fbff 0%, #f1f5f9 100%);
+  padding: 22px clamp(12px, 1.8vw, 20px) 0;
+  overflow-x: hidden;
 }
 
-.portal-topbar,
 .dashboard-hero,
 .home-visual-section {
   max-width: 1460px;
@@ -574,19 +579,27 @@ export default {
 }
 
 .portal-topbar {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 10;
+  padding: clamp(12px, 1.4vw, 18px) clamp(12px, 1.8vw, 20px);
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.portal-topbar__inner {
+  max-width: 1460px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 18px;
   height: 68px;
   padding: 0 24px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1px solid $portal-surface-border;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.06);
+  background: $portal-surface-bg;
+  box-shadow: $portal-surface-shadow;
   backdrop-filter: blur(18px);
 }
 
@@ -658,9 +671,9 @@ export default {
   margin-bottom: 28px;
   padding: 38px 42px;
   border-radius: 28px;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  background: linear-gradient(135deg, rgba(238, 245, 255, 0.88) 0%, rgba(255, 255, 255, 0.88) 55%, rgba(240, 253, 255, 0.84) 100%);
-  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.06);
+  border: 1px solid $portal-surface-border;
+  background: $portal-surface-bg;
+  box-shadow: $portal-surface-shadow;
   backdrop-filter: blur(14px);
 }
 
@@ -1443,10 +1456,18 @@ export default {
 
 @media screen and (max-width: 1100px) {
   .dashboard-home {
-    padding: 16px 12px 30px;
+    padding-bottom: 30px;
+  }
+
+  .dashboard-shell {
+    padding: 12px 12px 0;
   }
 
   .portal-topbar {
+    padding: 12px;
+  }
+
+  .portal-topbar__inner {
     flex-direction: column;
     justify-content: center;
     height: auto;

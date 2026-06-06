@@ -1,7 +1,7 @@
 <template>
   <div v-loading="pageLoading" class="course-square-page">
     <div class="portal-breadcrumb-bar">
-      <el-button plain icon="el-icon-arrow-left" @click="$router.push('/index')">
+      <el-button plain icon="el-icon-arrow-left" @click="$router.push('/')">
         返回首页
       </el-button>
       <span class="portal-breadcrumb-bar__text">课程广场</span>
