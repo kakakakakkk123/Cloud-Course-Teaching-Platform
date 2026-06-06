@@ -1,3 +1,6 @@
+-- 注意：项目已接入 Flyway，正常启动会自动执行 ruoyi-admin/src/main/resources/db/migration 下的迁移。
+-- 本脚本仅作为历史初始化顺序参考，一般不再手动执行。
+
 -- 在线课程教学平台完整初始化入口脚本
 --
 -- MySQL 命令行执行方式：
