@@ -1,56 +1,118 @@
 <template>
-  <div class="login">
-    <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form">
-      <h3 class="title">{{ title }}</h3>
-      <el-form-item prop="username">
-        <el-input v-model="loginForm.username" type="text" auto-complete="off" placeholder="账号">
-          <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
-        </el-input>
-      </el-form-item>
-      <el-form-item prop="password">
-        <el-input
-          v-model="loginForm.password"
-          type="password"
-          auto-complete="off"
-          placeholder="密码"
-          show-password
-          @keyup.enter.native="handleLogin"
-        >
-          <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
-        </el-input>
-      </el-form-item>
-      <el-form-item prop="code" v-if="captchaEnabled">
-        <el-input
-          v-model="loginForm.code"
-          auto-complete="off"
-          placeholder="验证码"
-          style="width: 63%"
-          @keyup.enter.native="handleLogin"
-        >
-          <svg-icon slot="prefix" icon-class="validCode" class="el-input__icon input-icon" />
-        </el-input>
-        <div class="login-code">
-          <img :src="codeUrl" @click="getCode" class="login-code-img" />
+  <div class="auth-page">
+    <div class="auth-shell">
+      <section class="auth-story">
+        <div class="story-top">
+          <p class="story-kicker">Course Access</p>
+          <h1 class="story-title">回到你的课程空间，继续管理与学习。</h1>
+          <p class="story-copy">
+            使用统一账号进入课程广场、学习中心和教学管理后台。游客可直接返回首页浏览公开课程内容。
+          </p>
         </div>
-      </el-form-item>
-      <el-checkbox v-model="loginForm.rememberMe" style="margin:0 0 25px 0;">记住账号</el-checkbox>
-      <el-form-item style="width:100%;">
-        <el-button :loading="loading" size="medium" type="primary" style="width:100%;" @click.native.prevent="handleLogin">
-          <span v-if="!loading">登录</span>
-          <span v-else>登录中...</span>
-        </el-button>
-        <el-button plain size="medium" style="width:100%;margin-top:12px;" @click="$router.push('/course-square')">
-          游客浏览课程
-        </el-button>
-        <div style="float: right;" v-if="register">
-          <router-link class="link-type" :to="'/register'">立即注册</router-link>
+
+        <div class="story-orbit story-orbit-a" />
+        <div class="story-orbit story-orbit-b" />
+
+        <div class="story-panel">
+          <div class="story-panel__label">登录流程</div>
+          <div class="story-step">
+            <span class="story-step__index">01</span>
+            <div>
+              <div class="story-step__title">输入账号密码</div>
+              <div class="story-step__desc">使用管理员、教师或学生账号进入对应工作区。</div>
+            </div>
+          </div>
+          <div class="story-step">
+            <span class="story-step__index">02</span>
+            <div>
+              <div class="story-step__title">完成验证码校验</div>
+              <div class="story-step__desc">通过验证码后，系统会按角色加载课程与后台权限。</div>
+            </div>
+          </div>
+          <div class="story-step">
+            <span class="story-step__index">03</span>
+            <div>
+              <div class="story-step__title">进入目标页面</div>
+              <div class="story-step__desc">从首页进入后台时会自动回到后台首页。</div>
+            </div>
+          </div>
         </div>
-        <div style="float: left;">
-          <router-link class="link-type" :to="'/forgot-password'">忘记密码</router-link>
+
+        <div class="story-highlights">
+          <div class="highlight-item">
+            <span class="highlight-item__value">课程首页</span>
+            <span class="highlight-item__label">公开浏览</span>
+          </div>
+          <div class="highlight-item">
+            <span class="highlight-item__value">角色权限</span>
+            <span class="highlight-item__label">自动加载</span>
+          </div>
+          <div class="highlight-item">
+            <span class="highlight-item__value">后台入口</span>
+            <span class="highlight-item__label">登录后进入</span>
+          </div>
         </div>
-      </el-form-item>
-    </el-form>
-    <div class="el-login-footer">
+      </section>
+
+      <section class="auth-panel">
+        <div class="auth-panel__head">
+          <p class="eyebrow">账号登录</p>
+          <h3 class="title">{{ title }}</h3>
+          <p class="subtitle">登录后即可进入课程学习、教学管理或系统后台。</p>
+        </div>
+
+        <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="auth-form">
+          <el-form-item prop="username">
+            <el-input v-model="loginForm.username" type="text" auto-complete="off" placeholder="账号">
+              <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
+            </el-input>
+          </el-form-item>
+          <el-form-item prop="password">
+            <el-input
+              v-model="loginForm.password"
+              type="password"
+              auto-complete="off"
+              placeholder="密码"
+              show-password
+              @keyup.enter.native="handleLogin"
+            >
+              <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
+            </el-input>
+          </el-form-item>
+          <el-form-item v-if="captchaEnabled" prop="code">
+            <div class="captcha-row">
+              <el-input
+                v-model="loginForm.code"
+                auto-complete="off"
+                placeholder="验证码"
+                @keyup.enter.native="handleLogin"
+              >
+                <svg-icon slot="prefix" icon-class="validCode" class="el-input__icon input-icon" />
+              </el-input>
+              <img :src="codeUrl" @click="getCode" class="auth-code-img" />
+            </div>
+          </el-form-item>
+
+          <el-checkbox v-model="loginForm.rememberMe" class="remember-check">记住账号</el-checkbox>
+
+          <el-form-item style="width: 100%;">
+            <el-button :loading="loading" size="medium" type="primary" class="submit-btn" @click.native.prevent="handleLogin">
+              <span v-if="!loading">登录</span>
+              <span v-else>登录中...</span>
+            </el-button>
+            <el-button plain size="medium" class="ghost-btn" @click="$router.push('/')">
+              返回首页
+            </el-button>
+            <div class="link-row link-row--split">
+              <router-link class="link-type" :to="'/forgot-password'">忘记密码</router-link>
+              <router-link v-if="register" class="link-type" :to="'/register'">立即注册</router-link>
+            </div>
+          </el-form-item>
+        </el-form>
+      </section>
+    </div>
+
+    <div class="auth-footer">
       <span>{{ footerContent }}</span>
     </div>
   </div>
@@ -152,59 +214,5 @@ export default {
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
-.login {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  background-image: url("../assets/images/login-background.jpg");
-  background-size: cover;
-}
-.title {
-  margin: 0 auto 30px auto;
-  text-align: center;
-  color: #707070;
-}
-.login-form {
-  border-radius: 6px;
-  background: #ffffff;
-  width: 400px;
-  padding: 25px 25px 5px 25px;
-  z-index: 1;
-  .el-input {
-    height: 38px;
-    input {
-      height: 38px;
-    }
-  }
-  .input-icon {
-    height: 39px;
-    width: 14px;
-    margin-left: 2px;
-  }
-}
-.login-code {
-  width: 33%;
-  height: 38px;
-  float: right;
-  img {
-    cursor: pointer;
-    vertical-align: middle;
-  }
-}
-.el-login-footer {
-  height: 40px;
-  line-height: 40px;
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  text-align: center;
-  color: #fff;
-  font-family: Arial;
-  font-size: 12px;
-  letter-spacing: 1px;
-}
-.login-code-img {
-  height: 38px;
-}
+@import "../assets/styles/auth-page.scss";
 </style>
