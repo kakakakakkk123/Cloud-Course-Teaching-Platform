@@ -1,164 +1,570 @@
 <template>
-  <div class="course-square">
-    <div class="hero">
-      <div>
-        <p class="eyebrow">游客模式</p>
-        <h1>在线课程广场</h1>
-        <p class="summary">
-          未登录用户可以浏览课程、搜索课程和查看课程介绍；收藏、学习、考试和评论需要登录学生账号。
-        </p>
-      </div>
-      <div class="hero__actions">
-        <el-button type="primary" @click="$router.push('/login')">登录学习</el-button>
-        <el-button @click="$router.push('/register')">学生注册</el-button>
-      </div>
+  <div v-loading="pageLoading" class="course-square-page">
+    <div class="portal-breadcrumb-bar">
+      <el-button plain icon="el-icon-arrow-left" @click="$router.push('/index')">
+        返回首页
+      </el-button>
+      <span class="portal-breadcrumb-bar__text">课程广场</span>
     </div>
 
-    <el-card class="search-card" shadow="never">
-      <el-input
-        v-model.trim="keyword"
-        placeholder="搜索课程名称、老师或关键词"
-        clearable
-        prefix-icon="el-icon-search"
-      />
+    <transition name="keyword-tip-fade">
+      <div v-if="hasKeywordSearch" class="keyword-search-tip">
+        <i class="el-icon-search"></i>
+        <span>当前搜索关键词：{{ queryParams.keyword }}</span>
+        <el-button type="text" @click="resetQuery">清除搜索</el-button>
+      </div>
+    </transition>
+
+    <section class="portal-hero">
+      <div class="portal-hero__content">
+        <p class="portal-hero__kicker">游客首页</p>
+        <h1>在线课程广场</h1>
+        <p class="portal-hero__summary">
+          游客可浏览课程、搜索课程和查看课程详情；注册课程、点赞课程和在线学习需登录学生账号后进行。
+        </p>
+        <div class="portal-hero__actions">
+          <el-button type="primary" @click="$router.push('/login')">登录学习</el-button>
+          <el-button @click="$router.push('/register')">学生注册</el-button>
+        </div>
+      </div>
+      <div class="portal-hero__panel">
+        <div class="portal-hero__stat">
+          <strong>{{ courseStats.total }}</strong>
+          <span>已发布课程</span>
+        </div>
+        <div class="portal-hero__stat">
+          <strong>{{ courseStats.recommend }}</strong>
+          <span>推荐课程</span>
+        </div>
+        <div class="portal-hero__stat">
+          <strong>{{ courseStats.hot }}</strong>
+          <span>热门课程</span>
+        </div>
+      </div>
+    </section>
+
+    <el-card v-if="featuredCourses.length" class="banner-card banner-card--compact" shadow="never">
+      <div class="banner-card__head">
+        <div>
+          <p class="portal-section__kicker">精选推荐</p>
+          <h3>课程推荐横幅</h3>
+        </div>
+        <span class="banner-card__hint">作为辅助浏览入口展示，课程搜索与列表仍是本页重点</span>
+      </div>
+      <el-carousel height="200px" indicator-position="outside" :interval="4800">
+        <el-carousel-item v-for="item in featuredCourses" :key="item.courseId">
+          <div class="banner-item banner-item--compact" @click="openCourseDetail(item.courseId)">
+            <img :src="getCourseCover(item.coverImage)" :alt="item.courseName">
+            <div class="banner-item__mask">
+              <h3>{{ item.courseName }}</h3>
+              <p>{{ item.courseSubtitle || item.intro || "点击查看课程详情" }}</p>
+            </div>
+          </div>
+        </el-carousel-item>
+      </el-carousel>
     </el-card>
 
-    <div class="course-grid">
-      <el-card v-for="course in filteredCourses" :key="course.id" class="course-card" shadow="hover">
-        <div class="course-card__head">
-          <span class="course-tag">{{ course.category }}</span>
-          <span class="teacher">{{ course.teacher }}</span>
+    <el-card class="toolbar-card" shadow="never">
+      <el-form :inline="true" :model="queryParams" class="toolbar-form">
+        <el-form-item>
+          <el-input
+            v-model.trim="queryParams.keyword"
+            clearable
+            placeholder="搜索课程名称、课程简介"
+            prefix-icon="el-icon-search"
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-select v-model="queryParams.orderBy" placeholder="排序方式" @change="handleQuery">
+            <el-option label="按发布时间" value="publishTime" />
+            <el-option label="按注册人数" value="enrollCount" />
+            <el-option label="按更新时间" value="lastContentTime" />
+            <el-option label="按点赞人数" value="likeCount" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-select v-model="queryParams.isAsc" placeholder="排序方向" @change="handleQuery">
+            <el-option label="降序" value="desc" />
+            <el-option label="升序" value="asc" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleQuery">查询</el-button>
+          <el-button @click="resetQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
+
+      <div class="category-list">
+        <el-tag
+          :effect="!queryParams.categoryId ? 'dark' : 'plain'"
+          class="category-tag"
+          @click="selectCategory('')"
+        >
+          全部课程
+        </el-tag>
+        <el-tag
+          v-for="item in homeData.categories"
+          :key="item.categoryId"
+          :effect="String(queryParams.categoryId) === String(item.categoryId) ? 'dark' : 'plain'"
+          class="category-tag"
+          @click="selectCategory(item.categoryId)"
+        >
+          {{ item.categoryName }}
+        </el-tag>
+      </div>
+    </el-card>
+
+    <course-section
+      title="推荐课程"
+      kicker="推荐内容"
+      :courses="homeData.recommendCourses"
+      :show-more="true"
+    />
+    <course-section
+      title="热门课程"
+      kicker="学习热度"
+      :courses="homeData.hotCourses"
+      :show-more="true"
+    />
+    <course-section
+      title="最新课程"
+      kicker="内容更新"
+      :courses="homeData.latestCourses"
+      :show-more="true"
+    />
+
+    <section class="course-list-section">
+      <div class="course-list-section__head">
+        <div>
+          <p class="portal-section__kicker">课程列表</p>
+          <h2>全部课程</h2>
         </div>
-        <h3>{{ course.name }}</h3>
-        <p>{{ course.intro }}</p>
-        <div class="course-meta">
-          <span>课时：{{ course.hours }}</span>
-          <span>难度：{{ course.level }}</span>
-        </div>
-      </el-card>
-    </div>
+        <span class="course-list-section__count">共 {{ total }} 门课程</span>
+      </div>
+      <div v-if="courseList.length" class="course-list-grid">
+        <course-card v-for="item in courseList" :key="item.courseId" :course="item" />
+      </div>
+      <el-empty v-else description="暂无符合条件的课程" :image-size="100" />
+      <pagination
+        v-show="total > 0"
+        :total="total"
+        :page.sync="queryParams.pageNum"
+        :limit.sync="queryParams.pageSize"
+        @pagination="getCourseList"
+      />
+    </section>
   </div>
 </template>
 
 <script>
+import { getPortalHome, listPortalCourses } from "@/api/portal"
+import CourseCard from "../components/CourseCard"
+import CourseSection from "../components/CourseSection"
+
 export default {
   name: "CourseSquare",
+  components: { CourseCard, CourseSection },
   data() {
     return {
-      keyword: "",
-      courses: [
-        { id: 1, name: "Java Web 开发基础", teacher: "张老师", category: "编程开发", level: "入门", hours: 32, intro: "面向在线教学平台的 Java Web 入门课程，覆盖 Servlet、JSP 与前后端联调。" },
-        { id: 2, name: "数据库系统原理", teacher: "李老师", category: "数据库", level: "中级", hours: 28, intro: "学习关系数据库设计、SQL 优化与事务机制，适合教学系统数据建模。" },
-        { id: 3, name: "软件测试与质量保证", teacher: "王老师", category: "软件工程", level: "中级", hours: 24, intro: "围绕测试用例、缺陷跟踪和质量保障流程展开，强调项目实战。" },
-        { id: 4, name: "前端界面设计实践", teacher: "陈老师", category: "前端设计", level: "入门", hours: 20, intro: "学习 Vue、组件化界面设计与课程平台常见交互实现。" }
-      ]
+      pageLoading: false,
+      total: 0,
+      courseList: [],
+      homeData: {
+        banners: [],
+        categories: [],
+        recommendCourses: [],
+        hotCourses: [],
+        latestCourses: []
+      },
+      queryParams: {
+        pageNum: 1,
+        pageSize: 8,
+        keyword: "",
+        categoryId: "",
+        orderBy: "publishTime",
+        isAsc: "desc"
+      }
     }
   },
   computed: {
-    filteredCourses() {
-      if (!this.keyword) {
-        return this.courses
+    /** 首页统计数据 */
+    courseStats() {
+      return {
+        total: this.total,
+        recommend: (this.homeData.recommendCourses || []).length,
+        hot: (this.homeData.hotCourses || []).length
       }
-      const keyword = this.keyword.toLowerCase()
-      return this.courses.filter(course =>
-        [course.name, course.teacher, course.category, course.intro].some(item => item.toLowerCase().includes(keyword))
-      )
+    },
+    /** 当前是否带有关键词搜索 */
+    hasKeywordSearch() {
+      return !!this.queryParams.keyword
+    },
+    /** 课程广场精选横幅数据 */
+    featuredCourses() {
+      const source = [
+        ...(this.homeData.recommendCourses || []),
+        ...(this.homeData.latestCourses || [])
+      ]
+      const courseMap = new Map()
+      source.forEach(item => {
+        if (item && item.courseId && !courseMap.has(item.courseId)) {
+          courseMap.set(item.courseId, item)
+        }
+      })
+      return Array.from(courseMap.values()).slice(0, 4)
+    }
+  },
+  created() {
+    this.initQueryParams()
+    this.getHomeData()
+    this.getCourseList()
+  },
+  watch: {
+    /** 监听路由关键字变化，自动同步课程查询 */
+    "$route.query.keyword"(value) {
+      const keyword = value || ""
+      if (keyword === this.queryParams.keyword) {
+        return
+      }
+      this.queryParams.keyword = keyword
+      this.handleQuery()
+    }
+  },
+  methods: {
+    /** 初始化查询参数，接收首页传入的关键字 */
+    initQueryParams() {
+      this.queryParams.keyword = this.$route.query.keyword || ""
+    },
+    /** 加载首页聚合数据 */
+    getHomeData() {
+      this.pageLoading = true
+      getPortalHome().then(res => {
+        const data = res.data || {}
+        this.homeData = {
+          banners: data.banners || [],
+          categories: data.categories || [],
+          recommendCourses: data.recommendCourses || [],
+          hotCourses: data.hotCourses || [],
+          latestCourses: data.latestCourses || []
+        }
+      }).finally(() => {
+        this.pageLoading = false
+      })
+    },
+    /** 加载课程列表 */
+    getCourseList() {
+      listPortalCourses(this.queryParams).then(res => {
+        this.courseList = res.rows || []
+        this.total = res.total || 0
+      })
+    },
+    /** 执行课程查询 */
+    handleQuery() {
+      this.queryParams.pageNum = 1
+      this.getCourseList()
+    },
+    /** 重置查询条件 */
+    resetQuery() {
+      this.queryParams = {
+        pageNum: 1,
+        pageSize: 8,
+        keyword: "",
+        categoryId: "",
+        orderBy: "publishTime",
+        isAsc: "desc"
+      }
+      if (this.$route.query.keyword) {
+        this.$router.replace({ path: "/course-square" })
+      }
+      this.getCourseList()
+    },
+    /** 切换课程分类 */
+    selectCategory(categoryId) {
+      this.queryParams.categoryId = categoryId
+      this.handleQuery()
+    },
+    /** 处理轮播图点击 */
+    handleBannerClick(item) {
+      if (item.courseId) {
+        this.$router.push(`/course/${item.courseId}`)
+        return
+      }
+      if (item.jumpUrl) {
+        window.open(item.jumpUrl, "_blank")
+      }
+    },
+    /** 跳转课程详情 */
+    openCourseDetail(courseId) {
+      this.$router.push(`/course/${courseId}`)
+    },
+    /** 获取课程封面地址 */
+    getCourseCover(cover) {
+      if (!cover) {
+        return "https://dummyimage.com/720x420/dbeafe/1d4ed8&text=Course"
+      }
+      if (/^https?:\/\//.test(cover)) {
+        return cover
+      }
+      return process.env.VUE_APP_BASE_API + cover
+    },
+    /** 处理图片完整地址 */
+    getImageUrl(url) {
+      if (!url) {
+        return ""
+      }
+      if (/^https?:\/\//.test(url)) {
+        return url
+      }
+      return process.env.VUE_APP_BASE_API + url
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.course-square {
+.course-square-page {
   min-height: 100vh;
-  padding: 40px 6vw;
+  padding: 32px 5vw 48px;
   background:
-    radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 28%),
-    radial-gradient(circle at top right, rgba(16, 185, 129, 0.16), transparent 24%),
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 28%),
+    radial-gradient(circle at top right, rgba(16, 185, 129, 0.14), transparent 24%),
     linear-gradient(180deg, #f8fbff 0%, #eef7ff 100%);
 }
 
-.hero,
-.search-card {
+.portal-breadcrumb-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.portal-breadcrumb-bar__text {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.keyword-search-tip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 10px 14px;
+  border: 1px solid rgba(59, 130, 246, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #2563eb;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.keyword-search-tip span {
+  color: #475569;
+}
+
+.keyword-tip-fade-enter-active,
+.keyword-tip-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.keyword-tip-fade-enter,
+.keyword-tip-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.portal-hero {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
   margin-bottom: 24px;
 }
 
-.hero {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-  align-items: flex-end;
+.portal-hero__content,
+.portal-hero__panel {
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
 }
 
-.eyebrow {
-  margin: 0 0 10px;
+.portal-hero__content {
+  padding: 32px;
+}
+
+.portal-hero__kicker,
+.portal-section__kicker {
+  margin: 0;
   color: #2563eb;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 2px;
 }
 
-h1 {
-  margin: 0;
-  font-size: 40px;
+.portal-hero h1 {
+  margin: 12px 0 0;
   color: #0f172a;
+  font-size: 40px;
 }
 
-.summary {
-  max-width: 760px;
-  margin: 14px 0 0;
+.portal-hero__summary {
+  max-width: 720px;
+  margin: 16px 0 0;
   color: #475569;
   line-height: 1.8;
 }
 
-.hero__actions {
+.portal-hero__actions {
   display: flex;
   gap: 12px;
+  margin-top: 22px;
 }
 
-.search-card {
+.portal-hero__panel {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  padding: 28px;
+}
+
+.portal-hero__stat {
+  padding: 18px;
   border-radius: 18px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
 }
 
-.course-grid {
+.portal-hero__stat strong {
+  display: block;
+  color: #0f172a;
+  font-size: 28px;
+}
+
+.portal-hero__stat span,
+.course-list-section__count {
+  color: #64748b;
+}
+
+.banner-card,
+.toolbar-card {
+  margin-bottom: 24px;
+  border-radius: 22px;
+}
+
+.banner-card {
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04);
+}
+
+.banner-card__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.banner-card__head h3 {
+  margin: 6px 0 0;
+  color: #0f172a;
+  font-size: 24px;
+}
+
+.banner-card__hint {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.banner-item {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  cursor: pointer;
+}
+
+.banner-item--compact {
+  height: 200px;
+}
+
+.banner-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.banner-item__mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0) 20%, rgba(15, 23, 42, 0.72) 100%);
+  color: #fff;
+}
+
+.banner-item__mask h3 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.banner-item__mask p {
+  margin: 10px 0 0;
+  line-height: 1.7;
+}
+
+.toolbar-form {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.category-tag {
+  cursor: pointer;
+}
+
+.course-list-section {
+  margin-top: 34px;
+}
+
+.course-list-section__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.course-list-section__head h2 {
+  margin: 6px 0 0;
+  color: #0f172a;
+  font-size: 28px;
+}
+
+.course-list-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 18px;
 }
 
-.course-card {
-  border-radius: 18px;
-}
+@media (max-width: 960px) {
+  .portal-hero {
+    grid-template-columns: 1fr;
+  }
 
-.course-card__head,
-.course-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  color: #64748b;
-  font-size: 13px;
-}
-
-.course-tag {
-  color: #1d4ed8;
-  font-weight: 700;
-}
-
-.course-card h3 {
-  margin: 16px 0 10px;
-  color: #0f172a;
-}
-
-.course-card p {
-  min-height: 72px;
-  line-height: 1.8;
-  color: #475569;
-}
-
-@media (max-width: 768px) {
-  .hero,
-  .hero__actions {
+  .portal-hero__actions,
+  .course-list-section__head {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .banner-card__head {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>

@@ -59,6 +59,12 @@ export const constantRoutes = [
     meta: { title: '课程广场' }
   },
   {
+    path: '/course/:courseId(\\d+)',
+    component: () => import('@/views/course/detail/index'),
+    hidden: true,
+    meta: { title: '课程详情' }
+  },
+  {
     path: '/404',
     component: () => import('@/views/error/404'),
     hidden: true
@@ -105,15 +111,104 @@ export const constantRoutes = [
 
 export const dynamicRoutes = [
   {
-    path: '/account-manage',
+    path: '/account',
     component: Layout,
+    hidden: true,
+    roles: ['admin'],
+    children: [
+      {
+        path: 'all',
+        component: () => import('@/views/system/user/index'),
+        name: 'AccountAll',
+        meta: { title: '全部账号', activeMenu: '/account/all' }
+      },
+      {
+        path: 'student',
+        component: () => import('@/views/system/user/index'),
+        name: 'AccountStudent',
+        meta: { title: '学生账号', activeMenu: '/account/student' }
+      },
+      {
+        path: 'teacher',
+        component: () => import('@/views/system/user/index'),
+        name: 'AccountTeacher',
+        meta: { title: '教师账号', activeMenu: '/account/teacher' }
+      },
+      {
+        path: 'admin',
+        component: () => import('@/views/system/user/index'),
+        name: 'AccountAdmin',
+        meta: { title: '管理员账号', activeMenu: '/account/admin' }
+      }
+    ]
+  },
+  {
+    path: '/teaching/score-detail',
+    component: Layout,
+    hidden: true,
     roles: ['teacher', 'admin'],
     children: [
       {
-        path: '',
-        component: () => import('@/views/system/user/index'),
-        name: 'AccountManage',
-        meta: { title: '账号管理', icon: 'user' }
+        path: ':examId?',
+        component: () => import('@/views/teaching/score/index'),
+        name: 'TeachingScoreDetail',
+        meta: { title: '成绩统计', activeMenu: '/teaching/score' }
+      }
+    ]
+  },
+  {
+    path: '/teaching/exam',
+    component: Layout,
+    hidden: true,
+    roles: ['teacher', 'admin'],
+    children: [
+      {
+        path: ':paperId?',
+        component: () => import('@/views/teaching/exam/index'),
+        name: 'TeachingExamManage',
+        meta: { title: '考试发布', activeMenu: '/teaching/paper' }
+      }
+    ]
+  },
+  {
+    path: '/teaching/paper-manage',
+    component: Layout,
+    hidden: true,
+    roles: ['teacher', 'admin'],
+    children: [
+      {
+        path: ':bankId?',
+        component: () => import('@/views/teaching/paper/manage'),
+        name: 'TeachingPaperManage',
+        meta: { title: '试卷管理', activeMenu: '/teaching/paper' }
+      }
+    ]
+  },
+  {
+    path: '/teaching/question',
+    component: Layout,
+    hidden: true,
+    roles: ['teacher', 'admin'],
+    children: [
+      {
+        path: ':bankId(\\d+)',
+        component: () => import('@/views/teaching/question/index'),
+        name: 'TeachingQuestion',
+        meta: { title: '试题管理', activeMenu: '/teaching/paper' }
+      }
+    ]
+  },
+  {
+    path: '/teaching/content',
+    component: Layout,
+    hidden: true,
+    roles: ['teacher', 'admin'],
+    children: [
+      {
+        path: ':courseId(\\d+)',
+        component: () => import('@/views/teaching/content/index'),
+        name: 'TeachingContent',
+        meta: { title: '课程内容管理', activeMenu: '/teaching/course' }
       }
     ]
   },

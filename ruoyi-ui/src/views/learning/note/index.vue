@@ -1,17 +1,18 @@
 <template>
-  <profile-memo
+  <learning-collection-list
     field="learningNotes"
-    title="学习笔记"
-    description="记录课堂重点、实验步骤和个人总结。"
-    placeholder="请输入本周学习笔记、重要知识点和复习总结"
+    title="我的笔记"
+    type-label="笔记"
+    tag-type="success"
+    empty-text="暂无笔记记录"
   />
 </template>
 
 <script>
-import ProfileMemo from "../components/ProfileMemo"
+import LearningCollectionList from "../components/LearningCollectionList"
 
 export default {
   name: "LearningNote",
-  components: { ProfileMemo }
+  components: { LearningCollectionList }
 }
 </script>

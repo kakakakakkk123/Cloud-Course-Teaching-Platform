@@ -68,6 +68,7 @@
                   class="content-item__summary content-item__summary--rich"
                   v-html="getContentSummary(item)"
                 />
+                <course-content-resource :item="item" />
               </div>
             </div>
             <el-empty v-else description="教师暂未发布课程内容" :image-size="88" />
@@ -101,9 +102,13 @@
 <script>
 import { getToken } from "@/utils/auth"
 import { getPortalCourseDetail, enrollPortalCourse, likePortalCourse, cancelLikePortalCourse } from "@/api/portal"
+import CourseContentResource from "@/components/CourseContentResource"
 
 export default {
   name: "CourseDetail",
+  components: {
+    CourseContentResource
+  },
   data() {
     return {
       loading: false,
