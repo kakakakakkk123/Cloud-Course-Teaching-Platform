@@ -2,7 +2,7 @@
   <div v-loading="loading" class="dashboard-home">
     <div class="dashboard-shell">
       <header class="portal-topbar">
-        <div class="portal-brand" @click="$router.push('/index')">
+        <div class="portal-brand" @click="$router.push('/')">
           <div class="portal-brand__logo">
             <i class="el-icon-reading"></i>
           </div>
@@ -13,7 +13,7 @@
         </div>
 
         <nav class="portal-nav">
-          <span class="portal-nav__item portal-nav__item--active" @click="$router.push('/index')">
+          <span class="portal-nav__item portal-nav__item--active" @click="$router.push('/')">
             首页
           </span>
           <span class="portal-nav__item" @click="goCourseSquare">
@@ -39,7 +39,7 @@
           <el-button
             v-else
             class="primary-action primary-action--nav"
-            @click="goCourseManage"
+            @click="enterBackend"
           >
             进入后台
           </el-button>
@@ -169,7 +169,7 @@
           <span class="search-panel__label">快速前往</span>
           <div class="search-panel__chip-list">
             <button class="search-chip" @click="goCourseSquare">课程广场</button>
-            <button class="search-chip" @click="$router.push('/user/profile')">个人中心</button>
+            <button class="search-chip" @click="goProfile">个人中心</button>
             <button v-if="isStudent" class="search-chip" @click="goMyCourses">我的课程</button>
             <button v-else class="search-chip" @click="goCourseManage">课程管理</button>
           </div>
@@ -273,6 +273,7 @@ import { mapGetters } from "vuex"
 import { getPortalHome, listMyPortalCourses } from "@/api/portal"
 import CourseSection from "@/views/course/components/CourseSection"
 import heroIllustration from "@/assets/images/education-hero.svg"
+import { getToken } from "@/utils/auth"
 
 export default {
   name: "Index",
@@ -458,7 +459,27 @@ export default {
     },
     /** 跳转我的课程 */
     goMyCourses() {
+      if (!getToken()) {
+        this.goLoginWithRedirect("/learning/my-course")
+        return
+      }
       this.$router.push("/learning/my-course")
+    },
+    /** 进入后台首页 */
+    enterBackend() {
+      if (!getToken()) {
+        this.goLoginWithRedirect("/index")
+        return
+      }
+      this.$router.push("/index")
+    },
+    /** 跳转个人中心 */
+    goProfile() {
+      if (!getToken()) {
+        this.goLoginWithRedirect("/user/profile")
+        return
+      }
+      this.$router.push("/user/profile")
     },
     /** 根据角色跳转学习路径卡片 */
     handlePathCardClick() {
@@ -470,7 +491,22 @@ export default {
     },
     /** 跳转课程管理 */
     goCourseManage() {
+      if (!getToken()) {
+        this.goLoginWithRedirect("/index")
+        return
+      }
+      if (!this.isTeacherOrAdmin) {
+        this.$router.push("/index")
+        return
+      }
       this.$router.push("/teaching/course")
+    },
+    /** 未登录时带目标地址进入登录页 */
+    goLoginWithRedirect(redirect) {
+      this.$router.push({
+        path: "/login",
+        query: { redirect }
+      })
     },
     /** 跳转课程详情 */
     openCourseDetail(courseId) {
@@ -538,6 +574,8 @@ export default {
 }
 
 .portal-topbar {
+  position: relative;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
