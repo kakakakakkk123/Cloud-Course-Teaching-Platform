@@ -36,7 +36,7 @@ public class EduExamManageController extends BaseController
     /**
      * 查询考试列表
      */
-    @PreAuthorize("@ss.hasPermi('edu:score:list')")
+    @PreAuthorize("@ss.hasAnyRoles('teacher,admin') or @ss.hasPermi('edu:score:list')")
     @GetMapping("/list")
     public TableDataInfo list(EduExam exam)
     {

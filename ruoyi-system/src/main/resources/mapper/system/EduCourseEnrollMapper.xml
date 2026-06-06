@@ -81,4 +81,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by e.create_time desc
     </select>
 
+    <update id="updateLearningProgress">
+        update edu_course_enroll
+        set progress_percent = greatest(ifnull(progress_percent, 0), #{progressPercent}),
+            last_study_time = sysdate(),
+            finish_time = case
+                when greatest(ifnull(progress_percent, 0), #{progressPercent}) >= 100 then ifnull(finish_time, sysdate())
+                else finish_time
+            end,
+            update_time = sysdate()
+        where course_id = #{courseId}
+          and student_id = #{studentId}
+          and enroll_status = '1'
+    </update>
+
 </mapper>

@@ -111,6 +111,38 @@ export const constantRoutes = [
 
 export const dynamicRoutes = [
   {
+    path: '/account',
+    component: Layout,
+    hidden: true,
+    roles: ['admin'],
+    children: [
+      {
+        path: 'all',
+        component: () => import('@/views/system/user/index'),
+        name: 'AccountAll',
+        meta: { title: '全部账号', activeMenu: '/account/all' }
+      },
+      {
+        path: 'student',
+        component: () => import('@/views/system/user/index'),
+        name: 'AccountStudent',
+        meta: { title: '学生账号', activeMenu: '/account/student' }
+      },
+      {
+        path: 'teacher',
+        component: () => import('@/views/system/user/index'),
+        name: 'AccountTeacher',
+        meta: { title: '教师账号', activeMenu: '/account/teacher' }
+      },
+      {
+        path: 'admin',
+        component: () => import('@/views/system/user/index'),
+        name: 'AccountAdmin',
+        meta: { title: '管理员账号', activeMenu: '/account/admin' }
+      }
+    ]
+  },
+  {
     path: '/teaching/score-detail',
     component: Layout,
     hidden: true,
@@ -177,19 +209,6 @@ export const dynamicRoutes = [
         component: () => import('@/views/teaching/content/index'),
         name: 'TeachingContent',
         meta: { title: '课程内容管理', activeMenu: '/teaching/course' }
-      }
-    ]
-  },
-  {
-    path: '/account-manage',
-    component: Layout,
-    roles: ['teacher', 'admin'],
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/system/user/index'),
-        name: 'AccountManage',
-        meta: { title: '账号管理', icon: 'user' }
       }
     ]
   },

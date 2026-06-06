@@ -37,17 +37,20 @@ const permission = {
   },
   actions: {
     // 生成路由
-    GenerateRoutes({ commit }) {
+    GenerateRoutes({ commit, rootState }) {
       return new Promise(resolve => {
         // 向后端请求路由数据
         getRouters().then(res => {
           const sdata = JSON.parse(JSON.stringify(res.data))
           const rdata = JSON.parse(JSON.stringify(res.data))
-          const sidebarRoutes = filterAsyncRouter(sdata)
-          const rewriteRoutes = filterAsyncRouter(rdata, false, true)
+          const isStudent = hasExactRole(rootState, 'student')
+          const isAdmin = hasExactRole(rootState, 'admin')
+          const sidebarRoutes = filterAdminLearningRoutes(filterAsyncRouter(sdata), isAdmin, isStudent)
+          const rewriteRoutes = filterAdminLearningRoutes(filterAsyncRouter(rdata, false, true), isAdmin, isStudent)
           const roleRoutes = filterDynamicRoutes(dynamicRoutes)
+          const studentLearningRoutes = isStudent ? getStudentLearningFallbackRoutes() : []
           const visibleRoleRoutes = roleRoutes.filter(route => !route.hidden)
-          const accessRoutes = roleRoutes.concat(rewriteRoutes)
+          const accessRoutes = roleRoutes.concat(studentLearningRoutes, rewriteRoutes)
           accessRoutes.push({ path: '*', redirect: '/404', hidden: true })
           // 同步注册后台菜单路由和前端手写的隐藏角色路由，避免菜单可见但点击 404。
           router.addRoutes(accessRoutes)
@@ -122,6 +125,53 @@ export function filterDynamicRoutes(routes) {
     }
   })
   return res
+}
+
+function filterAdminLearningRoutes(routes, isAdmin, isStudent) {
+  if (!isAdmin || isStudent) {
+    return routes
+  }
+  return routes.filter(route => {
+    if (route.path === '/learning' || route.path === 'learning') {
+      return false
+    }
+    if (route.children && route.children.length) {
+      route.children = filterAdminLearningRoutes(route.children, isAdmin, isStudent)
+    }
+    return true
+  })
+}
+
+function hasExactRole(rootState, role) {
+  const roles = rootState && rootState.user && rootState.user.roles ? rootState.user.roles : []
+  return roles.indexOf(role) !== -1
+}
+
+function getStudentLearningFallbackRoutes() {
+  return [
+    createStudentLearningRoute('/learning/my-course', 'learning/my-course/index', 'StudentMyCourseFallback', '我的课程'),
+    createStudentLearningRoute('/learning/online', 'learning/online/index', 'StudentOnlineLearningFallback', '在线学习'),
+    createStudentLearningRoute('/learning/exam', 'learning/exam/index', 'StudentMyExamFallback', '我的考试'),
+    createStudentLearningRoute('/learning/wrong', 'learning/wrong/index', 'StudentWrongQuestionsFallback', '我的错题'),
+    createStudentLearningRoute('/learning/favorite', 'learning/favorite/index', 'StudentFavoriteFallback', '收藏'),
+    createStudentLearningRoute('/learning/note', 'learning/note/index', 'StudentNoteFallback', '笔记')
+  ]
+}
+
+function createStudentLearningRoute(path, view, name, title) {
+  return {
+    path,
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: loadView(view),
+        name,
+        meta: { title, activeMenu: path }
+      }
+    ]
+  }
 }
 
 export const loadView = (view) => {

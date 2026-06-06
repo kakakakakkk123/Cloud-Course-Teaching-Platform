@@ -239,7 +239,13 @@
             <image-upload v-model="form.fileUrl" :limit="1" />
           </template>
           <template v-else>
-            <file-upload v-model="form.fileUrl" :limit="1" :file-type="currentFileTypes" />
+            <file-upload
+              v-model="form.fileUrl"
+              :limit="1"
+              :file-size="currentFileSize"
+              :file-type="currentFileTypes"
+              @success="handleFileUploadSuccess"
+            />
           </template>
         </el-form-item>
 
@@ -421,7 +427,7 @@ export default {
         { label: "允许", value: "1" }
       ],
       documentFileTypes: ["doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "pdf", "zip", "rar"],
-      videoFileTypes: ["mp4", "avi", "mov", "wmv", "flv", "webm", "mkv"]
+      videoFileTypes: ["mp4", "avi", "mov", "wmv", "flv", "webm", "mkv", "rmvb", "mpg", "mpeg", "m4v", "3gp"]
     }
   },
   computed: {
@@ -463,6 +469,10 @@ export default {
     /** 当前文件类型限制 */
     currentFileTypes() {
       return this.form.contentType === "2" ? this.videoFileTypes : this.documentFileTypes
+    },
+    /** 当前文件大小限制，单位 MB */
+    currentFileSize() {
+      return this.form.contentType === "2" ? 200 : 50
     }
   },
   watch: {
@@ -472,9 +482,15 @@ export default {
         if (this.currentCourseId) {
           this.queryParams.courseId = this.currentCourseId
           this.getCourseInfo()
-          this.getExamOptions()
           this.getList()
         }
+      }
+    },
+    "form.contentType"(value) {
+      if (value === "5") {
+        this.getExamOptions()
+      } else {
+        this.examOptions = []
       }
     }
   },
@@ -657,6 +673,12 @@ export default {
           this.getCourseInfo()
         })
       })
+    },
+    /** 上传成功后回填原始文件名 */
+    handleFileUploadSuccess(response, file) {
+      if (!this.form.fileName) {
+        this.form.fileName = response.originalFilename || (file && file.name) || response.newFileName || ""
+      }
     },
     /** 取消弹窗 */
     cancel() {

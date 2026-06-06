@@ -116,6 +116,7 @@
 
 <script>
 import { getPortalCourseDetail } from "@/api/portal"
+import { markContentLearned, startStudentExam } from "@/api/learning"
 
 export default {
   name: "OnlineLearning",
@@ -173,7 +174,18 @@ export default {
     /** 打开课程内容 */
     handleOpenContent(item) {
       if (String(item.contentType) === "5") {
-        this.$modal.msgSuccess("考试模块即将接入，这里将作为课程考试入口。")
+        if (!item.examId) {
+          this.$modal.msgWarning("该考试入口暂未关联考试。")
+          return
+        }
+        startStudentExam(item.examId).then(() => {
+          markContentLearned(item.contentId).finally(() => {
+            this.$router.push({
+              path: "/learning/exam",
+              query: { examId: item.examId }
+            })
+          })
+        })
         return
       }
 
@@ -182,6 +194,9 @@ export default {
         this.$modal.msgWarning("该内容暂未配置可访问地址。")
         return
       }
+      markContentLearned(item.contentId).then(() => {
+        this.getDetail(this.courseId)
+      }).catch(() => {})
       window.open(targetUrl, "_blank")
     },
     /** 生成内容访问地址 */

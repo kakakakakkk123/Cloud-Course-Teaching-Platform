@@ -51,7 +51,7 @@ public class EduCourseCategoryController extends BaseController
     /**
      * 查询课程分类树
      */
-    @PreAuthorize("@ss.hasPermi('edu:category:list')")
+    @PreAuthorize("@ss.hasAnyRoles('teacher,admin') or @ss.hasPermi('edu:category:list')")
     @GetMapping("/tree")
     public AjaxResult tree()
     {

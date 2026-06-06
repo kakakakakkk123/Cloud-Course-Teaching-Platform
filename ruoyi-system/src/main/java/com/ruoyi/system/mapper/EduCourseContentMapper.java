@@ -35,6 +35,30 @@ public interface EduCourseContentMapper
     public List<EduCourseContent> selectPublishedContentByCourseId(Long courseId);
 
     /**
+     * 查询已发布课程内容
+     *
+     * @param contentId 内容ID
+     * @return 课程内容
+     */
+    public EduCourseContent selectPublishedContentById(Long contentId);
+
+    /**
+     * 查询已发布内容数量
+     *
+     * @param courseId 课程ID
+     * @return 内容数量
+     */
+    public int countPublishedContentByCourseId(Long courseId);
+
+    /**
+     * 查询当前内容之前的已发布内容数量
+     *
+     * @param content 课程内容
+     * @return 内容数量
+     */
+    public int countLearnedContentPosition(EduCourseContent content);
+
+    /**
      * 新增课程内容
      *
      * @param content 课程内容

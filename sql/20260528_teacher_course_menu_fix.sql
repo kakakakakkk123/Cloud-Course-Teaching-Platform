@@ -79,7 +79,13 @@ insert into sys_menu
 select 21025, '内容删除', 2101, 10, '', '', '', '', 0, 0, 'F', '0', '0', 'edu:content:remove', '#', 'admin', sysdate(), '', null, '课程内容删除权限'
 where not exists (select 1 from sys_menu where menu_id = 21025);
 
--- 5. 绑定教师角色菜单与权限
+-- 5. 课程分类下拉权限
+insert into sys_menu
+(menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+select 21026, '课程分类列表', 2101, 11, '', '', '', '', 0, 0, 'F', '0', '0', 'edu:category:list', '#', 'admin', sysdate(), '', null, '课程分类下拉查询权限'
+where not exists (select 1 from sys_menu where menu_id = 21026);
+
+-- 6. 绑定教师角色菜单与权限
 insert into sys_role_menu (role_id, menu_id)
 select 3, 2100 where not exists (select 1 from sys_role_menu where role_id = 3 and menu_id = 2100);
 
@@ -116,7 +122,10 @@ select 3, 21024 where not exists (select 1 from sys_role_menu where role_id = 3 
 insert into sys_role_menu (role_id, menu_id)
 select 3, 21025 where not exists (select 1 from sys_role_menu where role_id = 3 and menu_id = 21025);
 
--- 6. 执行后可用下面 SQL 验证
+insert into sys_role_menu (role_id, menu_id)
+select 3, 21026 where not exists (select 1 from sys_role_menu where role_id = 3 and menu_id = 21026);
+
+-- 7. 执行后可用下面 SQL 验证
 -- select
 --   r.role_key,
 --   m.menu_id,
@@ -127,5 +136,5 @@ select 3, 21025 where not exists (select 1 from sys_role_menu where role_id = 3 
 -- join sys_role_menu rm on r.role_id = rm.role_id
 -- join sys_menu m on rm.menu_id = m.menu_id
 -- where r.role_key = 'teacher'
---   and m.menu_id between 2100 and 21025
+--   and m.menu_id between 2100 and 21026
 -- order by m.menu_id;

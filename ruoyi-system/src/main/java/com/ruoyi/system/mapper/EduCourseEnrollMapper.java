@@ -1,6 +1,7 @@
 package com.ruoyi.system.mapper;
 
 import java.util.List;
+import java.math.BigDecimal;
 import org.apache.ibatis.annotations.Param;
 import com.ruoyi.system.domain.course.EduCourse;
 import com.ruoyi.system.domain.course.EduCourseEnroll;
@@ -53,4 +54,15 @@ public interface EduCourseEnrollMapper
      * @return 课程集合
      */
     public List<EduCourse> selectStudentEnrolledCourseList(Long studentId);
+
+    /**
+     * 更新学生课程学习进度
+     *
+     * @param courseId 课程ID
+     * @param studentId 学生ID
+     * @param progressPercent 学习进度
+     * @return 结果
+     */
+    public int updateLearningProgress(@Param("courseId") Long courseId, @Param("studentId") Long studentId,
+            @Param("progressPercent") BigDecimal progressPercent);
 }

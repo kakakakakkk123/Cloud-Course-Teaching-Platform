@@ -74,6 +74,30 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by cc.sort_order asc, cc.content_id asc
     </select>
 
+    <select id="selectPublishedContentById" parameterType="Long" resultMap="EduCourseContentResult">
+        <include refid="selectEduCourseContentVo"/>
+        where cc.content_id = #{contentId}
+          and cc.publish_status = '1'
+    </select>
+
+    <select id="countPublishedContentByCourseId" parameterType="Long" resultType="int">
+        select count(1)
+        from edu_course_content
+        where course_id = #{courseId}
+          and publish_status = '1'
+    </select>
+
+    <select id="countLearnedContentPosition" parameterType="com.ruoyi.system.domain.course.EduCourseContent" resultType="int">
+        select count(1)
+        from edu_course_content
+        where course_id = #{courseId}
+          and publish_status = '1'
+          and (
+              ifnull(sort_order, 0) &lt; ifnull(#{sortOrder}, 0)
+              or (ifnull(sort_order, 0) = ifnull(#{sortOrder}, 0) and content_id &lt;= #{contentId})
+          )
+    </select>
+
     <insert id="insertEduCourseContent" parameterType="com.ruoyi.system.domain.course.EduCourseContent" useGeneratedKeys="true" keyProperty="contentId">
         insert into edu_course_content (
             course_id, parent_id, content_title, content_type, source_type, file_name, file_url, cover_image,
