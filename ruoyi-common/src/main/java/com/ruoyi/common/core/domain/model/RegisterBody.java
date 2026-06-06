@@ -23,6 +23,16 @@ public class RegisterBody extends LoginBody
     private String grade;
 
     /**
+     * 学院ID
+     */
+    private Long academyId;
+
+    /**
+     * 专业ID
+     */
+    private Long majorId;
+
+    /**
      * 邮箱
      */
     private String email;
@@ -67,6 +77,26 @@ public class RegisterBody extends LoginBody
     public String getEmail()
     {
         return email;
+    }
+
+    public Long getAcademyId()
+    {
+        return academyId;
+    }
+
+    public void setAcademyId(Long academyId)
+    {
+        this.academyId = academyId;
+    }
+
+    public Long getMajorId()
+    {
+        return majorId;
+    }
+
+    public void setMajorId(Long majorId)
+    {
+        this.majorId = majorId;
     }
 
     public void setEmail(String email)

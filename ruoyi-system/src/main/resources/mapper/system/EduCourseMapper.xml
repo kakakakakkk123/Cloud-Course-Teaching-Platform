@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.EduCourseMapper">
+
+    <resultMap id="EduCourseResult" type="com.ruoyi.system.domain.course.EduCourse">
+        <id property="courseId" column="course_id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="teacherId" column="teacher_id"/>
+        <result property="courseName" column="course_name"/>
+        <result property="courseSubtitle" column="course_subtitle"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="intro" column="intro"/>
+        <result property="detailHtml" column="detail_html"/>
+        <result property="tags" column="tags"/>
+        <result property="difficultyLevel" column="difficulty_level"/>
+        <result property="publishStatus" column="publish_status"/>
+        <result property="recommendFlag" column="recommend_flag"/>
+        <result property="hotFlag" column="hot_flag"/>
+        <result property="bannerFlag" column="banner_flag"/>
+        <result property="allowRegister" column="allow_register"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="viewCount" column="view_count"/>
+        <result property="likeCount" column="like_count"/>
+        <result property="enrollCount" column="enroll_count"/>
+        <result property="contentCount" column="content_count"/>
+        <result property="examCount" column="exam_count"/>
+        <result property="lastContentTime" column="last_content_time"/>
+        <result property="publishTime" column="publish_time"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="progressPercent" column="progress_percent"/>
+    </resultMap>
+
+    <sql id="selectEduCourseVo">
+        select c.course_id, c.category_id, c.teacher_id, c.course_name, c.course_subtitle, c.cover_image,
+               c.intro, c.detail_html, c.tags, c.difficulty_level, c.publish_status, c.recommend_flag,
+               c.hot_flag, c.banner_flag, c.allow_register, c.sort_order, c.view_count, c.like_count,
+               c.enroll_count, c.content_count, c.exam_count, c.last_content_time, c.publish_time,
+               c.status, c.del_flag, c.create_by, c.create_time, c.update_by, c.update_time, c.remark,
+               cat.category_name, u.nick_name as teacher_name
+        from edu_course c
+                 left join edu_course_category cat on c.category_id = cat.category_id
+                 left join sys_user u on c.teacher_id = u.user_id
+    </sql>
+
+    <select id="selectEduCourseById" parameterType="Long" resultMap="EduCourseResult">
+        <include refid="selectEduCourseVo"/>
+        where c.course_id = #{courseId}
+    </select>
+
+    <select id="selectEduCourseList" parameterType="com.ruoyi.system.domain.course.EduCourse" resultMap="EduCourseResult">
+        <include refid="selectEduCourseVo"/>
+        <where>
+            c.del_flag = '0'
+            <if test="courseName != null and courseName != ''">
+                and c.course_name like concat('%', #{courseName}, '%')
+            </if>
+            <if test="categoryId != null">
+                and c.category_id = #{categoryId}
+            </if>
+            <if test="teacherId != null">
+                and c.teacher_id = #{teacherId}
+            </if>
+            <if test="publishStatus != null and publishStatus != ''">
+                and c.publish_status = #{publishStatus}
+            </if>
+            <if test="recommendFlag != null and recommendFlag != ''">
+                and c.recommend_flag = #{recommendFlag}
+            </if>
+            <if test="status != null and status != ''">
+                and c.status = #{status}
+            </if>
+        </where>
+        order by c.sort_order desc, c.course_id desc
+    </select>
+
+    <select id="selectPortalCourseList" parameterType="com.ruoyi.system.domain.course.EduCourse" resultMap="EduCourseResult">
+        <include refid="selectEduCourseVo"/>
+        <where>
+            c.del_flag = '0'
+            and c.status = '0'
+            and c.publish_status = '1'
+            <if test="courseName != null and courseName != ''">
+                and c.course_name like concat('%', #{courseName}, '%')
+            </if>
+            <if test="categoryId != null">
+                and (c.category_id = #{categoryId} or cat.parent_id = #{categoryId})
+            </if>
+            <if test="difficultyLevel != null and difficultyLevel != ''">
+                and c.difficulty_level = #{difficultyLevel}
+            </if>
+            <if test="teacherId != null">
+                and c.teacher_id = #{teacherId}
+            </if>
+        </where>
+        <choose>
+            <when test="params.orderByColumn != null and params.orderByColumn != ''">
+                order by ${params.orderByColumn} ${params.orderByDirection}, c.course_id desc
+            </when>
+            <otherwise>
+                order by c.sort_order desc, c.publish_time desc, c.course_id desc
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="selectPublishedCourseById" parameterType="Long" resultMap="EduCourseResult">
+        <include refid="selectEduCourseVo"/>
+        where c.course_id = #{courseId}
+          and c.del_flag = '0'
+          and c.status = '0'
+          and c.publish_status = '1'
+    </select>
+
+    <select id="selectRecommendCourseList" parameterType="Integer" resultMap="EduCourseResult">
+        <include refid="selectEduCourseVo"/>
+        where c.del_flag = '0'
+          and c.status = '0'
+          and c.publish_status = '1'
+          and c.recommend_flag = '1'
+        order by c.sort_order desc, c.update_time desc, c.course_id desc
+        limit #{limitNum}
+    </select>
+
+    <select id="selectHotCourseList" parameterType="Integer" resultMap="EduCourseResult">
+        <include refid="selectEduCourseVo"/>
+        where c.del_flag = '0'
+          and c.status = '0'
+          and c.publish_status = '1'
+        order by c.hot_flag desc, c.enroll_count desc, c.like_count desc, c.view_count desc, c.course_id desc
+        limit #{limitNum}
+    </select>
+
+    <select id="selectLatestCourseList" parameterType="Integer" resultMap="EduCourseResult">
+        <include refid="selectEduCourseVo"/>
+        where c.del_flag = '0'
+          and c.status = '0'
+          and c.publish_status = '1'
+        order by ifnull(c.last_content_time, c.publish_time) desc, c.course_id desc
+        limit #{limitNum}
+    </select>
+
+    <insert id="insertEduCourse" parameterType="com.ruoyi.system.domain.course.EduCourse" useGeneratedKeys="true" keyProperty="courseId">
+        insert into edu_course (
+            category_id, teacher_id, course_name, course_subtitle, cover_image, intro, detail_html,
+            tags, difficulty_level, publish_status, recommend_flag, hot_flag, banner_flag, allow_register,
+            sort_order, view_count, like_count, enroll_count, content_count, exam_count, last_content_time,
+            publish_time, status, del_flag, create_by, create_time, remark
+        ) values (
+            #{categoryId}, #{teacherId}, #{courseName}, #{courseSubtitle}, #{coverImage}, #{intro}, #{detailHtml},
+            #{tags}, #{difficultyLevel}, #{publishStatus}, #{recommendFlag}, #{hotFlag}, #{bannerFlag}, #{allowRegister},
+            #{sortOrder}, 0, 0, 0, 0, 0, null, #{publishTime}, #{status}, '0', #{createBy}, sysdate(), #{remark}
+        )
+    </insert>
+
+    <update id="updateEduCourse" parameterType="com.ruoyi.system.domain.course.EduCourse">
+        update edu_course
+        <set>
+            category_id = #{categoryId},
+            teacher_id = #{teacherId},
+            course_name = #{courseName},
+            course_subtitle = #{courseSubtitle},
+            cover_image = #{coverImage},
+            intro = #{intro},
+            detail_html = #{detailHtml},
+            tags = #{tags},
+            difficulty_level = #{difficultyLevel},
+            publish_status = #{publishStatus},
+            recommend_flag = #{recommendFlag},
+            hot_flag = #{hotFlag},
+            banner_flag = #{bannerFlag},
+            allow_register = #{allowRegister},
+            sort_order = #{sortOrder},
+            publish_time = #{publishTime},
+            status = #{status},
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where course_id = #{courseId}
+    </update>
+
+    <update id="deleteEduCourseById" parameterType="Long">
+        update edu_course
+        set del_flag = '2', update_time = sysdate()
+        where course_id = #{courseId}
+    </update>
+
+    <update id="deleteEduCourseByIds" parameterType="Long">
+        update edu_course
+        set del_flag = '2', update_time = sysdate()
+        where course_id in
+        <foreach collection="array" item="courseId" open="(" separator="," close=")">
+            #{courseId}
+        </foreach>
+    </update>
+
+    <update id="refreshCourseContentStats" parameterType="Long">
+        update edu_course c
+        set c.content_count = (
+                select count(1)
+                from edu_course_content cc
+                where cc.course_id = c.course_id
+            ),
+            c.last_content_time = (
+                select max(coalesce(cc.update_time, cc.create_time))
+                from edu_course_content cc
+                where cc.course_id = c.course_id
+            ),
+            c.update_time = sysdate()
+        where c.course_id = #{courseId}
+    </update>
+
+    <update id="increaseViewCount" parameterType="Long">
+        update edu_course
+        set view_count = ifnull(view_count, 0) + 1
+        where course_id = #{courseId}
+    </update>
+
+    <update id="refreshEnrollCount" parameterType="Long">
+        update edu_course c
+        set c.enroll_count = (
+                select count(1)
+                from edu_course_enroll ce
+                where ce.course_id = c.course_id
+                  and ce.enroll_status = '1'
+            ),
+            c.update_time = sysdate()
+        where c.course_id = #{courseId}
+    </update>
+
+    <update id="refreshLikeCount" parameterType="Long">
+        update edu_course c
+        set c.like_count = (
+                select count(1)
+                from edu_course_like cl
+                where cl.course_id = c.course_id
+            ),
+            c.update_time = sysdate()
+        where c.course_id = #{courseId}
+    </update>
+
+    <update id="clearBannerCourseRef" parameterType="Long">
+        update edu_course_banner
+        set course_id = null, update_time = sysdate()
+        where course_id in
+        <foreach collection="array" item="courseId" open="(" separator="," close=")">
+            #{courseId}
+        </foreach>
+    </update>
+
+    <select id="countCourseByTeacherId" parameterType="Long" resultType="int">
+        select count(1)
+        from edu_course
+        where teacher_id = #{teacherId}
+          and del_flag = '0'
+    </select>
+
+    <select id="selectPortalCourseState" resultMap="EduCourseResult">
+        <include refid="selectEduCourseVo"/>
+        where c.course_id = #{courseId}
+    </select>
+
+</mapper>
