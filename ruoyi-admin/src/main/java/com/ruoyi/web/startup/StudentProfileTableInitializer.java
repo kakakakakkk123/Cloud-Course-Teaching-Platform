@@ -1,6 +1,7 @@
 package com.ruoyi.web.startup;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.Statement;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -49,13 +50,22 @@ public class StudentProfileTableInitializer implements ApplicationRunner
                 ) engine=innodb auto_increment=1 comment = '学生档案表'
                 """;
 
-        String alterTableSql = "alter table edu_student_profile add column if not exists grade varchar(20) default null comment '年级' after user_id";
-
         try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement())
         {
             statement.execute(createTableSql);
-            statement.execute(alterTableSql);
+            if (!hasGradeColumn(connection))
+            {
+                statement.execute("alter table edu_student_profile add column grade varchar(20) default null comment '年级' after user_id");
+            }
             log.info("student profile table checked");
+        }
+    }
+
+    private boolean hasGradeColumn(Connection connection) throws Exception
+    {
+        try (ResultSet rs = connection.getMetaData().getColumns(connection.getCatalog(), null, "edu_student_profile", "grade"))
+        {
+            return rs.next();
         }
     }
 }

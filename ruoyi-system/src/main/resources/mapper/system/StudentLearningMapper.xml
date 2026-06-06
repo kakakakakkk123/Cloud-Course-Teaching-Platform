@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.StudentLearningMapper">
+
+    <resultMap id="StudentLearningOverviewResult" type="com.ruoyi.system.domain.learning.StudentLearningOverview">
+        <result property="enrolledCourseCount" column="enrolled_course_count"/>
+        <result property="studyingCourseCount" column="studying_course_count"/>
+        <result property="completedCourseCount" column="completed_course_count"/>
+        <result property="pendingExamCount" column="pending_exam_count"/>
+    </resultMap>
+
+    <resultMap id="StudentExamResult" type="com.ruoyi.system.domain.learning.StudentExamVO">
+        <id property="examId" column="exam_id"/>
+        <result property="examName" column="exam_name"/>
+        <result property="paperId" column="paper_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="courseName" column="course_name"/>
+        <result property="paperName" column="paper_name"/>
+        <result property="examNotice" column="exam_notice"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="durationMinutes" column="duration_minutes"/>
+        <result property="passScore" column="pass_score"/>
+        <result property="totalScore" column="total_score"/>
+        <result property="maxAttemptCount" column="max_attempt_count"/>
+        <result property="showScoreAfterSubmit" column="show_score_after_submit"/>
+        <result property="showAnswerAfterSubmit" column="show_answer_after_submit"/>
+        <result property="status" column="status"/>
+        <result property="attemptCount" column="attempt_count"/>
+        <result property="recordId" column="record_id"/>
+        <result property="attemptNo" column="attempt_no"/>
+        <result property="recordStartTime" column="record_start_time"/>
+        <result property="submitTime" column="submit_time"/>
+        <result property="recordStatus" column="record_status"/>
+        <result property="studentScore" column="student_score"/>
+        <result property="resultStatus" column="result_status"/>
+        <result property="checkedFlag" column="checked_flag"/>
+    </resultMap>
+
+    <resultMap id="EduExamRecordResult" type="com.ruoyi.system.domain.exam.EduExamRecord">
+        <id property="recordId" column="record_id"/>
+        <result property="examId" column="exam_id"/>
+        <result property="paperId" column="paper_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="attemptNo" column="attempt_no"/>
+        <result property="startTime" column="start_time"/>
+        <result property="submitTime" column="submit_time"/>
+        <result property="durationSeconds" column="duration_seconds"/>
+        <result property="recordStatus" column="record_status"/>
+        <result property="totalScore" column="total_score"/>
+        <result property="resultStatus" column="result_status"/>
+        <result property="checkedFlag" column="checked_flag"/>
+    </resultMap>
+
+    <select id="selectLearningOverview" parameterType="Long" resultMap="StudentLearningOverviewResult">
+        select count(1) as enrolled_course_count,
+               sum(case when ifnull(e.progress_percent, 0) > 0 and ifnull(e.progress_percent, 0) &lt; 100 then 1 else 0 end) as studying_course_count,
+               sum(case when ifnull(e.progress_percent, 0) >= 100 then 1 else 0 end) as completed_course_count,
+               0 as pending_exam_count
+        from edu_course_enroll e
+        inner join edu_course c on e.course_id = c.course_id
+        where e.student_id = #{studentId}
+          and e.enroll_status = '1'
+          and c.del_flag = '0'
+    </select>
+
+    <select id="selectPendingExamCount" parameterType="Long" resultType="int">
+        select count(1)
+        from edu_exam e
+        inner join edu_course_enroll ce on e.course_id = ce.course_id and ce.student_id = #{studentId} and ce.enroll_status = '1'
+        where e.del_flag = '0'
+          and e.status = '1'
+          and (e.end_time is null or e.end_time >= sysdate())
+          and not exists (
+              select 1
+              from edu_exam_record r
+              where r.exam_id = e.exam_id
+                and r.student_id = #{studentId}
+                and r.exam_status in ('2', '3')
+          )
+    </select>
+
+    <select id="selectStudentExamList" resultMap="StudentExamResult">
+        select e.exam_id, e.exam_name, e.paper_id, e.course_id, c.course_name, p.paper_name,
+               e.exam_desc as exam_notice, e.start_time, e.end_time, e.duration_minutes,
+               e.pass_score, e.total_score, e.max_attempt_count,
+               e.show_score_after as show_score_after_submit,
+               e.show_answer_after as show_answer_after_submit,
+               e.status,
+               ifnull(ac.attempt_count, 0) as attempt_count,
+               lr.record_id, lr.attempt_no, lr.start_time as record_start_time, lr.submit_time,
+               lr.exam_status as record_status, lr.total_score as student_score,
+               lr.pass_flag as result_status, lr.checked_flag
+        from edu_exam e
+        inner join edu_course_enroll ce on e.course_id = ce.course_id and ce.student_id = #{studentId} and ce.enroll_status = '1'
+        left join edu_course c on e.course_id = c.course_id
+        left join edu_paper p on e.paper_id = p.paper_id
+        left join (
+            select exam_id, student_id, count(1) as attempt_count
+            from edu_exam_record
+            where student_id = #{studentId}
+            group by exam_id, student_id
+        ) ac on e.exam_id = ac.exam_id
+        left join edu_exam_record lr on lr.record_id = (
+            select r.record_id
+            from edu_exam_record r
+            where r.exam_id = e.exam_id and r.student_id = #{studentId}
+            order by r.attempt_no desc, r.record_id desc
+            limit 1
+        )
+        where e.del_flag = '0'
+          and e.status in ('1', '2')
+        <if test="status != null and status != ''">
+            <choose>
+                <when test="status == 'todo'">
+                    and (lr.record_id is null or lr.exam_status in ('0', '1'))
+                    and (e.end_time is null or e.end_time >= sysdate())
+                </when>
+                <when test="status == 'done'">
+                    and lr.exam_status in ('2', '3')
+                </when>
+            </choose>
+        </if>
+        order by e.start_time desc, e.exam_id desc
+    </select>
+
+    <select id="selectRunningExamRecord" resultMap="EduExamRecordResult">
+        select record_id, exam_id, paper_id, course_id, student_id, attempt_no, start_time,
+               submit_time, duration_seconds, exam_status as record_status, total_score,
+               pass_flag as result_status, checked_flag
+        from edu_exam_record
+        where exam_id = #{examId}
+          and student_id = #{studentId}
+          and exam_status = '1'
+        order by record_id desc
+        limit 1
+    </select>
+
+    <select id="selectExamAttemptCount" resultType="int">
+        select count(1)
+        from edu_exam_record
+        where exam_id = #{examId}
+          and student_id = #{studentId}
+    </select>
+
+    <insert id="insertExamRecord" parameterType="com.ruoyi.system.domain.exam.EduExamRecord" useGeneratedKeys="true" keyProperty="recordId">
+        insert into edu_exam_record (
+            exam_id, paper_id, course_id, student_id, attempt_no, start_time,
+            duration_seconds, exam_status, objective_score, subjective_score,
+            total_score, pass_flag, checked_flag
+        ) values (
+            #{examId}, #{paperId}, #{courseId}, #{studentId}, #{attemptNo}, sysdate(),
+            0, '1', 0, 0, 0, '0', '0'
+        )
+    </insert>
+
+    <update id="submitExamRecord">
+        update edu_exam_record
+        set submit_time = sysdate(),
+            duration_seconds = ifnull(timestampdiff(second, start_time, sysdate()), 0),
+            exam_status = '2',
+            checked_flag = '0'
+        where record_id = #{recordId}
+          and student_id = #{studentId}
+          and exam_status = '1'
+    </update>
+
+</mapper>

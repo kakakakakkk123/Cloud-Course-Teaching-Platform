@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import com.ruoyi.common.constant.UserConstants;
+import com.ruoyi.common.core.domain.entity.SysDept;
 import com.ruoyi.common.core.domain.entity.SysRole;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.domain.model.AccountSecuritySettings;
@@ -28,6 +29,7 @@ import com.ruoyi.system.service.ISysConfigService;
 import com.ruoyi.system.service.ISysRoleService;
 import com.ruoyi.system.service.ISysUserService;
 import com.ruoyi.system.service.IStudentAccountService;
+import com.ruoyi.system.service.ISysDeptService;
 
 /**
  * Account module service implementation
@@ -43,8 +45,6 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     private static final String LOGIN_BLACK_IP_KEY = "sys.login.blackIPList";
     private static final String LOGIN_BLOCKED_UA_KEY = "sys.login.blockedUserAgentKeywords";
     private static final String INIT_PASSWORD_KEY = "sys.user.initPassword";
-    private static final Long STUDENT_DEFAULT_DEPT_ID = 103L;
-
     @Autowired
     private ISysUserService userService;
 
@@ -57,6 +57,9 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     @Autowired
     private StudentAccountMapper accountMapper;
 
+    @Autowired
+    private ISysDeptService deptService;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public String register(RegisterBody registerBody)
@@ -68,6 +71,8 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         String grade = StringUtils.trim(registerBody.getGrade());
         String phonenumber = StringUtils.trim(registerBody.getPhonenumber());
         String email = StringUtils.trim(registerBody.getEmail());
+        Long academyId = registerBody.getAcademyId();
+        Long majorId = registerBody.getMajorId();
 
         if (!studentRegisterEnabled())
         {
@@ -99,9 +104,33 @@ public class StudentAccountServiceImpl implements IStudentAccountService
             return "年级不能为空。";
         }
 
+        if (academyId == null)
+        {
+            return "请选择学院。";
+        }
+        if (majorId == null)
+        {
+            return "请选择专业。";
+        }
+
+        SysDept academy = deptService.selectDeptById(academyId);
+        if (StringUtils.isNull(academy) || !UserConstants.DEPT_NORMAL.equals(academy.getStatus()))
+        {
+            return "所选学院不存在或已停用。";
+        }
+        SysDept major = deptService.selectDeptById(majorId);
+        if (StringUtils.isNull(major) || !UserConstants.DEPT_NORMAL.equals(major.getStatus()))
+        {
+            return "所选专业不存在或已停用。";
+        }
+        if (!academyId.equals(major.getParentId()))
+        {
+            return "所选专业与学院不匹配。";
+        }
+
         SysUser user = new SysUser();
         user.setUserName(username);
-        user.setDeptId(STUDENT_DEFAULT_DEPT_ID);
+        user.setDeptId(majorId);
         user.setStudentNo(studentNo);
         user.setNickName(nickName);
         user.setPhonenumber(phonenumber);
@@ -362,7 +391,10 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         {
             try
             {
-                user.setDeptId(StringUtils.isNull(user.getDeptId()) || user.getDeptId() == 0 ? STUDENT_DEFAULT_DEPT_ID : user.getDeptId());
+                if (StringUtils.isNull(user.getDeptId()) || user.getDeptId() == 0)
+                {
+                    throw new ServiceException("所属部门不能为空");
+                }
                 if (StringUtils.isEmpty(user.getUserName()) || StringUtils.isEmpty(user.getStudentNo()) || StringUtils.isEmpty(user.getNickName()))
                 {
                     throw new ServiceException("账号、学号、昵称不能为空");
