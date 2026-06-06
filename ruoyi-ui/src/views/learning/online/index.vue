@@ -65,6 +65,7 @@
                 <p class="content-card__summary">
                   {{ item.summary || item.contentBody || "教师暂未补充该内容的说明信息。" }}
                 </p>
+                <course-content-resource :item="item" :show-actions="false" />
 
                 <div class="content-card__footer">
                   <span>排序：{{ item.sortOrder || 0 }}</span>
@@ -117,9 +118,13 @@
 <script>
 import { getPortalCourseDetail } from "@/api/portal"
 import { markContentLearned, startStudentExam } from "@/api/learning"
+import CourseContentResource from "@/components/CourseContentResource"
 
 export default {
   name: "OnlineLearning",
+  components: {
+    CourseContentResource
+  },
   data() {
     return {
       loading: false,
