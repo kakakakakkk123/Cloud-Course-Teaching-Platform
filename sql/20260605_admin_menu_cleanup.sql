@@ -20,7 +20,7 @@ where menu_id in (2000, 2001, 2002, 2003, 2004, 2005);
 insert into sys_menu
 (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache,
  menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select 2300, '账号管理', 0, 4, 'account', null, '', '', 0, 0,
+select 2300, '账号管理', 0, 4, 'account', null, '', '', 1, 0,
        'M', '0', '0', '', 'user', 'admin', sysdate(), '', null, '账号管理目录'
 where not exists (select 1 from sys_menu where menu_id = 2300);
 
@@ -30,6 +30,7 @@ set menu_name = '账号管理',
     order_num = 4,
     path = 'account',
     component = null,
+    is_frame = '1',
     menu_type = 'M',
     visible = '0',
     status = '0',
@@ -41,7 +42,7 @@ where menu_id = 2300;
 insert into sys_menu
 (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache,
  menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select 2301, '全部账号', 2300, 1, 'all', 'system/user/index', '{"roleId":0}', '', 0, 0,
+select 2301, '全部账号', 2300, 1, 'all', 'system/user/index', '{"roleId":0}', '', 1, 0,
        'C', '0', '0', 'system:user:list', 'user', 'admin', sysdate(), '', null, '全部账号菜单'
 where not exists (select 1 from sys_menu where menu_id = 2301);
 
@@ -52,6 +53,7 @@ set menu_name = '全部账号',
     path = 'all',
     component = 'system/user/index',
     `query` = '{"roleId":0}',
+    is_frame = '1',
     menu_type = 'C',
     visible = '0',
     status = '0',
@@ -64,7 +66,7 @@ where menu_id = 2301;
 insert into sys_menu
 (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache,
  menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select 2302, '学生账号', 2300, 2, 'student', 'system/user/index', '{"roleId":4}', '', 0, 0,
+select 2302, '学生账号', 2300, 2, 'student', 'system/user/index', '{"roleId":4}', '', 1, 0,
        'C', '0', '0', 'system:user:list', 'peoples', 'admin', sysdate(), '', null, '学生账号菜单'
 where not exists (select 1 from sys_menu where menu_id = 2302);
 
@@ -75,6 +77,7 @@ set menu_name = '学生账号',
     path = 'student',
     component = 'system/user/index',
     `query` = '{"roleId":4}',
+    is_frame = '1',
     menu_type = 'C',
     visible = '0',
     status = '0',
@@ -87,7 +90,7 @@ where menu_id = 2302;
 insert into sys_menu
 (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache,
  menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select 2303, '教师账号', 2300, 3, 'teacher', 'system/user/index', '{"roleId":3}', '', 0, 0,
+select 2303, '教师账号', 2300, 3, 'teacher', 'system/user/index', '{"roleId":3}', '', 1, 0,
        'C', '0', '0', 'system:user:list', 'post', 'admin', sysdate(), '', null, '教师账号菜单'
 where not exists (select 1 from sys_menu where menu_id = 2303);
 
@@ -98,6 +101,7 @@ set menu_name = '教师账号',
     path = 'teacher',
     component = 'system/user/index',
     `query` = '{"roleId":3}',
+    is_frame = '1',
     menu_type = 'C',
     visible = '0',
     status = '0',
@@ -110,7 +114,7 @@ where menu_id = 2303;
 insert into sys_menu
 (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache,
  menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select 2304, '管理员账号', 2300, 4, 'admin', 'system/user/index', '{"roleId":1}', '', 0, 0,
+select 2304, '管理员账号', 2300, 4, 'admin', 'system/user/index', '{"roleId":1}', '', 1, 0,
        'C', '0', '0', 'system:user:list', 'admin', 'admin', sysdate(), '', null, '管理员账号菜单'
 where not exists (select 1 from sys_menu where menu_id = 2304);
 
@@ -121,6 +125,7 @@ set menu_name = '管理员账号',
     path = 'admin',
     component = 'system/user/index',
     `query` = '{"roleId":1}',
+    is_frame = '1',
     menu_type = 'C',
     visible = '0',
     status = '0',
