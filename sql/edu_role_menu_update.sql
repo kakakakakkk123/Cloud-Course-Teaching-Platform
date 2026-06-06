@@ -13,41 +13,41 @@ select 4, '学生', 'student', 4, 2, 1, 1, '0', '0', 'admin', sysdate(), '', nul
 where not exists (select 1 from sys_role where role_id = 4);
 
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2100', '教学管理', '0', '5', 'teaching', '', '', '', 0, 0, 'M', '0', '0', '', 'education', 'admin', sysdate(), '', null, '教师教学管理目录'
+select '2100', '教学管理', '0', '5', 'teaching', '', '', '', 1, 0, 'M', '0', '0', '', 'education', 'admin', sysdate(), '', null, '教师教学管理目录'
 where not exists (select 1 from sys_menu where menu_id = '2100');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2101', '课程管理', '2100', '1', 'course', 'teaching/course/index', '', '', 0, 0, 'C', '0', '0', 'teaching:course:list', 'form', 'admin', sysdate(), '', null, '课程管理菜单'
+select '2101', '课程管理', '2100', '1', 'course', 'teaching/course/index', '', '', 1, 0, 'C', '0', '0', 'teaching:course:list', 'form', 'admin', sysdate(), '', null, '课程管理菜单'
 where not exists (select 1 from sys_menu where menu_id = '2101');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2102', '学生管理', '2100', '2', 'student', 'account/student/index', '', '', 0, 0, 'C', '0', '0', 'account:student:list', 'peoples', 'admin', sysdate(), '', null, '学生管理菜单'
+select '2102', '学生管理', '2100', '2', 'student', 'account/student/index', '', '', 1, 0, 'C', '0', '0', 'account:student:list', 'peoples', 'admin', sysdate(), '', null, '学生管理菜单'
 where not exists (select 1 from sys_menu where menu_id = '2102');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2103', '试卷管理', '2100', '3', 'paper', 'teaching/paper/index', '', '', 0, 0, 'C', '0', '0', 'teaching:paper:list', 'documentation', 'admin', sysdate(), '', null, '试卷管理菜单'
+select '2103', '试卷管理', '2100', '3', 'paper', 'teaching/paper/index', '', '', 1, 0, 'C', '0', '0', 'teaching:paper:list', 'documentation', 'admin', sysdate(), '', null, '试卷管理菜单'
 where not exists (select 1 from sys_menu where menu_id = '2103');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2104', '成绩统计', '2100', '4', 'score', 'teaching/score/index', '', '', 0, 0, 'C', '0', '0', 'teaching:score:list', 'chart', 'admin', sysdate(), '', null, '成绩统计菜单'
+select '2104', '成绩统计', '2100', '4', 'score', 'teaching/score/index', '', '', 1, 0, 'C', '0', '0', 'teaching:score:list', 'chart', 'admin', sysdate(), '', null, '成绩统计菜单'
 where not exists (select 1 from sys_menu where menu_id = '2104');
 
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2200', '学习中心', '0', '6', 'learning', '', '', '', 0, 0, 'M', '0', '0', '', 'guide', 'admin', sysdate(), '', null, '学生学习中心目录'
+select '2200', '学习中心', '0', '6', 'learning', '', '', '', 1, 0, 'M', '0', '0', '', 'guide', 'admin', sysdate(), '', null, '学生学习中心目录'
 where not exists (select 1 from sys_menu where menu_id = '2200');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2201', '我的课程', '2200', '1', 'my-course', 'learning/my-course/index', '', '', 0, 0, 'C', '0', '0', 'learning:course:list', 'dashboard', 'admin', sysdate(), '', null, '我的课程菜单'
+select '2201', '我的课程', '2200', '1', 'my-course', 'learning/my-course/index', '', '', 1, 0, 'C', '0', '0', 'learning:course:list', 'dashboard', 'admin', sysdate(), '', null, '我的课程菜单'
 where not exists (select 1 from sys_menu where menu_id = '2201');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2202', '在线学习', '2200', '2', 'online', 'learning/online/index', '', '', 0, 0, 'C', '0', '0', 'learning:online:list', 'build', 'admin', sysdate(), '', null, '在线学习菜单'
+select '2202', '在线学习', '2200', '2', 'online', 'learning/online/index', '', '', 1, 0, 'C', '0', '0', 'learning:online:list', 'build', 'admin', sysdate(), '', null, '在线学习菜单'
 where not exists (select 1 from sys_menu where menu_id = '2202');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2203', '我的考试', '2200', '3', 'exam', 'learning/exam/index', '', '', 0, 0, 'C', '0', '0', 'learning:exam:list', 'documentation', 'admin', sysdate(), '', null, '我的考试菜单'
+select '2203', '我的考试', '2200', '3', 'exam', 'learning/exam/index', '', '', 1, 0, 'C', '0', '0', 'learning:exam:list', 'documentation', 'admin', sysdate(), '', null, '我的考试菜单'
 where not exists (select 1 from sys_menu where menu_id = '2203');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2204', '我的错题', '2200', '4', 'wrong', 'learning/wrong/index', '', '', 0, 0, 'C', '0', '0', 'learning:wrong:list', 'bug', 'admin', sysdate(), '', null, '我的错题菜单'
+select '2204', '我的错题', '2200', '4', 'wrong', 'learning/wrong/index', '', '', 1, 0, 'C', '0', '0', 'learning:wrong:list', 'bug', 'admin', sysdate(), '', null, '我的错题菜单'
 where not exists (select 1 from sys_menu where menu_id = '2204');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2205', '收藏', '2200', '5', 'favorite', 'learning/favorite/index', '', '', 0, 0, 'C', '0', '0', 'learning:favorite:list', 'star', 'admin', sysdate(), '', null, '收藏菜单'
+select '2205', '收藏', '2200', '5', 'favorite', 'learning/favorite/index', '', '', 1, 0, 'C', '0', '0', 'learning:favorite:list', 'star', 'admin', sysdate(), '', null, '收藏菜单'
 where not exists (select 1 from sys_menu where menu_id = '2205');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2206', '笔记', '2200', '6', 'note', 'learning/note/index', '', '', 0, 0, 'C', '0', '0', 'learning:note:list', 'edit', 'admin', sysdate(), '', null, '笔记菜单'
+select '2206', '笔记', '2200', '6', 'note', 'learning/note/index', '', '', 1, 0, 'C', '0', '0', 'learning:note:list', 'edit', 'admin', sysdate(), '', null, '笔记菜单'
 where not exists (select 1 from sys_menu where menu_id = '2206');
 
 delete from sys_role_menu where role_id in (3, 4) and menu_id in (2000,2001,2002,2003,2004,2005,2100,2101,2102,2103,2104,2200,2201,2202,2203,2204,2205,2206);
@@ -88,20 +88,20 @@ select 5, '游客', 'visitor', 5, 2, 1, 1, '0', '0', 'admin', sysdate(), '', nul
 where not exists (select 1 from sys_role where role_id = 5);
 
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2300', '账号管理', '0', '4', 'account', '', '', '', 0, 0, 'M', '0', '0', '', 'user', 'admin', sysdate(), '', null, '账号管理目录'
+select '2300', '账号管理', '0', '4', 'account', '', '', '', 1, 0, 'M', '0', '0', '', 'user', 'admin', sysdate(), '', null, '账号管理目录'
 where not exists (select 1 from sys_menu where menu_id = '2300');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2301', '全部账号', '2300', '1', 'all', 'system/user/index', '{"roleId":0}', '', 0, 0, 'C', '0', '0', 'system:user:list', 'user', 'admin', sysdate(), '', null, '全部账号菜单'
+select '2301', '全部账号', '2300', '1', 'all', 'system/user/index', '{"roleId":0}', '', 1, 0, 'C', '0', '0', 'system:user:list', 'user', 'admin', sysdate(), '', null, '全部账号菜单'
 where not exists (select 1 from sys_menu where menu_id = '2301');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2302', '学生账号', '2300', '2', 'student', 'system/user/index', '{"roleId":4}', '', 0, 0, 'C', '0', '0', 'system:user:list', 'peoples', 'admin', sysdate(), '', null, '学生账号菜单'
+select '2302', '学生账号', '2300', '2', 'student', 'system/user/index', '{"roleId":4}', '', 1, 0, 'C', '0', '0', 'system:user:list', 'peoples', 'admin', sysdate(), '', null, '学生账号菜单'
 where not exists (select 1 from sys_menu where menu_id = '2302');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2303', '教师账号', '2300', '3', 'teacher', 'system/user/index', '{"roleId":3}', '', 0, 0, 'C', '0', '0', 'system:user:list', 'post', 'admin', sysdate(), '', null, '教师账号菜单'
+select '2303', '教师账号', '2300', '3', 'teacher', 'system/user/index', '{"roleId":3}', '', 1, 0, 'C', '0', '0', 'system:user:list', 'post', 'admin', sysdate(), '', null, '教师账号菜单'
 where not exists (select 1 from sys_menu where menu_id = '2303');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2304', '管理员账号', '2300', '4', 'admin', 'system/user/index', '{"roleId":1}', '', 0, 0, 'C', '0', '0', 'system:user:list', 'admin', 'admin', sysdate(), '', null, '管理员账号菜单'
+select '2304', '管理员账号', '2300', '4', 'admin', 'system/user/index', '{"roleId":1}', '', 1, 0, 'C', '0', '0', 'system:user:list', 'admin', 'admin', sysdate(), '', null, '管理员账号菜单'
 where not exists (select 1 from sys_menu where menu_id = '2304');
 insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, `query`, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-select '2305', '游客账号', '2300', '5', 'visitor', 'system/user/index', '{"roleId":5}', '', 0, 0, 'C', '0', '0', 'system:user:list', 'message', 'admin', sysdate(), '', null, '游客账号菜单'
+select '2305', '游客账号', '2300', '5', 'visitor', 'system/user/index', '{"roleId":5}', '', 1, 0, 'C', '0', '0', 'system:user:list', 'message', 'admin', sysdate(), '', null, '游客账号菜单'
 where not exists (select 1 from sys_menu where menu_id = '2305');
