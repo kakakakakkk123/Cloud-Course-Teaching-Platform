@@ -276,6 +276,7 @@ import CourseSection from "@/views/course/components/CourseSection"
 import heroIllustration from "@/assets/images/education-hero.svg"
 import coursePlaceholder from "@/assets/images/course-placeholder.svg"
 import { getToken } from "@/utils/auth"
+import { resolveResourceUrl } from "@/utils/resource"
 
 export default {
   name: "Index",
@@ -524,10 +525,7 @@ export default {
       if (!cover) {
         return this.coursePlaceholder
       }
-      if (/^https?:\/\//.test(cover)) {
-        return cover
-      }
-      return process.env.VUE_APP_BASE_API + cover
+      return resolveResourceUrl(cover)
     },
     /** 搜索课程并跳转到课程广场 */
     handleSearch() {

@@ -162,6 +162,7 @@ import { getPortalHome, listPortalCourses } from "@/api/portal"
 import CourseCard from "../components/CourseCard"
 import CourseSection from "../components/CourseSection"
 import coursePlaceholder from "@/assets/images/course-placeholder.svg"
+import { resolveResourceUrl } from "@/utils/resource"
 
 export default {
   name: "CourseSquare",
@@ -295,20 +296,11 @@ export default {
       if (!cover) {
         return this.coursePlaceholder
       }
-      if (/^https?:\/\//.test(cover)) {
-        return cover
-      }
-      return process.env.VUE_APP_BASE_API + cover
+      return resolveResourceUrl(cover)
     },
     /** 处理图片完整地址 */
     getImageUrl(url) {
-      if (!url) {
-        return ""
-      }
-      if (/^https?:\/\//.test(url)) {
-        return url
-      }
-      return process.env.VUE_APP_BASE_API + url
+      return resolveResourceUrl(url)
     }
   }
 }
