@@ -9,6 +9,8 @@ public class AccountSecuritySettings
 
     private String blockedUserAgentKeywords;
 
+    private Boolean forgotPasswordEmailRequired;
+
     public String getBlackIpList()
     {
         return blackIpList;
@@ -27,5 +29,15 @@ public class AccountSecuritySettings
     public void setBlockedUserAgentKeywords(String blockedUserAgentKeywords)
     {
         this.blockedUserAgentKeywords = blockedUserAgentKeywords;
+    }
+
+    public Boolean getForgotPasswordEmailRequired()
+    {
+        return forgotPasswordEmailRequired;
+    }
+
+    public void setForgotPasswordEmailRequired(Boolean forgotPasswordEmailRequired)
+    {
+        this.forgotPasswordEmailRequired = forgotPasswordEmailRequired;
     }
 }

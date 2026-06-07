@@ -24,6 +24,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
+import com.ruoyi.framework.web.service.EmailCodeService;
 import com.ruoyi.framework.web.service.SysPasswordService;
 import com.ruoyi.framework.web.service.SysRegisterService;
 import com.ruoyi.system.service.ISysConfigService;
@@ -50,13 +51,25 @@ public class StudentAccountController extends BaseController
     @Autowired
     private ISysConfigService configService;
 
+    @Autowired
+    private EmailCodeService emailCodeService;
+
     @Anonymous
     @PostMapping("/forgotPassword")
     public AjaxResult forgotPassword(@RequestBody ForgotPasswordBody body)
     {
+        if (body == null)
+        {
+            return error("找回密码请求不能为空");
+        }
         if (configService.selectCaptchaEnabled())
         {
             registerService.validateCaptcha(body.getUsername(), body.getCode(), body.getUuid());
+        }
+        if (studentAccountService.forgotPasswordEmailRequired() || StringUtils.isNotEmpty(body.getEmail()))
+        {
+            String email = studentAccountService.validateForgotPasswordEmail(body);
+            emailCodeService.validateForgotPasswordCode(email, body.getEmailCode());
         }
         String msg = studentAccountService.forgotPassword(body);
         if (StringUtils.isEmpty(msg))
@@ -64,6 +77,15 @@ public class StudentAccountController extends BaseController
             passwordService.clearLoginRecordCache(body.getUsername());
         }
         return StringUtils.isEmpty(msg) ? success() : error(msg);
+    }
+
+    @Anonymous
+    @PostMapping("/forgotPasswordEmailCode")
+    public AjaxResult forgotPasswordEmailCode(@RequestBody ForgotPasswordBody body)
+    {
+        String email = studentAccountService.validateForgotPasswordEmail(body);
+        emailCodeService.sendForgotPasswordCode(email);
+        return success("邮箱验证码已发送");
     }
 
     @Anonymous
@@ -117,6 +139,10 @@ public class StudentAccountController extends BaseController
     @PutMapping("/students/{userId}/password")
     public AjaxResult resetPassword(@PathVariable Long userId, @RequestBody SysUser body)
     {
+        if (body == null)
+        {
+            return error("新密码不能为空");
+        }
         AjaxResult result = toAjax(studentAccountService.resetStudentPassword(userId, body.getPassword()));
         passwordService.clearLoginRecordCache(studentAccountService.selectStudentByUserId(userId).getUserName());
         return result;
@@ -126,6 +152,10 @@ public class StudentAccountController extends BaseController
     @PutMapping("/students/{userId}/status")
     public AjaxResult changeStatus(@PathVariable Long userId, @RequestBody SysUser body)
     {
+        if (body == null)
+        {
+            return error("用户状态不能为空");
+        }
         return toAjax(studentAccountService.changeStudentStatus(userId, body.getStatus()));
     }
 
@@ -133,6 +163,10 @@ public class StudentAccountController extends BaseController
     @PutMapping("/students/password")
     public AjaxResult resetPasswords(@RequestBody SysUser body)
     {
+        if (body == null)
+        {
+            return error("批量重置参数不能为空");
+        }
         AjaxResult result = toAjax(studentAccountService.resetStudentPasswords(body.getRoleIds(), body.getPassword()));
         for (Long userId : body.getRoleIds())
         {
@@ -145,6 +179,10 @@ public class StudentAccountController extends BaseController
     @PutMapping("/students/status")
     public AjaxResult changeStatuses(@RequestBody SysUser body)
     {
+        if (body == null)
+        {
+            return error("批量状态参数不能为空");
+        }
         return toAjax(studentAccountService.changeStudentStatuses(body.getRoleIds(), body.getStatus()));
     }
 
