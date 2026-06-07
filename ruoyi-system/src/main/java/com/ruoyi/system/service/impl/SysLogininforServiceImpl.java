@@ -62,4 +62,10 @@ public class SysLogininforServiceImpl implements ISysLogininforService
     {
         logininforMapper.cleanLogininfor();
     }
+
+    @Override
+    public void cleanLogininforBefore(String cutoffTime)
+    {
+        logininforMapper.cleanLogininforBefore(cutoffTime);
+    }
 }

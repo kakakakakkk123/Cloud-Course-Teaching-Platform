@@ -24,7 +24,9 @@ export default {
   data() {
     return {
       // 密码限制类型
-      pwdChrType: cache.session.get('pwrChrtype') || '0'
+      pwdChrType: cache.session.get('pwrChrtype') || '0',
+      pwdMinLength: Number(cache.session.get('pwdMinLength') || 5),
+      pwdMaxLength: Number(cache.session.get('pwdMaxLength') || 20)
     }
   },
   computed: {
@@ -33,7 +35,7 @@ export default {
       const rule = PWD_RULES[this.pwdChrType] || PWD_RULES['0']
       return [
         { required: true, message: '密码不能为空', trigger: 'blur' },
-        { min: 6, max: 20, message: '密码长度必须介于 6 和 20 之间', trigger: 'blur' },
+        { min: this.pwdMinLength, max: this.pwdMaxLength, message: `密码长度必须介于 ${this.pwdMinLength} 和 ${this.pwdMaxLength} 之间`, trigger: 'blur' },
         { pattern: rule.pattern, message: rule.message, trigger: 'blur' }
       ]
     },
@@ -41,8 +43,8 @@ export default {
     pwdPromptValidator() {
       const rule = PWD_RULES['0']
       return (value) => {
-        if (!value || value.length < 6 || value.length > 20) {
-          return '密码长度必须介于 6 和 20 之间'
+        if (!value || value.length < this.pwdMinLength || value.length > this.pwdMaxLength) {
+          return `密码长度必须介于 ${this.pwdMinLength} 和 ${this.pwdMaxLength} 之间`
         }
         if (!rule.pattern.test(value)) {
           return rule.message
@@ -54,7 +56,7 @@ export default {
       const rule = PWD_RULES[this.pwdChrType] || PWD_RULES['0']
       return [
         { required: true, message: '新密码不能为空', trigger: 'blur' },
-        { min: 6, max: 20, message: '新密码长度必须介于 6 和 20 之间', trigger: 'blur' },
+        { min: this.pwdMinLength, max: this.pwdMaxLength, message: `新密码长度必须介于 ${this.pwdMinLength} 和 ${this.pwdMaxLength} 之间`, trigger: 'blur' },
         { pattern: rule.pattern, message: rule.message, trigger: 'blur' }
       ]
     },
@@ -63,7 +65,7 @@ export default {
       const rule = PWD_RULES['0']
       return [
         { required: true, message: '请输入您的密码', trigger: 'blur' },
-        { min: 6, max: 20, message: '用户密码长度必须介于 6 和 20 之间', trigger: 'blur' },
+        { min: this.pwdMinLength, max: this.pwdMaxLength, message: `用户密码长度必须介于 ${this.pwdMinLength} 和 ${this.pwdMaxLength} 之间`, trigger: 'blur' },
         { pattern: rule.pattern, message: rule.message, trigger: 'blur' }
       ]
     }

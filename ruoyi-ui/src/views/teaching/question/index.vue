@@ -315,6 +315,7 @@ import {
 
 export default {
   name: "TeachingQuestion",
+  dicts: ["edu_question_type", "edu_course_difficulty", "sys_normal_disable"],
   data() {
     return {
       loading: false,
@@ -348,25 +349,31 @@ export default {
           { required: true, message: "请输入题干", trigger: "blur" }
         ]
       },
-      questionTypeOptions: [
-        { label: "单选题", value: "1" },
-        { label: "多选题", value: "2" },
-        { label: "判断题", value: "3" },
-        { label: "填空题", value: "4" },
-        { label: "简答题", value: "5" }
-      ],
-      difficultyOptions: [
-        { label: "简单", value: "1" },
-        { label: "中等", value: "2" },
-        { label: "困难", value: "3" }
-      ],
-      statusOptions: [
-        { label: "启用", value: "0" },
-        { label: "停用", value: "1" }
-      ]
     }
   },
   computed: {
+    questionTypeOptions() {
+      return this.dictOptions("edu_question_type", [
+        { label: "单选题", value: "1", raw: { listClass: "default" } },
+        { label: "多选题", value: "2", raw: { listClass: "warning" } },
+        { label: "判断题", value: "3", raw: { listClass: "success" } },
+        { label: "填空题", value: "4", raw: { listClass: "info" } },
+        { label: "简答题", value: "5", raw: { listClass: "danger" } }
+      ])
+    },
+    difficultyOptions() {
+      return this.dictOptions("edu_course_difficulty", [
+        { label: "初级", value: "1", raw: { listClass: "success" } },
+        { label: "中级", value: "2", raw: { listClass: "warning" } },
+        { label: "高级", value: "3", raw: { listClass: "danger" } }
+      ])
+    },
+    statusOptions() {
+      return this.dictOptions("sys_normal_disable", [
+        { label: "启用", value: "0", raw: { listClass: "primary" } },
+        { label: "停用", value: "1", raw: { listClass: "danger" } }
+      ])
+    },
     /** 当前题库编号 */
     bankId() {
       return this.$route.params.bankId
@@ -389,6 +396,21 @@ export default {
     this.getList()
   },
   methods: {
+    dictOptions(type, fallback) {
+      const options = this.dict && this.dict.type ? this.dict.type[type] : []
+      return options && options.length ? options : fallback
+    },
+    getOptionLabel(options, value, fallback) {
+      const option = options.find(item => item.value === String(value))
+      return option ? option.label : fallback
+    },
+    getOptionTagType(options, value, fallback = "info") {
+      const option = options.find(item => item.value === String(value))
+      if (!option || !option.raw) {
+        return fallback
+      }
+      return option.raw.listClass === "primary" ? "" : (option.raw.listClass || fallback)
+    },
     /** 查询试题列表 */
     getList() {
       if (!this.bankId) {
@@ -411,33 +433,19 @@ export default {
     },
     /** 获取题型文案 */
     getQuestionTypeText(value) {
-      const option = this.questionTypeOptions.find(item => item.value === String(value))
-      return option ? option.label : "未知题型"
+      return this.getOptionLabel(this.questionTypeOptions, value, "未知题型")
     },
     /** 获取题型标签样式 */
     getQuestionTypeTag(value) {
-      const tagMap = {
-        "1": "",
-        "2": "warning",
-        "3": "success",
-        "4": "info",
-        "5": "danger"
-      }
-      return tagMap[String(value)] || "info"
+      return this.getOptionTagType(this.questionTypeOptions, value)
     },
     /** 获取难度文案 */
     getDifficultyText(value) {
-      const option = this.difficultyOptions.find(item => item.value === String(value))
-      return option ? option.label : "中等"
+      return this.getOptionLabel(this.difficultyOptions, value, "中级")
     },
     /** 获取难度标签样式 */
     getDifficultyTag(value) {
-      const tagMap = {
-        "1": "success",
-        "2": "warning",
-        "3": "danger"
-      }
-      return tagMap[String(value)] || "info"
+      return this.getOptionTagType(this.difficultyOptions, value)
     },
     /** 截取题干预览 */
     getQuestionTitle(value) {

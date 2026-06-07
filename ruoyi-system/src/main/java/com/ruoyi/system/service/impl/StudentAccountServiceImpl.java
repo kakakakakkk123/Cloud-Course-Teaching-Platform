@@ -18,8 +18,10 @@ import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.domain.model.AccountSecuritySettings;
 import com.ruoyi.common.core.domain.model.ForgotPasswordBody;
 import com.ruoyi.common.core.domain.model.RegisterBody;
+import com.ruoyi.common.core.text.Convert;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.PasswordPolicyUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.system.domain.StudentProfile;
@@ -46,6 +48,8 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     private static final String LOGIN_BLOCKED_UA_KEY = "sys.login.blockedUserAgentKeywords";
     private static final String FORGOT_PASSWORD_EMAIL_REQUIRED_KEY = "sys.account.forgotPasswordEmailRequired";
     private static final String INIT_PASSWORD_KEY = "sys.user.initPassword";
+    private static final String STUDENT_DEFAULT_STATUS_KEY = "sys.account.studentDefaultStatus";
+    private static final String MISSING_STUDENT_POLICY_KEY = "sys.account.missingStudentPolicy";
     @Autowired
     private ISysUserService userService;
 
@@ -167,7 +171,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         ensurePasswordValid(password, "密码");
         user.setRoleIds(new Long[] { studentRole.getRoleId() });
         user.setPassword(SecurityUtils.encryptPassword(password));
-        user.setStatus(UserConstants.NORMAL);
+        user.setStatus(studentDefaultStatus());
         user.setPwdUpdateDate(DateUtils.getNowDate());
         user.setCreateBy("public");
         if (userService.insertUser(user) <= 0)
@@ -447,7 +451,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
                     }
                     user.setRoleIds(new Long[] { studentRole.getRoleId() });
                     user.setPassword(SecurityUtils.encryptPassword(configService.selectConfigByKey(INIT_PASSWORD_KEY)));
-                    user.setStatus(UserConstants.NORMAL);
+                    user.setStatus(studentDefaultStatus());
                     user.setCreateBy(operName);
                     user.setCreateTime(DateUtils.getNowDate());
                     user.setPwdUpdateDate(DateUtils.getNowDate());
@@ -499,7 +503,8 @@ public class StudentAccountServiceImpl implements IStudentAccountService
                 .map(SysUser::getUserName)
                 .filter(name -> !importedUserNames.contains(name))
                 .collect(Collectors.toList());
-        if (Boolean.TRUE.equals(disableMissing) && !CollectionUtils.isEmpty(missingStudents))
+        if ((Boolean.TRUE.equals(disableMissing) || "disable".equalsIgnoreCase(configValue(MISSING_STUDENT_POLICY_KEY)))
+                && !CollectionUtils.isEmpty(missingStudents))
         {
             for (String userName : missingStudents)
             {
@@ -525,7 +530,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         if (!StringUtils.isEmpty(missingText))
         {
             successMsg.append("<br/>").append("提示：").append(missingText);
-            if (Boolean.TRUE.equals(disableMissing))
+            if (Boolean.TRUE.equals(disableMissing) || "disable".equalsIgnoreCase(configValue(MISSING_STUDENT_POLICY_KEY)))
             {
                 successMsg.append("，已自动停用名单外账号");
             }
@@ -607,15 +612,20 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     private void ensurePasswordValid(String password, String label)
     {
         String target = StringUtils.trim(password);
-        if (StringUtils.isEmpty(target))
+        String error = PasswordPolicyUtils.validate(target,
+                Convert.toInt(configValue("sys.account.passwordMinLength"), UserConstants.PASSWORD_MIN_LENGTH),
+                Convert.toInt(configValue("sys.account.passwordMaxLength"), UserConstants.PASSWORD_MAX_LENGTH),
+                configValue("sys.account.chrtype"));
+        if (StringUtils.isNotEmpty(error))
         {
-            throw new ServiceException(label + "不能为空。");
+            throw new ServiceException(error.replaceFirst("^密码", label));
         }
-        if (target.length() < UserConstants.PASSWORD_MIN_LENGTH || target.length() > UserConstants.PASSWORD_MAX_LENGTH)
-        {
-            throw new ServiceException(label + "长度必须在 " + UserConstants.PASSWORD_MIN_LENGTH + " 到 "
-                    + UserConstants.PASSWORD_MAX_LENGTH + " 个字符之间。");
-        }
+    }
+
+    private String studentDefaultStatus()
+    {
+        String status = configValue(STUDENT_DEFAULT_STATUS_KEY);
+        return UserConstants.USER_DISABLE.equals(status) ? UserConstants.USER_DISABLE : UserConstants.NORMAL;
     }
 
     private void ensureStudentIds(Long[] userIds)

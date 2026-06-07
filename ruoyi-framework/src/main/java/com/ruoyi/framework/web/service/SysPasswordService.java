@@ -16,6 +16,7 @@ import com.ruoyi.common.utils.ServletUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.ip.IpUtils;
 import com.ruoyi.framework.security.context.AuthenticationContextHolder;
+import com.ruoyi.system.service.ISysConfigService;
 
 /**
  * 登录密码方法
@@ -29,6 +30,9 @@ public class SysPasswordService
 
     @Autowired
     private RedisCache redisCache;
+
+    @Autowired
+    private ISysConfigService configService;
 
     @Value(value = "${user.password.maxRetryCount}")
     private int maxRetryCount;
@@ -72,7 +76,7 @@ public class SysPasswordService
     private boolean isLocked(String key)
     {
         Integer retryCount = redisCache.getCacheObject(key);
-        return retryCount != null && retryCount >= maxRetryCount;
+        return retryCount != null && retryCount >= currentMaxRetryCount();
     }
 
     private void checkLocked(String username, String ip, String deviceId)
@@ -81,7 +85,7 @@ public class SysPasswordService
                 || isLocked(getIpCacheKey(ip))
                 || isLocked(getDeviceCacheKey(deviceId)))
         {
-            throw new UserPasswordRetryLimitExceedException(maxRetryCount, lockTime);
+            throw new UserPasswordRetryLimitExceedException(currentMaxRetryCount(), currentLockTime());
         }
     }
 
@@ -89,10 +93,10 @@ public class SysPasswordService
     {
         Integer retryCount = redisCache.getCacheObject(key);
         retryCount = retryCount == null ? 1 : retryCount + 1;
-        redisCache.setCacheObject(key, retryCount, lockTime, TimeUnit.MINUTES);
-        if (retryCount >= maxRetryCount)
+        redisCache.setCacheObject(key, retryCount, currentLockTime(), TimeUnit.MINUTES);
+        if (retryCount >= currentMaxRetryCount())
         {
-            throw new UserPasswordRetryLimitExceedException(maxRetryCount, lockTime);
+            throw new UserPasswordRetryLimitExceedException(currentMaxRetryCount(), currentLockTime());
         }
     }
 
@@ -140,5 +144,31 @@ public class SysPasswordService
         {
             redisCache.deleteObject(key);
         }
+    }
+
+    private int currentMaxRetryCount()
+    {
+        return configInt("sys.login.maxRetryCount", maxRetryCount);
+    }
+
+    private int currentLockTime()
+    {
+        return configInt("sys.login.lockTime", lockTime);
+    }
+
+    private int configInt(String key, int fallback)
+    {
+        try
+        {
+            String value = configService.selectConfigByKey(key);
+            if (StringUtils.isNotEmpty(value))
+            {
+                return Integer.parseInt(value);
+            }
+        }
+        catch (Exception ignored)
+        {
+        }
+        return fallback;
     }
 }

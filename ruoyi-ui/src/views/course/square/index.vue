@@ -52,11 +52,11 @@
         <span class="banner-card__hint">作为辅助浏览入口展示，课程搜索与列表仍是本页重点</span>
       </div>
       <el-carousel height="200px" indicator-position="outside" :interval="4800">
-        <el-carousel-item v-for="item in featuredCourses" :key="item.courseId">
-          <div class="banner-item banner-item--compact" @click="openCourseDetail(item.courseId)">
-            <img :src="getCourseCover(item.coverImage)" :alt="item.courseName">
+        <el-carousel-item v-for="item in featuredCourses" :key="item.bannerId || item.courseId">
+          <div class="banner-item banner-item--compact" @click="handleBannerClick(item)">
+            <img :src="getCourseCover(item.bannerImage || item.coverImage)" :alt="item.bannerTitle || item.courseName">
             <div class="banner-item__mask">
-              <h3>{{ item.courseName }}</h3>
+              <h3>{{ item.bannerTitle || item.courseName }}</h3>
               <p>{{ item.courseSubtitle || item.intro || "点击查看课程详情" }}</p>
             </div>
           </div>
@@ -161,6 +161,8 @@
 import { getPortalHome, listPortalCourses } from "@/api/portal"
 import CourseCard from "../components/CourseCard"
 import CourseSection from "../components/CourseSection"
+import coursePlaceholder from "@/assets/images/course-placeholder.svg"
+import { resolveResourceUrl } from "@/utils/resource"
 
 export default {
   name: "CourseSquare",
@@ -168,6 +170,7 @@ export default {
   data() {
     return {
       pageLoading: false,
+      coursePlaceholder,
       total: 0,
       courseList: [],
       homeData: {
@@ -202,17 +205,7 @@ export default {
     },
     /** 课程广场精选横幅数据 */
     featuredCourses() {
-      const source = [
-        ...(this.homeData.recommendCourses || []),
-        ...(this.homeData.latestCourses || [])
-      ]
-      const courseMap = new Map()
-      source.forEach(item => {
-        if (item && item.courseId && !courseMap.has(item.courseId)) {
-          courseMap.set(item.courseId, item)
-        }
-      })
-      return Array.from(courseMap.values()).slice(0, 4)
+      return (this.homeData.banners || []).slice(0, 4)
     }
   },
   created() {
@@ -286,12 +279,12 @@ export default {
     },
     /** 处理轮播图点击 */
     handleBannerClick(item) {
-      if (item.courseId) {
-        this.$router.push(`/course/${item.courseId}`)
-        return
-      }
       if (item.jumpUrl) {
         window.open(item.jumpUrl, "_blank")
+        return
+      }
+      if (item.courseId) {
+        this.$router.push(`/course/${item.courseId}`)
       }
     },
     /** 跳转课程详情 */
@@ -301,22 +294,13 @@ export default {
     /** 获取课程封面地址 */
     getCourseCover(cover) {
       if (!cover) {
-        return "https://dummyimage.com/720x420/dbeafe/1d4ed8&text=Course"
+        return this.coursePlaceholder
       }
-      if (/^https?:\/\//.test(cover)) {
-        return cover
-      }
-      return process.env.VUE_APP_BASE_API + cover
+      return resolveResourceUrl(cover)
     },
     /** 处理图片完整地址 */
     getImageUrl(url) {
-      if (!url) {
-        return ""
-      }
-      if (/^https?:\/\//.test(url)) {
-        return url
-      }
-      return process.env.VUE_APP_BASE_API + url
+      return resolveResourceUrl(url)
     }
   }
 }

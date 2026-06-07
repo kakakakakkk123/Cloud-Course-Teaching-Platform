@@ -25,6 +25,8 @@
 </template>
 
 <script>
+import { resolveResourceUrl } from "@/utils/resource"
+
 export default {
   name: "CourseCard",
   props: {
@@ -44,10 +46,7 @@ export default {
       if (!cover) {
         return ""
       }
-      if (/^https?:\/\//.test(cover)) {
-        return cover
-      }
-      return process.env.VUE_APP_BASE_API + cover
+      return resolveResourceUrl(cover)
     },
     /** 课程难度文案 */
     difficultyText() {

@@ -122,8 +122,8 @@
         <el-table-column label="查看次数" prop="viewCount" width="90" align="center" />
         <el-table-column label="发布状态" width="100" align="center">
           <template slot-scope="scope">
-            <el-tag size="mini" :type="scope.row.publishStatus === '1' ? 'success' : 'info'">
-              {{ scope.row.publishStatus === "1" ? "已发布" : "草稿" }}
+            <el-tag size="mini" :type="getPublishTagType(scope.row.publishStatus)">
+              {{ getPublishStatusLabel(scope.row.publishStatus) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -346,6 +346,7 @@ import {
 
 export default {
   name: "TeachingContent",
+  dicts: ["edu_content_type", "edu_content_source_type", "edu_course_publish_status"],
   data() {
     const validateLinkUrl = (rule, value, callback) => {
       if (this.showLinkInput && value && !/^https?:\/\//.test(value)) {
@@ -407,21 +408,6 @@ export default {
           { validator: validateLinkUrl, trigger: "blur" }
         ]
       },
-      contentTypeOptions: [
-        { label: "文档", value: "1" },
-        { label: "视频", value: "2" },
-        { label: "图片", value: "3" },
-        { label: "外链", value: "4" },
-        { label: "考试", value: "5" }
-      ],
-      sourceTypeOptions: [
-        { label: "上传文件", value: "1" },
-        { label: "外部链接", value: "2" }
-      ],
-      publishStatusOptions: [
-        { label: "草稿", value: "0" },
-        { label: "已发布", value: "1" }
-      ],
       yesNoOptions: [
         { label: "关闭", value: "0" },
         { label: "允许", value: "1" }
@@ -431,6 +417,27 @@ export default {
     }
   },
   computed: {
+    contentTypeOptions() {
+      return this.dictOptions("edu_content_type", [
+        { label: "文档", value: "1", raw: { listClass: "primary" } },
+        { label: "视频", value: "2", raw: { listClass: "success" } },
+        { label: "图片", value: "3", raw: { listClass: "warning" } },
+        { label: "外链", value: "4", raw: { listClass: "info" } },
+        { label: "考试", value: "5", raw: { listClass: "danger" } }
+      ])
+    },
+    sourceTypeOptions() {
+      return this.dictOptions("edu_content_source_type", [
+        { label: "上传文件", value: "1", raw: { listClass: "primary" } },
+        { label: "外部链接", value: "2", raw: { listClass: "info" } }
+      ])
+    },
+    publishStatusOptions() {
+      return this.dictOptions("edu_course_publish_status", [
+        { label: "草稿", value: "0", raw: { listClass: "info" } },
+        { label: "已发布", value: "1", raw: { listClass: "success" } }
+      ]).filter(item => item.value !== "2")
+    },
     /** 当前课程编号 */
     currentCourseId() {
       return Number(this.$route.params.courseId || this.$route.query.courseId || 0)
@@ -495,6 +502,21 @@ export default {
     }
   },
   methods: {
+    dictOptions(type, fallback) {
+      const options = this.dict && this.dict.type ? this.dict.type[type] : []
+      return options && options.length ? options : fallback
+    },
+    getOptionLabel(options, value, fallback) {
+      const option = options.find(item => item.value === String(value))
+      return option ? option.label : fallback
+    },
+    getOptionTagType(options, value, fallback = "info") {
+      const option = options.find(item => item.value === String(value))
+      if (!option || !option.raw) {
+        return fallback
+      }
+      return option.raw.listClass === "primary" ? "" : (option.raw.listClass || fallback)
+    },
     /** 查询课程基础信息 */
     getCourseInfo() {
       getCourse(this.currentCourseId).then(response => {
@@ -542,24 +564,23 @@ export default {
     },
     /** 内容类型名称 */
     getContentTypeLabel(value) {
-      const option = this.contentTypeOptions.find(item => item.value === value)
-      return option ? option.label : "未知"
+      return this.getOptionLabel(this.contentTypeOptions, value, "未知")
     },
     /** 内容类型标签样式 */
     getContentTypeTagType(value) {
-      const tagMap = {
-        "1": "primary",
-        "2": "success",
-        "3": "warning",
-        "4": "info",
-        "5": "danger"
-      }
-      return tagMap[value] || "info"
+      return this.getOptionTagType(this.contentTypeOptions, value)
     },
     /** 来源类型名称 */
     getSourceTypeLabel(value) {
-      const option = this.sourceTypeOptions.find(item => item.value === value)
-      return option ? option.label : "-"
+      return this.getOptionLabel(this.sourceTypeOptions, value, "-")
+    },
+    /** 发布状态名称 */
+    getPublishStatusLabel(value) {
+      return this.getOptionLabel(this.publishStatusOptions, value, "未知")
+    },
+    /** 发布状态标签样式 */
+    getPublishTagType(value) {
+      return this.getOptionTagType(this.publishStatusOptions, value)
     },
     /** 格式化考试名称 */
     formatExamName(examId) {

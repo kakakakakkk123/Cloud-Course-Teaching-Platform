@@ -73,4 +73,10 @@ public class SysOperLogServiceImpl implements ISysOperLogService
     {
         operLogMapper.cleanOperLog();
     }
+
+    @Override
+    public void cleanOperLogBefore(String cutoffTime)
+    {
+        operLogMapper.cleanOperLogBefore(cutoffTime);
+    }
 }

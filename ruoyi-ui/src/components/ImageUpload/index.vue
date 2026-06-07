@@ -46,7 +46,7 @@
 
 <script>
 import { getToken } from "@/utils/auth"
-import { isExternal } from "@/utils/validate"
+import { resolveResourceUrl } from "@/utils/resource"
 import Sortable from 'sortablejs'
 
 export default {
@@ -126,15 +126,13 @@ export default {
       handler(val) {
         if (val) {
           // 首先将值转为数组
-          const list = Array.isArray(val) ? val : this.value.split(',')
+          const list = Array.isArray(val) ? val : val.split(',')
           // 然后将数组转为对象数组
-          this.fileList = list.map(item => {
+          this.fileList = list.filter(item => item).map(item => {
             if (typeof item === "string") {
-              if (item.indexOf(this.baseUrl) === -1 && !isExternal(item)) {
-                  item = { name: this.baseUrl + item, url: this.baseUrl + item }
-              } else {
-                  item = { name: item, url: item }
-              }
+              item = { name: item, url: resolveResourceUrl(item) }
+            } else if (item.url) {
+              item = { ...item, url: resolveResourceUrl(item.url) }
             }
             return item
           })
@@ -196,7 +194,7 @@ export default {
     // 上传成功回调
     handleUploadSuccess(res, file) {
       if (res.code === 200) {
-        this.uploadList.push({ name: res.fileName, url: res.fileName })
+        this.uploadList.push({ name: res.fileName, url: resolveResourceUrl(res.fileName) })
         this.uploadedSuccessfully()
       } else {
         this.number--
@@ -231,16 +229,22 @@ export default {
     },
     // 预览
     handlePictureCardPreview(file) {
-      this.dialogImageUrl = file.url
+      this.dialogImageUrl = resolveResourceUrl(file.url)
       this.dialogVisible = true
     },
     // 对象转成指定字符串分隔
+    normalizeResourceValue(url) {
+      if (url && url.indexOf(this.baseUrl) === 0) {
+        return url.replace(this.baseUrl, "")
+      }
+      return url
+    },
     listToString(list, separator) {
       let strs = ""
       separator = separator || ","
       for (let i in list) {
         if (list[i].url) {
-          strs += list[i].url.replace(this.baseUrl, "") + separator
+          strs += this.normalizeResourceValue(list[i].url) + separator
         }
       }
       return strs != '' ? strs.substr(0, strs.length - 1) : ''

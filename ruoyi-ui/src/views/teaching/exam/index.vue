@@ -262,6 +262,7 @@ import {
 
 export default {
   name: "TeachingExamManage",
+  dicts: ["edu_exam_status"],
   data() {
     return {
       loading: false,
@@ -290,14 +291,16 @@ export default {
           { required: true, message: "请选择发布状态", trigger: "change" }
         ]
       },
-      statusOptions: [
-        { label: "草稿", value: "0" },
-        { label: "已发布", value: "1" },
-        { label: "已结束", value: "2" }
-      ]
     }
   },
   computed: {
+    statusOptions() {
+      return this.dictOptions("edu_exam_status", [
+        { label: "草稿", value: "0", raw: { listClass: "info" } },
+        { label: "已发布", value: "1", raw: { listClass: "success" } },
+        { label: "已结束", value: "2", raw: { listClass: "warning" } }
+      ])
+    },
     /** 当前试卷编号 */
     paperId() {
       return this.$route.params.paperId
@@ -330,6 +333,21 @@ export default {
     this.getList()
   },
   methods: {
+    dictOptions(type, fallback) {
+      const options = this.dict && this.dict.type ? this.dict.type[type] : []
+      return options && options.length ? options : fallback
+    },
+    getOptionLabel(options, value, fallback) {
+      const option = options.find(item => item.value === String(value))
+      return option ? option.label : fallback
+    },
+    getOptionTagType(options, value, fallback = "info") {
+      const option = options.find(item => item.value === String(value))
+      if (!option || !option.raw) {
+        return fallback
+      }
+      return option.raw.listClass === "primary" ? "" : (option.raw.listClass || fallback)
+    },
     /** 查询考试列表 */
     getList() {
       this.loading = true
@@ -347,17 +365,11 @@ export default {
     },
     /** 获取状态文案 */
     getStatusText(value) {
-      const option = this.statusOptions.find(item => item.value === String(value))
-      return option ? option.label : "未知"
+      return this.getOptionLabel(this.statusOptions, value, "未知")
     },
     /** 获取状态标签样式 */
     getStatusTag(value) {
-      const tagMap = {
-        "0": "info",
-        "1": "success",
-        "2": "warning"
-      }
-      return tagMap[String(value)] || "info"
+      return this.getOptionTagType(this.statusOptions, value)
     },
     /** 选择行变化 */
     handleSelectionChange(selection) {

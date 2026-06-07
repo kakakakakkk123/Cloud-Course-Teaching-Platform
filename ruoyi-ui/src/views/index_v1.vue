@@ -112,6 +112,7 @@ import { mapGetters } from "vuex"
 import { getPortalHome } from "@/api/portal"
 import { listCourse } from "@/api/edu/course"
 import { listNoticeTop } from "@/api/system/notice"
+import { resolveResourceUrl } from "@/utils/resource"
 
 export default {
   name: "Dashboard",
@@ -271,10 +272,7 @@ export default {
       if (!cover) {
         return ""
       }
-      if (/^https?:\/\//.test(cover)) {
-        return cover
-      }
-      return process.env.VUE_APP_BASE_API + cover
+      return resolveResourceUrl(cover)
     },
     getCourseInitial(name) {
       return (name || "课程").slice(0, 2)
