@@ -1,7 +1,10 @@
 package com.ruoyi.web.controller.common;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -35,6 +38,15 @@ public class CommonController
     private ServerConfig serverConfig;
 
     private static final String FILE_DELIMITER = ",";
+
+    private static final Set<String> ALLOWED_UPLOAD_DIRECTORIES = new HashSet<String>(Arrays.asList(
+            "course/cover",
+            "course/banner",
+            "course/content/video",
+            "course/content/image",
+            "course/content/document",
+            "course/content/cover"
+    ));
 
     /**
      * 通用下载请求
@@ -72,12 +84,12 @@ public class CommonController
      * 通用上传请求（单个）
      */
     @PostMapping("/upload")
-    public AjaxResult uploadFile(MultipartFile file) throws Exception
+    public AjaxResult uploadFile(MultipartFile file, String directory) throws Exception
     {
         try
         {
             // 上传文件路径
-            String filePath = RuoYiConfig.getUploadPath();
+            String filePath = resolveUploadPath(directory);
             // 上传并返回新文件名称
             String fileName = FileUploadUtils.upload(filePath, file);
             String url = serverConfig.getUrl() + fileName;
@@ -86,6 +98,7 @@ public class CommonController
             ajax.put("fileName", fileName);
             ajax.put("newFileName", FileUtils.getName(fileName));
             ajax.put("originalFilename", file.getOriginalFilename());
+            ajax.put("directory", normalizeUploadDirectory(directory));
             return ajax;
         }
         catch (Exception e)
@@ -98,12 +111,12 @@ public class CommonController
      * 通用上传请求（多个）
      */
     @PostMapping("/uploads")
-    public AjaxResult uploadFiles(List<MultipartFile> files) throws Exception
+    public AjaxResult uploadFiles(List<MultipartFile> files, String directory) throws Exception
     {
         try
         {
             // 上传文件路径
-            String filePath = RuoYiConfig.getUploadPath();
+            String filePath = resolveUploadPath(directory);
             List<String> urls = new ArrayList<String>();
             List<String> fileNames = new ArrayList<String>();
             List<String> newFileNames = new ArrayList<String>();
@@ -123,12 +136,49 @@ public class CommonController
             ajax.put("fileNames", StringUtils.join(fileNames, FILE_DELIMITER));
             ajax.put("newFileNames", StringUtils.join(newFileNames, FILE_DELIMITER));
             ajax.put("originalFilenames", StringUtils.join(originalFilenames, FILE_DELIMITER));
+            ajax.put("directory", normalizeUploadDirectory(directory));
             return ajax;
         }
         catch (Exception e)
         {
             return AjaxResult.error(e.getMessage());
         }
+    }
+
+    private String resolveUploadPath(String directory)
+    {
+        String normalizedDirectory = normalizeUploadDirectory(directory);
+        if (StringUtils.isEmpty(normalizedDirectory))
+        {
+            return RuoYiConfig.getUploadPath();
+        }
+        if (!ALLOWED_UPLOAD_DIRECTORIES.contains(normalizedDirectory))
+        {
+            throw new IllegalArgumentException("不支持的上传目录: " + normalizedDirectory);
+        }
+        return RuoYiConfig.getProfile() + "/" + normalizedDirectory;
+    }
+
+    private String normalizeUploadDirectory(String directory)
+    {
+        if (StringUtils.isEmpty(directory))
+        {
+            return "";
+        }
+        String normalizedDirectory = directory.trim().replace("\\", "/");
+        while (normalizedDirectory.startsWith("/"))
+        {
+            normalizedDirectory = normalizedDirectory.substring(1);
+        }
+        while (normalizedDirectory.endsWith("/"))
+        {
+            normalizedDirectory = normalizedDirectory.substring(0, normalizedDirectory.length() - 1);
+        }
+        if (normalizedDirectory.contains("..") || normalizedDirectory.contains("//"))
+        {
+            throw new IllegalArgumentException("上传目录非法: " + directory);
+        }
+        return normalizedDirectory;
     }
 
     /**

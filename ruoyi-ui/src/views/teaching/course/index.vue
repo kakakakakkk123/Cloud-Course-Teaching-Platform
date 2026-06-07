@@ -307,7 +307,7 @@
         </el-row>
 
         <el-form-item label="课程封面" prop="coverImage">
-          <image-upload v-model="form.coverImage" :limit="1" />
+          <image-upload v-model="form.coverImage" :limit="1" directory="course/cover" />
         </el-form-item>
 
         <el-form-item label="课程简介" prop="intro">
