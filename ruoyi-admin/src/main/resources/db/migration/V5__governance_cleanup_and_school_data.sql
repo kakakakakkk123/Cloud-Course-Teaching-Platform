@@ -1,4 +1,4 @@
--- 1. Retire old student-account menus that still point to account/student/index.
+﻿-- 1. Retire old student-account menus that still point to account/student/index.
 update sys_menu
 set visible = '1', status = '1'
 where menu_id in (2001, 2002, 2003, 2004, 2005, 2102)
@@ -23,25 +23,25 @@ from sys_menu m
 where m.menu_id in (2301, 2302, 2303, 2304, 2306, 2400, 2401, 2500, 2501, 2502);
 
 -- 3. Replace demo company departments with school-style organization data.
-update sys_dept set dept_name = '明德大学', leader = '校长办公室', phone = '010-62000000', email = 'office@mingde.edu.cn'
+update sys_dept set dept_name = '明德大学', leader = '校长办公室', phone = '01062000000', email = 'office@mingde.edu.cn'
 where dept_id = 100;
-update sys_dept set dept_name = '校本部', leader = '党政办公室', phone = '010-62000001', email = 'admin@mingde.edu.cn'
+update sys_dept set dept_name = '校本部', leader = '党政办公室', phone = '01062000001', email = 'admin@mingde.edu.cn'
 where dept_id = 101;
-update sys_dept set dept_name = '继续教育学院', leader = '继续教育学院', phone = '010-62000002', email = 'jxjy@mingde.edu.cn'
+update sys_dept set dept_name = '继续教育学院', leader = '继续教育学院', phone = '01062000002', email = 'jxjy@mingde.edu.cn'
 where dept_id = 102;
-update sys_dept set dept_name = '信息化办公室', leader = '信息化办公室', phone = '010-62000103', email = 'it@mingde.edu.cn'
+update sys_dept set dept_name = '信息化办公室', leader = '信息化办公室', phone = '01062000103', email = 'it@mingde.edu.cn'
 where dept_id = 103;
-update sys_dept set dept_name = '教务处', leader = '教务处', phone = '010-62000104', email = 'jwc@mingde.edu.cn'
+update sys_dept set dept_name = '教务处', leader = '教务处', phone = '01062000104', email = 'jwc@mingde.edu.cn'
 where dept_id = 104;
-update sys_dept set dept_name = '质量评估中心', leader = '质量评估中心', phone = '010-62000105', email = 'quality@mingde.edu.cn'
+update sys_dept set dept_name = '质量评估中心', leader = '质量评估中心', phone = '01062000105', email = 'quality@mingde.edu.cn'
 where dept_id = 105;
-update sys_dept set dept_name = '财务处', leader = '财务处', phone = '010-62000106', email = 'finance@mingde.edu.cn'
+update sys_dept set dept_name = '财务处', leader = '财务处', phone = '01062000106', email = 'finance@mingde.edu.cn'
 where dept_id = 106;
-update sys_dept set dept_name = '后勤保障处', leader = '后勤保障处', phone = '010-62000107', email = 'logistics@mingde.edu.cn'
+update sys_dept set dept_name = '后勤保障处', leader = '后勤保障处', phone = '01062000107', email = 'logistics@mingde.edu.cn'
 where dept_id = 107;
-update sys_dept set dept_name = '招生就业处', leader = '招生就业处', phone = '010-62000108', email = 'career@mingde.edu.cn'
+update sys_dept set dept_name = '招生就业处', leader = '招生就业处', phone = '01062000108', email = 'career@mingde.edu.cn'
 where dept_id = 108;
-update sys_dept set dept_name = '学生工作处', leader = '学生工作处', phone = '010-62000109', email = 'xgc@mingde.edu.cn'
+update sys_dept set dept_name = '学生工作处', leader = '学生工作处', phone = '01062000109', email = 'xgc@mingde.edu.cn'
 where dept_id = 109;
 
 update sys_user set nick_name = '系统管理员', email = 'admin@mingde.edu.cn', phonenumber = '01062000000'
@@ -52,7 +52,7 @@ where user_id = 2 and user_name = 'ry';
 -- 4. Rebuild the academic organization tree as college -> major -> class.
 update sys_dept
 set dept_name = '院系分类', parent_id = 100, ancestors = '0,100', order_num = 10,
-    leader = '教务处', phone = '010-62001000', email = 'schools@mingde.edu.cn', status = '0', del_flag = '0'
+    leader = '教务处', phone = '01062001000', email = 'schools@mingde.edu.cn', status = '0', del_flag = '0'
 where dept_id = 120;
 
 update sys_dept
@@ -62,38 +62,38 @@ where dept_id <> 120
 
 insert into sys_dept(dept_id, parent_id, ancestors, dept_name, order_num, leader, phone, email, status, del_flag, create_by, create_time)
 values
-(1201, 120, '0,100,120', '信息工程学院', 1, '信息工程学院', '010-62001201', 'ise@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120101, 1201, '0,100,120,1201', '软件工程', 1, '软件工程教研室', '010-62012101', 'se@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12010101, 120101, '0,100,120,1201,120101', '软件工程2024级1班', 1, '软件工程2024级1班', '010-62110101', 'se202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12010102, 120101, '0,100,120,1201,120101', '软件工程2023级1班', 2, '软件工程2023级1班', '010-62110102', 'se202301@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120102, 1201, '0,100,120,1201', '数据科学与大数据技术', 2, '数据科学教研室', '010-62012102', 'data@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12010201, 120102, '0,100,120,1201,120102', '数据科学与大数据技术2024级1班', 1, '数据科学与大数据技术2024级1班', '010-62110201', 'data202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120103, 1201, '0,100,120,1201', '计算机科学与技术', 3, '计算机科学教研室', '010-62012103', 'cs@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12010301, 120103, '0,100,120,1201,120103', '计算机科学与技术2024级1班', 1, '计算机科学与技术2024级1班', '010-62110301', 'cs202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(1202, 120, '0,100,120', '经济管理学院', 2, '经济管理学院', '010-62001202', 'sem@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120201, 1202, '0,100,120,1202', '工商管理', 1, '工商管理教研室', '010-62012201', 'business@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12020101, 120201, '0,100,120,1202,120201', '工商管理2024级1班', 1, '工商管理2024级1班', '010-62120101', 'business202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120202, 1202, '0,100,120,1202', '市场营销', 2, '市场营销教研室', '010-62012202', 'marketing@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12020201, 120202, '0,100,120,1202,120202', '市场营销2024级1班', 1, '市场营销2024级1班', '010-62120201', 'marketing202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120203, 1202, '0,100,120,1202', '会计学', 3, '会计学教研室', '010-62012203', 'accounting@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12020301, 120203, '0,100,120,1202,120203', '会计学2024级1班', 1, '会计学2024级1班', '010-62120301', 'accounting202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120204, 1202, '0,100,120,1202', '金融学', 4, '金融学教研室', '010-62012204', 'finance@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12020401, 120204, '0,100,120,1202,120204', '金融学2024级1班', 1, '金融学2024级1班', '010-62120401', 'finance202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(1203, 120, '0,100,120', '外国语学院', 3, '外国语学院', '010-62001203', 'foreign@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120301, 1203, '0,100,120,1203', '英语', 1, '英语教研室', '010-62012301', 'english@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12030101, 120301, '0,100,120,1203,120301', '英语2024级1班', 1, '英语2024级1班', '010-62130101', 'english202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120302, 1203, '0,100,120,1203', '商务英语', 2, '商务英语教研室', '010-62012302', 'business-english@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12030201, 120302, '0,100,120,1203,120302', '商务英语2024级1班', 1, '商务英语2024级1班', '010-62130201', 'business-english202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120303, 1203, '0,100,120,1203', '日语', 3, '日语教研室', '010-62012303', 'japanese@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12030301, 120303, '0,100,120,1203,120303', '日语2024级1班', 1, '日语2024级1班', '010-62130301', 'japanese202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(1204, 120, '0,100,120', '艺术与传媒学院', 4, '艺术与传媒学院', '010-62001204', 'artmedia@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120401, 1204, '0,100,120,1204', '视觉传达设计', 1, '视觉传达设计教研室', '010-62012401', 'visual@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12040101, 120401, '0,100,120,1204,120401', '视觉传达设计2024级1班', 1, '视觉传达设计2024级1班', '010-62140101', 'visual202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120402, 1204, '0,100,120,1204', '数字媒体艺术', 2, '数字媒体艺术教研室', '010-62012402', 'digital-art@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12040201, 120402, '0,100,120,1204,120402', '数字媒体艺术2024级1班', 1, '数字媒体艺术2024级1班', '010-62140201', 'digital-art202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(1205, 120, '0,100,120', '马克思主义学院', 5, '马克思主义学院', '010-62001205', 'marxism@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(120501, 1205, '0,100,120,1205', '思想政治教育', 1, '思想政治教育教研室', '010-62012501', 'ideology@mingde.edu.cn', '0', '0', 'admin', sysdate()),
-(12050101, 120501, '0,100,120,1205,120501', '思想政治教育2024级1班', 1, '思想政治教育2024级1班', '010-62150101', 'ideology202401@mingde.edu.cn', '0', '0', 'admin', sysdate())
+(1201, 120, '0,100,120', '信息工程学院', 1, '信息工程学院', '01062001201', 'ise@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120101, 1201, '0,100,120,1201', '软件工程', 1, '软件工程教研室', '01062012101', 'se@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12010101, 120101, '0,100,120,1201,120101', '软件工程2024级1班', 1, '软件工程2024级1班', '01062110101', 'se202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12010102, 120101, '0,100,120,1201,120101', '软件工程2023级1班', 2, '软件工程2023级1班', '01062110102', 'se202301@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120102, 1201, '0,100,120,1201', '数据科学与大数据技术', 2, '数据科学教研室', '01062012102', 'data@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12010201, 120102, '0,100,120,1201,120102', '数据科学与大数据技术2024级1班', 1, '数据科学与大数据技术2024级1班', '01062110201', 'data202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120103, 1201, '0,100,120,1201', '计算机科学与技术', 3, '计算机科学教研室', '01062012103', 'cs@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12010301, 120103, '0,100,120,1201,120103', '计算机科学与技术2024级1班', 1, '计算机科学与技术2024级1班', '01062110301', 'cs202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(1202, 120, '0,100,120', '经济管理学院', 2, '经济管理学院', '01062001202', 'sem@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120201, 1202, '0,100,120,1202', '工商管理', 1, '工商管理教研室', '01062012201', 'business@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12020101, 120201, '0,100,120,1202,120201', '工商管理2024级1班', 1, '工商管理2024级1班', '01062120101', 'business202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120202, 1202, '0,100,120,1202', '市场营销', 2, '市场营销教研室', '01062012202', 'marketing@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12020201, 120202, '0,100,120,1202,120202', '市场营销2024级1班', 1, '市场营销2024级1班', '01062120201', 'marketing202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120203, 1202, '0,100,120,1202', '会计学', 3, '会计学教研室', '01062012203', 'accounting@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12020301, 120203, '0,100,120,1202,120203', '会计学2024级1班', 1, '会计学2024级1班', '01062120301', 'accounting202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120204, 1202, '0,100,120,1202', '金融学', 4, '金融学教研室', '01062012204', 'finance@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12020401, 120204, '0,100,120,1202,120204', '金融学2024级1班', 1, '金融学2024级1班', '01062120401', 'finance202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(1203, 120, '0,100,120', '外国语学院', 3, '外国语学院', '01062001203', 'foreign@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120301, 1203, '0,100,120,1203', '英语', 1, '英语教研室', '01062012301', 'english@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12030101, 120301, '0,100,120,1203,120301', '英语2024级1班', 1, '英语2024级1班', '01062130101', 'english202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120302, 1203, '0,100,120,1203', '商务英语', 2, '商务英语教研室', '01062012302', 'business-english@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12030201, 120302, '0,100,120,1203,120302', '商务英语2024级1班', 1, '商务英语2024级1班', '01062130201', 'business-english202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120303, 1203, '0,100,120,1203', '日语', 3, '日语教研室', '01062012303', 'japanese@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12030301, 120303, '0,100,120,1203,120303', '日语2024级1班', 1, '日语2024级1班', '01062130301', 'japanese202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(1204, 120, '0,100,120', '艺术与传媒学院', 4, '艺术与传媒学院', '01062001204', 'artmedia@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120401, 1204, '0,100,120,1204', '视觉传达设计', 1, '视觉传达设计教研室', '01062012401', 'visual@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12040101, 120401, '0,100,120,1204,120401', '视觉传达设计2024级1班', 1, '视觉传达设计2024级1班', '01062140101', 'visual202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120402, 1204, '0,100,120,1204', '数字媒体艺术', 2, '数字媒体艺术教研室', '01062012402', 'digital-art@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12040201, 120402, '0,100,120,1204,120402', '数字媒体艺术2024级1班', 1, '数字媒体艺术2024级1班', '01062140201', 'digital-art202401@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(1205, 120, '0,100,120', '马克思主义学院', 5, '马克思主义学院', '01062001205', 'marxism@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(120501, 1205, '0,100,120,1205', '思想政治教育', 1, '思想政治教育教研室', '01062012501', 'ideology@mingde.edu.cn', '0', '0', 'admin', sysdate()),
+(12050101, 120501, '0,100,120,1205,120501', '思想政治教育2024级1班', 1, '思想政治教育2024级1班', '01062150101', 'ideology202401@mingde.edu.cn', '0', '0', 'admin', sysdate())
 on duplicate key update
 parent_id = values(parent_id), ancestors = values(ancestors), dept_name = values(dept_name),
 order_num = values(order_num), leader = values(leader), phone = values(phone), email = values(email),
