@@ -70,17 +70,24 @@ spring:
     time-zone: GMT+8
     date-format: yyyy-MM-dd HH:mm:ss
   mail:
-    host: smtp.example.com
+    host: smtp.163.com
     port: 465
-    username: your-mail@example.com
-    password: your-mail-password
+    username: wakakaka1217@163.com
+    password: HNjcunN4EdHbbhie
+    protocol: smtp
+    default-encoding: UTF-8
     properties:
       mail:
         smtp:
           auth: true
           ssl:
             enable: true
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+            port: 465
           timeout: 5000
+          connectiontimeout: 5000
+          writetimeout: 5000
   # 服务模块
   devtools:
     restart:
