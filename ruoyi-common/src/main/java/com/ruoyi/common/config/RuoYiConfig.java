@@ -1,5 +1,9 @@
 package com.ruoyi.common.config;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -67,7 +71,26 @@ public class RuoYiConfig
 
     public void setProfile(String profile)
     {
-        RuoYiConfig.profile = profile;
+        String resolvedProfile = profile == null ? "" : profile.trim();
+        if (!resolvedProfile.isEmpty())
+        {
+            resolvedProfile = resolvedProfile.replace("\\", "/");
+            ensureDirectoryExists(resolvedProfile);
+        }
+        RuoYiConfig.profile = resolvedProfile;
+    }
+
+    private void ensureDirectoryExists(String profilePath)
+    {
+        try
+        {
+            Path path = Paths.get(profilePath);
+            Files.createDirectories(path);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("初始化上传目录失败: " + profilePath, e);
+        }
     }
 
     public static boolean isAddressEnabled()
