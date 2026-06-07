@@ -66,9 +66,6 @@
             <el-tab-pane :label="baseInfoTabLabel" name="userinfo">
               <userInfo :user="user" :role-text="roleText" :is-student="isStudent" />
             </el-tab-pane>
-            <el-tab-pane v-if="showStudentProfileTab" label="学习档案" name="studentProfile">
-              <studentProfile />
-            </el-tab-pane>
             <el-tab-pane label="账号安全" name="resetPwd">
               <resetPwd :role-text="roleText" :is-student="isStudent" />
             </el-tab-pane>
@@ -83,7 +80,6 @@
 import userAvatar from "./userAvatar"
 import userInfo from "./userInfo"
 import resetPwd from "./resetPwd"
-import studentProfile from "./studentProfile"
 import { getRegisterDeptOptions } from "@/api/login"
 import { getUserProfile } from "@/api/system/user"
 
@@ -91,7 +87,7 @@ const EMPTY_TEXT = "待补充"
 
 export default {
   name: "Profile",
-  components: { userAvatar, userInfo, resetPwd, studentProfile },
+  components: { userAvatar, userInfo, resetPwd },
   data() {
     return {
       user: {},
@@ -110,9 +106,6 @@ export default {
     },
     isStudent() {
       return !this.isAdmin && !this.isTeacher
-    },
-    showStudentProfileTab() {
-      return this.isStudent
     },
     displayName() {
       return this.user.nickName || this.user.userName || "未命名用户"
@@ -151,9 +144,9 @@ export default {
     securityStatus() {
       return this.user.phonenumber && this.user.email ? "已完善" : "待完善"
     },
-    archiveStatus() {
+    identityStatus() {
       if (this.isStudent) {
-        return this.academyName !== "暂未分配学院" ? "已建立" : "待完善"
+        return this.academyName !== "暂未分配学院" && this.majorName !== "暂未分配专业" ? "学籍明确" : "待完善"
       }
       return this.postText !== "未分配岗位" ? "职责明确" : "待补充"
     },
@@ -181,7 +174,7 @@ export default {
       if (this.isTeacher) {
         return "在这里维护教师身份资料与账号安全，让教学协作、课程沟通与个人信息保持清晰同步。"
       }
-      return "在这里维护你的身份资料、学习档案与账号安全，让课程学习、任务记录和个人成长保持同步。"
+      return "在这里维护你的身份资料与账号安全，学习待办、历史、笔记、收藏、错题和讨论请从侧边栏进入。"
     },
     heroChips() {
       if (this.isAdmin) {
@@ -249,27 +242,27 @@ export default {
     summarySubtitle() {
       if (this.isAdmin) return "快速查看资料、账号安全与职责状态"
       if (this.isTeacher) return "快速查看资料、账号安全与任教状态"
-      return "快速查看档案与账号状态"
+      return "快速查看基础资料与账号状态"
     },
     summaryItems() {
       if (this.isAdmin) {
         return [
           { label: "资料完整度", value: `${this.profileCompletion}%` },
           { label: "账号安全", value: this.securityStatus },
-          { label: "职责状态", value: this.archiveStatus }
+          { label: "职责状态", value: this.identityStatus }
         ]
       }
       if (this.isTeacher) {
         return [
           { label: "资料完整度", value: `${this.profileCompletion}%` },
           { label: "账号安全", value: this.securityStatus },
-          { label: "任教状态", value: this.archiveStatus }
+          { label: "任教状态", value: this.identityStatus }
         ]
       }
       return [
         { label: "资料完整度", value: `${this.profileCompletion}%` },
         { label: "账号安全", value: this.securityStatus },
-        { label: "档案状态", value: this.archiveStatus }
+        { label: "身份状态", value: this.identityStatus }
       ]
     },
     workspaceTitle() {
@@ -280,7 +273,7 @@ export default {
     workspaceSubtitle() {
       if (this.isAdmin) return "维护管理员基础资料与账号安全，确保管理身份信息准确可用"
       if (this.isTeacher) return "维护教师基础资料与账号安全，确保教学身份信息准确可用"
-      return "维护你的基础资料、学习档案与账号安全"
+      return "维护你的基础资料与账号安全"
     },
     baseInfoTabLabel() {
       return this.isStudent ? "基础资料" : "个人资料"
@@ -288,7 +281,7 @@ export default {
   },
   created() {
     const activeTab = this.$route.params && this.$route.params.activeTab
-    if (activeTab) {
+    if (["userinfo", "resetPwd"].includes(activeTab)) {
       this.selectedTab = activeTab
     }
     this.loadMajorMetaMap()
@@ -317,9 +310,6 @@ export default {
         this.user = response.data || {}
         this.roleGroup = response.roleGroup || "学生"
         this.postGroup = response.postGroup || ""
-        if (!this.showStudentProfileTab && this.selectedTab === "studentProfile") {
-          this.selectedTab = "userinfo"
-        }
       })
     },
     formatDate(value) {
