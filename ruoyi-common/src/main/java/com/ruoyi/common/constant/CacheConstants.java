@@ -20,6 +20,16 @@ public class CacheConstants
     public static final String EMAIL_CODE_KEY = "email_codes:";
 
     /**
+     * 注册邮箱验证码
+     */
+    public static final String EMAIL_REGISTER_CODE_KEY = EMAIL_CODE_KEY + "register:";
+
+    /**
+     * 忘记密码邮箱验证码
+     */
+    public static final String EMAIL_FORGOT_PASSWORD_CODE_KEY = EMAIL_CODE_KEY + "forgot_password:";
+
+    /**
      * 参数管理 cache key
      */
     public static final String SYS_CONFIG_KEY = "sys_config:";

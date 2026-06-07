@@ -48,6 +48,14 @@ public class SysRegisterController extends BaseController
     @PostMapping("/registerEmailCode")
     public AjaxResult registerEmailCode(@RequestBody EmailCodeBody body)
     {
+        if (body == null)
+        {
+            return error("邮箱不能为空。");
+        }
+        if (!studentAccountService.studentRegisterEnabled())
+        {
+            return error("当前未开放学生自主注册。");
+        }
         emailCodeService.sendRegisterCode(body.getEmail());
         return success("邮箱验证码已发送");
     }
@@ -55,6 +63,10 @@ public class SysRegisterController extends BaseController
     @PostMapping("/register")
     public AjaxResult register(@RequestBody RegisterBody user)
     {
+        if (user == null)
+        {
+            return error("注册信息不能为空。");
+        }
         if (configService.selectCaptchaEnabled())
         {
             registerService.validateCaptcha(user.getUsername(), user.getCode(), user.getUuid());

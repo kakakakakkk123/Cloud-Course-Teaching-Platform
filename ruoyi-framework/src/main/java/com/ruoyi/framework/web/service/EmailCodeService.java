@@ -10,9 +10,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.constant.CacheConstants;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.common.core.redis.RedisCache;
 
 /**
  * 邮箱验证码服务
@@ -33,6 +33,31 @@ public class EmailCodeService
 
     public String sendRegisterCode(String email)
     {
+        return sendCode(email, CacheConstants.EMAIL_REGISTER_CODE_KEY, "学生账号注册验证码");
+    }
+
+    public String sendForgotPasswordCode(String email)
+    {
+        return sendCode(email, CacheConstants.EMAIL_FORGOT_PASSWORD_CODE_KEY, "找回密码验证码");
+    }
+
+    public void validateRegisterCode(String email, String code)
+    {
+        String targetEmail = normalizeEmail(email);
+        if (StringUtils.isEmpty(targetEmail))
+        {
+            return;
+        }
+        validateCode(targetEmail, code, CacheConstants.EMAIL_REGISTER_CODE_KEY, "邮箱验证码");
+    }
+
+    public void validateForgotPasswordCode(String email, String code)
+    {
+        validateCode(email, code, CacheConstants.EMAIL_FORGOT_PASSWORD_CODE_KEY, "邮箱验证码");
+    }
+
+    private String sendCode(String email, String keyPrefix, String subject)
+    {
         String targetEmail = normalizeEmail(email);
         if (StringUtils.isEmpty(targetEmail))
         {
@@ -44,16 +69,15 @@ public class EmailCodeService
         }
 
         String code = generateCode();
-        String key = codeKey(targetEmail);
-        redisCache.setCacheObject(key, code, EXPIRE_MINUTES, TimeUnit.MINUTES);
+        redisCache.setCacheObject(codeKey(keyPrefix, targetEmail), code, EXPIRE_MINUTES, TimeUnit.MINUTES);
 
         try
         {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromAddress);
             message.setTo(targetEmail);
-            message.setSubject("学生账号注册验证码");
-            message.setText("你的注册验证码是：" + code + "，有效期 " + EXPIRE_MINUTES + " 分钟。");
+            message.setSubject(subject);
+            message.setText("你的验证码是：" + code + "，有效期 " + EXPIRE_MINUTES + " 分钟。");
             mailSender.send(message);
         }
         catch (MailException ex)
@@ -63,33 +87,35 @@ public class EmailCodeService
         return code;
     }
 
-    public void validateRegisterCode(String email, String code)
+    private void validateCode(String email, String code, String keyPrefix, String label)
     {
         String targetEmail = normalizeEmail(email);
         String targetCode = StringUtils.trim(code);
         if (StringUtils.isEmpty(targetEmail))
         {
-            return;
+            throw new ServiceException("邮箱不能为空");
         }
         if (StringUtils.isEmpty(targetCode))
         {
-            throw new ServiceException("请输入邮箱验证码");
+            throw new ServiceException("请输入" + label);
         }
-        String cacheCode = redisCache.getCacheObject(codeKey(targetEmail));
+
+        String key = codeKey(keyPrefix, targetEmail);
+        String cacheCode = redisCache.getCacheObject(key);
         if (StringUtils.isEmpty(cacheCode))
         {
-            throw new ServiceException("邮箱验证码已过期，请重新获取");
+            throw new ServiceException(label + "已过期，请重新获取");
         }
-        if (!StringUtils.equalsIgnoreCase(cacheCode, targetCode))
+        if (!cacheCode.equalsIgnoreCase(targetCode))
         {
-            throw new ServiceException("邮箱验证码错误");
+            throw new ServiceException(label + "错误");
         }
-        redisCache.deleteObject(codeKey(targetEmail));
+        redisCache.deleteObject(key);
     }
 
-    private String codeKey(String email)
+    private String codeKey(String keyPrefix, String email)
     {
-        return CacheConstants.EMAIL_CODE_KEY + normalizeEmail(email);
+        return keyPrefix + normalizeEmail(email);
     }
 
     private String normalizeEmail(String email)

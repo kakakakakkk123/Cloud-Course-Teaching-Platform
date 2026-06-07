@@ -56,8 +56,14 @@ public class CaptchaController
         List<SysConfig> registerConfigs = configService.selectConfigList(registerConfig);
         boolean registerEnabled = registerConfigs.isEmpty()
                 || "true".equalsIgnoreCase(registerConfigs.get(0).getConfigValue());
+        SysConfig forgotConfig = new SysConfig();
+        forgotConfig.setConfigKey("sys.account.forgotPasswordEmailRequired");
+        List<SysConfig> forgotConfigs = configService.selectConfigList(forgotConfig);
+        boolean forgotPasswordEmailRequired = !forgotConfigs.isEmpty()
+                && "true".equalsIgnoreCase(forgotConfigs.get(0).getConfigValue());
         ajax.put("captchaEnabled", captchaEnabled);
         ajax.put("registerEnabled", registerEnabled);
+        ajax.put("forgotPasswordEmailRequired", forgotPasswordEmailRequired);
         if (!captchaEnabled)
         {
             return ajax;
