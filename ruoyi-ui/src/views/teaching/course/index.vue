@@ -352,6 +352,7 @@ import {
 
 export default {
   name: "TeachingCourse",
+  dicts: ["edu_course_publish_status", "edu_course_difficulty"],
   data() {
     return {
       loading: false,
@@ -390,20 +391,26 @@ export default {
           { required: true, message: "请选择是否允许注册", trigger: "change" }
         ]
       },
-      publishStatusOptions: [
-        { label: "草稿", value: "0" },
-        { label: "已发布", value: "1" },
-        { label: "已下线", value: "2" }
-      ],
-      difficultyOptions: [
-        { label: "初级", value: "1" },
-        { label: "中级", value: "2" },
-        { label: "高级", value: "3" }
-      ],
       yesNoOptions: [
         { label: "关闭", value: "0" },
         { label: "允许", value: "1" }
       ]
+    }
+  },
+  computed: {
+    publishStatusOptions() {
+      return this.dictOptions("edu_course_publish_status", [
+        { label: "草稿", value: "0", raw: { listClass: "info" } },
+        { label: "已发布", value: "1", raw: { listClass: "success" } },
+        { label: "已下线", value: "2", raw: { listClass: "warning" } }
+      ])
+    },
+    difficultyOptions() {
+      return this.dictOptions("edu_course_difficulty", [
+        { label: "初级", value: "1", raw: { listClass: "success" } },
+        { label: "中级", value: "2", raw: { listClass: "warning" } },
+        { label: "高级", value: "3", raw: { listClass: "danger" } }
+      ])
     }
   },
   created() {
@@ -455,33 +462,36 @@ export default {
       }
       return process.env.VUE_APP_BASE_API + coverImage
     },
+    dictOptions(type, fallback) {
+      const options = this.dict && this.dict.type ? this.dict.type[type] : []
+      return options && options.length ? options : fallback
+    },
+    getOptionLabel(options, value, fallback) {
+      const option = options.find(item => item.value === String(value))
+      return option ? option.label : fallback
+    },
+    getOptionTagType(options, value, fallback = "info") {
+      const option = options.find(item => item.value === String(value))
+      if (!option || !option.raw) {
+        return fallback
+      }
+      return option.raw.listClass === "primary" ? "" : (option.raw.listClass || fallback)
+    },
     /** 获取难度标签文本 */
     getDifficultyLabel(value) {
-      const option = this.difficultyOptions.find(item => item.value === value)
-      return option ? option.label : "未设置"
+      return this.getOptionLabel(this.difficultyOptions, value, "未设置")
     },
     /** 获取难度标签类型 */
     getDifficultyTagType(value) {
-      const tagMap = {
-        "1": "success",
-        "2": "warning",
-        "3": "danger"
-      }
-      return tagMap[value] || "info"
+      return this.getOptionTagType(this.difficultyOptions, value)
     },
     /** 获取发布状态文本 */
     getPublishStatusLabel(value) {
-      const option = this.publishStatusOptions.find(item => item.value === value)
-      return option ? option.label : "未知"
+      return this.getOptionLabel(this.publishStatusOptions, value, "未知")
     },
     /** 获取发布状态标签类型 */
     getPublishTagType(value) {
-      const tagMap = {
-        "0": "info",
-        "1": "success",
-        "2": "warning"
-      }
-      return tagMap[value] || "info"
+      return this.getOptionTagType(this.publishStatusOptions, value)
     },
     /** 表单重置 */
     reset() {

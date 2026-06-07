@@ -1,6 +1,7 @@
 package com.ruoyi.system.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.system.domain.SysLogininfor;
 
 /**
@@ -39,4 +40,12 @@ public interface SysLogininforMapper
      * @return 结果
      */
     public int cleanLogininfor();
+
+    /**
+     * 清理指定时间之前的系统登录日志
+     *
+     * @param cutoffTime 截止时间
+     * @return 结果
+     */
+    public int cleanLogininforBefore(@Param("cutoffTime") String cutoffTime);
 }

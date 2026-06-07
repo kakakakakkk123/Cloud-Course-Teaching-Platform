@@ -8,10 +8,12 @@ import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.domain.model.RegisterBody;
 import com.ruoyi.common.core.redis.RedisCache;
+import com.ruoyi.common.core.text.Convert;
 import com.ruoyi.common.exception.user.CaptchaException;
 import com.ruoyi.common.exception.user.CaptchaExpireException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.MessageUtils;
+import com.ruoyi.common.utils.PasswordPolicyUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.manager.AsyncManager;
@@ -44,6 +46,7 @@ public class SysRegisterService
         String msg = "", username = registerBody.getUsername(), password = registerBody.getPassword();
         SysUser sysUser = new SysUser();
         sysUser.setUserName(username);
+        String passwordError = passwordPolicyError(password);
 
         // 验证码开关
         boolean captchaEnabled = configService.selectCaptchaEnabled();
@@ -65,10 +68,9 @@ public class SysRegisterService
         {
             msg = "账户长度必须在2到20个字符之间";
         }
-        else if (password.length() < UserConstants.PASSWORD_MIN_LENGTH
-                || password.length() > UserConstants.PASSWORD_MAX_LENGTH)
+        else if (StringUtils.isNotEmpty(passwordError))
         {
-            msg = "密码长度必须在5到20个字符之间";
+            msg = passwordError;
         }
         else if (!userService.checkUserNameUnique(sysUser))
         {
@@ -114,5 +116,23 @@ public class SysRegisterService
         {
             throw new CaptchaException();
         }
+    }
+
+    private String passwordPolicyError(String password)
+    {
+        return PasswordPolicyUtils.validate(password, passwordMinLength(), passwordMaxLength(),
+                configService.selectConfigByKey("sys.account.chrtype"));
+    }
+
+    private int passwordMinLength()
+    {
+        return Convert.toInt(configService.selectConfigByKey("sys.account.passwordMinLength"),
+                UserConstants.PASSWORD_MIN_LENGTH);
+    }
+
+    private int passwordMaxLength()
+    {
+        return Convert.toInt(configService.selectConfigByKey("sys.account.passwordMaxLength"),
+                UserConstants.PASSWORD_MAX_LENGTH);
     }
 }

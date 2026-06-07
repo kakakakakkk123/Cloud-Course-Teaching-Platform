@@ -260,7 +260,7 @@ export default {
     },
     /** 清空按钮操作 */
     handleClean() {
-      this.$modal.confirm('是否确认清空所有操作日志数据项？').then(function() {
+      this.$modal.confirm('是否确认清理超过保留期的操作日志数据项？').then(function() {
         return cleanOperlog()
       }).then(() => {
         this.getList()
@@ -276,4 +276,3 @@ export default {
   }
 }
 </script>
-

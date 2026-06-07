@@ -1,6 +1,7 @@
 package com.ruoyi.system.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.system.domain.SysOperLog;
 
 /**
@@ -45,4 +46,11 @@ public interface SysOperLogMapper
      * 清空操作日志
      */
     public void cleanOperLog();
+
+    /**
+     * 清理指定时间之前的操作日志
+     *
+     * @param cutoffTime 截止时间
+     */
+    public void cleanOperLogBefore(@Param("cutoffTime") String cutoffTime);
 }

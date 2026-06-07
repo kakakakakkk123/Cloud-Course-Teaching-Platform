@@ -62,5 +62,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="cleanLogininfor">
         truncate table sys_logininfor
     </update>
-    
+
+    <delete id="cleanLogininforBefore">
+        delete from sys_logininfor where login_time &lt; #{cutoffTime}
+    </delete>
+
 </mapper>

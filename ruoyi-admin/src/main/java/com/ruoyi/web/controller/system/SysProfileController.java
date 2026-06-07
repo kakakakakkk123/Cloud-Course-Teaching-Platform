@@ -12,12 +12,15 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.config.RuoYiConfig;
+import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.domain.model.LoginUser;
+import com.ruoyi.common.core.text.Convert;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.PasswordPolicyUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUploadUtils;
@@ -25,6 +28,7 @@ import com.ruoyi.common.utils.file.FileUtils;
 import com.ruoyi.common.utils.file.MimeTypeUtils;
 import com.ruoyi.framework.web.service.TokenService;
 import com.ruoyi.system.domain.StudentProfile;
+import com.ruoyi.system.service.ISysConfigService;
 import com.ruoyi.system.service.ISysUserService;
 import com.ruoyi.system.service.IStudentAccountService;
 
@@ -45,6 +49,9 @@ public class SysProfileController extends BaseController
 
     @Autowired
     private IStudentAccountService studentAccountService;
+
+    @Autowired
+    private ISysConfigService configService;
 
     /**
      * 个人信息
@@ -145,6 +152,16 @@ public class SysProfileController extends BaseController
         if (SecurityUtils.matchesPassword(newPassword, password))
         {
             return error("新密码不能与旧密码相同");
+        }
+        String policyError = PasswordPolicyUtils.validate(newPassword,
+                Convert.toInt(configService.selectConfigByKey("sys.account.passwordMinLength"),
+                        UserConstants.PASSWORD_MIN_LENGTH),
+                Convert.toInt(configService.selectConfigByKey("sys.account.passwordMaxLength"),
+                        UserConstants.PASSWORD_MAX_LENGTH),
+                configService.selectConfigByKey("sys.account.chrtype"));
+        if (StringUtils.isNotEmpty(policyError))
+        {
+            return error(policyError);
         }
         newPassword = SecurityUtils.encryptPassword(newPassword);
         if (userService.resetUserPwd(userId, newPassword) > 0)

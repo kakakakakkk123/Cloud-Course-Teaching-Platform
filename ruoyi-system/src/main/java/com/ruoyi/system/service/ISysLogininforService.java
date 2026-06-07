@@ -37,4 +37,11 @@ public interface ISysLogininforService
      * 清空系统登录日志
      */
     public void cleanLogininfor();
+
+    /**
+     * 清理指定时间之前的系统登录日志
+     *
+     * @param cutoffTime 截止时间
+     */
+    public void cleanLogininforBefore(String cutoffTime);
 }

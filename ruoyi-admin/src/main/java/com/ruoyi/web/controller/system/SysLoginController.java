@@ -88,6 +88,8 @@ public class SysLoginController
         ajax.put("roles", roles);
         ajax.put("permissions", permissions);
         ajax.put("pwdChrtype", getSysAccountChrtype());
+        ajax.put("pwdMinLength", Convert.toInt(configService.selectConfigByKey("sys.account.passwordMinLength"), 5));
+        ajax.put("pwdMaxLength", Convert.toInt(configService.selectConfigByKey("sys.account.passwordMaxLength"), 20));
         ajax.put("isDefaultModifyPwd", initPasswordIsModify(user.getPwdUpdateDate()));
         ajax.put("isPasswordExpired", passwordIsExpiration(user.getPwdUpdateDate()));
         return ajax;
