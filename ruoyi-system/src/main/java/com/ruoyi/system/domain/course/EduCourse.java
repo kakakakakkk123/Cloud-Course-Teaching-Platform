@@ -109,6 +109,15 @@ public class EduCourse extends BaseEntity
     /** 学习进度 */
     private BigDecimal progressPercent;
 
+    /** 注册状态 */
+    private String enrollStatus;
+
+    /** 最近学习时间 */
+    private Date lastStudyTime;
+
+    /** 完成时间 */
+    private Date finishTime;
+
     /** 门户排序字段 */
     private String sortField;
 
@@ -419,6 +428,36 @@ public class EduCourse extends BaseEntity
     public void setProgressPercent(BigDecimal progressPercent)
     {
         this.progressPercent = progressPercent;
+    }
+
+    public String getEnrollStatus()
+    {
+        return enrollStatus;
+    }
+
+    public void setEnrollStatus(String enrollStatus)
+    {
+        this.enrollStatus = enrollStatus;
+    }
+
+    public Date getLastStudyTime()
+    {
+        return lastStudyTime;
+    }
+
+    public void setLastStudyTime(Date lastStudyTime)
+    {
+        this.lastStudyTime = lastStudyTime;
+    }
+
+    public Date getFinishTime()
+    {
+        return finishTime;
+    }
+
+    public void setFinishTime(Date finishTime)
+    {
+        this.finishTime = finishTime;
     }
 
     public String getSortField()

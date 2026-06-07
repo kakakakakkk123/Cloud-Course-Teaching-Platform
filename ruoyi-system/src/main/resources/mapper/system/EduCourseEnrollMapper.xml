@@ -30,6 +30,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="intro" column="intro"/>
         <result property="teacherName" column="teacher_name"/>
         <result property="progressPercent" column="progress_percent"/>
+        <result property="enrollStatus" column="enroll_status"/>
+        <result property="lastStudyTime" column="last_study_time"/>
+        <result property="finishTime" column="finish_time"/>
         <result property="lastContentTime" column="last_content_time"/>
         <result property="enrollCount" column="enroll_count"/>
         <result property="likeCount" column="like_count"/>
@@ -71,6 +74,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectStudentEnrolledCourseList" parameterType="Long" resultMap="EduEnrolledCourseResult">
         select c.course_id, c.category_id, c.teacher_id, c.course_name, c.course_subtitle, c.cover_image,
                c.intro, c.last_content_time, c.enroll_count, c.like_count, e.progress_percent,
+               e.enroll_status, e.last_study_time, e.finish_time,
                u.nick_name as teacher_name
         from edu_course_enroll e
                  inner join edu_course c on e.course_id = c.course_id
