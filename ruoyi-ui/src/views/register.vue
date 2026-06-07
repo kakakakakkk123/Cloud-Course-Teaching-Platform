@@ -67,13 +67,13 @@
         <el-form ref="registerForm" :model="registerForm" :rules="registerRules" class="register-form">
           <div class="form-grid">
             <el-form-item prop="username">
-              <el-input v-model.trim="registerForm.username" placeholder="登录账号">
+              <el-input v-model.trim="registerForm.username" placeholder="登录账号（可填写学号）">
                 <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
               </el-input>
             </el-form-item>
 
             <el-form-item prop="studentNo">
-              <el-input v-model.trim="registerForm.studentNo" placeholder="学号">
+              <el-input v-model.trim="registerForm.studentNo" placeholder="学号" @blur="handleStudentNoBlur">
                 <svg-icon slot="prefix" icon-class="number" class="el-input__icon input-icon" />
               </el-input>
             </el-form-item>
@@ -191,7 +191,7 @@
           </el-form-item>
 
           <div class="form-tip">
-            注册完成后，账号将自动关联到所选专业，后续可在个人中心继续完善资料。
+            可直接使用学号作为登录账号；填写邮箱时需完成邮箱验证码校验。注册完成后，账号将自动关联到所选专业。
           </div>
 
           <el-form-item style="width: 100%;">
@@ -400,11 +400,17 @@ export default {
     handleAcademyChange() {
       this.registerForm.majorId = undefined
     },
+    handleStudentNoBlur() {
+      if (!this.registerForm.username && this.registerForm.studentNo) {
+        this.registerForm.username = this.registerForm.studentNo
+      }
+    },
     handleRegister() {
       if (!this.registerEnabled) {
         this.$modal.msgWarning("当前未开放学生自主注册")
         return
       }
+      this.handleStudentNoBlur()
       this.$refs.registerForm.validate(valid => {
         if (!valid) {
           return
