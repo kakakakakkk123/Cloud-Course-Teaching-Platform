@@ -90,6 +90,23 @@
               </el-input>
             </el-form-item>
 
+            <el-form-item prop="email">
+              <el-input v-model.trim="registerForm.email" placeholder="邮箱（可选）">
+                <svg-icon slot="prefix" icon-class="email" class="el-input__icon input-icon" />
+              </el-input>
+            </el-form-item>
+
+            <el-form-item v-if="registerForm.email" prop="emailCode">
+              <div class="captcha-row">
+                <el-input v-model.trim="registerForm.emailCode" placeholder="邮箱验证码">
+                  <svg-icon slot="prefix" icon-class="validCode" class="el-input__icon input-icon" />
+                </el-input>
+                <el-button :loading="emailCodeSending" :disabled="emailCodeCountdown > 0" @click="handleSendEmailCode">
+                  {{ emailCodeButtonText }}
+                </el-button>
+              </div>
+            </el-form-item>
+
             <el-form-item prop="academyId">
               <el-select
                 v-model="registerForm.academyId"
@@ -204,7 +221,7 @@
 </template>
 
 <script>
-import { getCodeImg, getRegisterDeptOptions, register } from "@/api/login"
+import { getCodeImg, getRegisterDeptOptions, register, sendRegisterEmailCode } from "@/api/login"
 import passwordRule from "@/utils/passwordRule"
 import defaultSettings from "@/settings"
 
@@ -224,6 +241,8 @@ export default {
         majorId: undefined,
         grade: "",
         phonenumber: "",
+        email: "",
+        emailCode: "",
         password: "",
         confirmPassword: "",
         code: "",
@@ -232,6 +251,9 @@ export default {
       loading: false,
       captchaEnabled: true,
       registerEnabled: true,
+      emailCodeSending: false,
+      emailCodeCountdown: 0,
+      emailCodeTimer: null,
       academyOptions: [],
       majorOptionsMap: {},
       gradeOptions: Array.from({ length: 8 }, (_, index) => `${currentYear + 1 - index}级`),
@@ -276,6 +298,10 @@ export default {
           { required: true, trigger: "blur", message: "请输入手机号" },
           { pattern: /^1[3-9]\d{9}$/, trigger: "blur", message: "请输入正确的手机号" }
         ],
+        email: [
+          { type: "email", trigger: "blur", message: "Please enter a valid email" }
+        ],
+        emailCode: [],
         confirmPassword: [
           { required: true, trigger: "blur", message: "请再次输入密码" },
           {
@@ -297,6 +323,14 @@ export default {
     },
     majorOptions() {
       return this.majorOptionsMap[this.registerForm.academyId] || []
+    },
+    emailCodeButtonText() {
+      return this.emailCodeCountdown > 0 ? `${this.emailCodeCountdown}s` : "Get Code"
+    }
+  },
+  beforeDestroy() {
+    if (this.emailCodeTimer) {
+      clearInterval(this.emailCodeTimer)
     }
   },
   created() {
@@ -333,6 +367,36 @@ export default {
         this.$modal.msgError("学院专业选项加载失败，请稍后重试")
       })
     },
+    handleSendEmailCode() {
+      if (!this.registerEnabled) {
+        this.$modal.msgWarning("Registration is closed")
+        return
+      }
+      if (!this.registerForm.email) {
+        this.$modal.msgWarning("Please enter email first")
+        return
+      }
+      this.emailCodeSending = true
+      sendRegisterEmailCode({ email: this.registerForm.email }).then(() => {
+        this.$modal.msgSuccess("Email code sent")
+        this.startEmailCodeCountdown()
+      }).finally(() => {
+        this.emailCodeSending = false
+      })
+    },
+    startEmailCodeCountdown() {
+      this.emailCodeCountdown = 60
+      if (this.emailCodeTimer) {
+        clearInterval(this.emailCodeTimer)
+      }
+      this.emailCodeTimer = setInterval(() => {
+        this.emailCodeCountdown -= 1
+        if (this.emailCodeCountdown <= 0) {
+          clearInterval(this.emailCodeTimer)
+          this.emailCodeTimer = null
+        }
+      }, 1000)
+    },
     handleAcademyChange() {
       this.registerForm.majorId = undefined
     },
@@ -343,6 +407,10 @@ export default {
       }
       this.$refs.registerForm.validate(valid => {
         if (!valid) {
+          return
+        }
+        if (this.registerForm.email && !this.registerForm.emailCode) {
+          this.$modal.msgWarning("Please enter email code")
           return
         }
         this.loading = true

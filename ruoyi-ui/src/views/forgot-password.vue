@@ -72,6 +72,21 @@
               <svg-icon slot="prefix" icon-class="number" class="el-input__icon input-icon" />
             </el-input>
           </el-form-item>
+          <el-form-item prop="email">
+            <el-input v-model.trim="form.email" placeholder="绑定邮箱（可选）">
+              <svg-icon slot="prefix" icon-class="email" class="el-input__icon input-icon" />
+            </el-input>
+          </el-form-item>
+          <el-form-item v-if="forgotPasswordEmailRequired || form.email" prop="emailCode">
+            <div class="captcha-row">
+              <el-input v-model.trim="form.emailCode" placeholder="邮箱验证码">
+                <svg-icon slot="prefix" icon-class="validCode" class="el-input__icon input-icon" />
+              </el-input>
+              <el-button :loading="emailCodeSending" :disabled="emailCodeCountdown > 0" @click="handleSendEmailCode">
+                {{ emailCodeButtonText }}
+              </el-button>
+            </div>
+          </el-form-item>
           <el-form-item prop="newPassword" :rules="registerPwdValidator">
             <el-input v-model="form.newPassword" type="password" show-password placeholder="新密码">
               <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
@@ -107,7 +122,7 @@
 </template>
 
 <script>
-import { getCodeImg, forgotPassword } from "@/api/login"
+import { getCodeImg, forgotPassword, sendForgotPasswordEmailCode } from "@/api/login"
 import passwordRule from "@/utils/passwordRule"
 import defaultSettings from "@/settings"
 
@@ -118,6 +133,8 @@ export default {
       form: {
         username: "",
         studentNo: "",
+        email: "",
+        emailCode: "",
         newPassword: "",
         confirmPassword: "",
         code: "",
@@ -126,13 +143,29 @@ export default {
       footerContent: defaultSettings.footerContent,
       codeUrl: "",
       captchaEnabled: true,
+      forgotPasswordEmailRequired: false,
+      emailCodeSending: false,
+      emailCodeCountdown: 0,
+      emailCodeTimer: null,
       loading: false,
       rules: {
         username: [{ required: true, message: "请输入登录账号", trigger: "blur" }],
         studentNo: [{ required: true, message: "请输入学号", trigger: "blur" }],
         confirmPassword: [{ required: true, message: "请再次输入密码", trigger: "blur" }],
+        email: [{ type: "email", message: "Please enter a valid email", trigger: "blur" }],
+        emailCode: [],
         code: []
       }
+    }
+  },
+  computed: {
+    emailCodeButtonText() {
+      return this.emailCodeCountdown > 0 ? `${this.emailCodeCountdown}s` : "Get Code"
+    }
+  },
+  beforeDestroy() {
+    if (this.emailCodeTimer) {
+      clearInterval(this.emailCodeTimer)
     }
   },
   created() {
@@ -143,6 +176,7 @@ export default {
       getCodeImg().then(res => {
         this.captchaEnabled = res.captchaEnabled === undefined ? true : res.captchaEnabled
         this.rules.code = this.captchaEnabled ? [{ required: true, trigger: "change", message: "请输入验证码" }] : []
+        this.forgotPasswordEmailRequired = !!res.forgotPasswordEmailRequired
         if (this.captchaEnabled) {
           this.codeUrl = "data:image/gif;base64," + res.img
           this.form.uuid = res.uuid
@@ -151,9 +185,43 @@ export default {
         this.$modal.msgError("验证码加载失败，请稍后重试")
       })
     },
+    handleSendEmailCode() {
+      if (!this.form.username || !this.form.studentNo) {
+        this.$modal.msgWarning("Please enter account and student number first")
+        return
+      }
+      this.emailCodeSending = true
+      sendForgotPasswordEmailCode({
+        username: this.form.username,
+        studentNo: this.form.studentNo,
+        email: this.form.email
+      }).then(() => {
+        this.$modal.msgSuccess("Email code sent")
+        this.startEmailCodeCountdown()
+      }).finally(() => {
+        this.emailCodeSending = false
+      })
+    },
+    startEmailCodeCountdown() {
+      this.emailCodeCountdown = 60
+      if (this.emailCodeTimer) {
+        clearInterval(this.emailCodeTimer)
+      }
+      this.emailCodeTimer = setInterval(() => {
+        this.emailCodeCountdown -= 1
+        if (this.emailCodeCountdown <= 0) {
+          clearInterval(this.emailCodeTimer)
+          this.emailCodeTimer = null
+        }
+      }, 1000)
+    },
     handleSubmit() {
       this.$refs.form.validate(valid => {
         if (!valid) return
+        if ((this.forgotPasswordEmailRequired || this.form.email) && !this.form.emailCode) {
+          this.$modal.msgWarning("Please enter email code")
+          return
+        }
         if (this.form.newPassword !== this.form.confirmPassword) {
           this.$modal.msgWarning("两次输入的密码不一致")
           return

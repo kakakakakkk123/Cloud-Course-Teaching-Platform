@@ -30,6 +30,13 @@
             placeholder="输入浏览器、系统或设备关键字，例如 Android、iPhone、MicroMessenger"
           />
         </el-form-item>
+        <el-form-item label="找回密码邮箱验证">
+          <el-switch
+            v-model="securitySettings.forgotPasswordEmailRequired"
+            active-text="强制验证"
+            inactive-text="可选验证"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" size="mini" @click="handleSaveSecuritySettings">保存安全策略</el-button>
           <span class="policy-tip">密码错误锁定仍沿用系统配置：连续输错 5 次后锁定 10 分钟。</span>
@@ -163,7 +170,8 @@ export default {
       registerEnabled: false,
       securitySettings: {
         blackIpList: "",
-        blockedUserAgentKeywords: ""
+        blockedUserAgentKeywords: "",
+        forgotPasswordEmailRequired: false
       },
       queryParams: {
         pageNum: 1,
@@ -205,8 +213,23 @@ export default {
       this.selectedRows = selection
       this.ids = selection.map(item => item.userId)
     },
+    passwordPromptOptions() {
+      return {
+        closeOnClickModal: false,
+        inputType: "password",
+        inputValidator: value => {
+          if (!value || value.length < 5 || value.length > 20) {
+            return "密码长度必须在 5 到 20 个字符之间"
+          }
+          if (/[<>"'|\\]/.test(value)) {
+            return "密码不能包含 < > \" ' | \\"
+          }
+          return true
+        }
+      }
+    },
     handleResetPwd(row) {
-      this.$prompt(`请输入 ${row.userName} 的新密码`, "重置密码", { closeOnClickModal: false }).then(({ value }) => {
+      this.$prompt(`请输入 ${row.userName} 的新密码`, "重置密码", this.passwordPromptOptions()).then(({ value }) => {
         resetStudentPassword(row.userId, value).then(() => {
           this.$modal.msgSuccess("重置成功")
         })
@@ -231,7 +254,7 @@ export default {
       }).catch(() => {})
     },
     handleBatchResetPwd() {
-      this.$prompt(`请输入所选 ${this.ids.length} 个学生的新密码`, "批量重置密码", { closeOnClickModal: false }).then(({ value }) => {
+      this.$prompt(`请输入所选 ${this.ids.length} 个学生的新密码`, "批量重置密码", this.passwordPromptOptions()).then(({ value }) => {
         resetStudentPasswords(this.ids, value).then(() => {
           this.$modal.msgSuccess("批量重置成功")
         })
@@ -272,8 +295,10 @@ export default {
       getSecuritySettings().then(res => {
         this.securitySettings = res.data || {
           blackIpList: "",
-          blockedUserAgentKeywords: ""
+          blockedUserAgentKeywords: "",
+          forgotPasswordEmailRequired: false
         }
+        this.securitySettings.forgotPasswordEmailRequired = !!this.securitySettings.forgotPasswordEmailRequired
       })
     },
     handleRegisterToggle(val) {

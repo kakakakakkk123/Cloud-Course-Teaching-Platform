@@ -11,7 +11,7 @@ let downloadLoadingInstance
 // 是否显示重新登录
 export let isRelogin = { show: false }
 const DEVICE_ID_KEY = 'device_id'
-const publicAuthPaths = ['/captchaImage', '/register', '/account/forgotPassword', '/account/registerEnabled']
+const publicAuthPaths = ['/captchaImage', '/register', '/registerEmailCode', '/registerDeptOptions', '/account/forgotPassword', '/account/forgotPasswordEmailCode', '/account/registerEnabled']
 
 function getDeviceId() {
   let deviceId = cache.local.get(DEVICE_ID_KEY)
