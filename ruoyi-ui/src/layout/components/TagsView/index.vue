@@ -68,6 +68,7 @@
 <script>
 import ScrollPane from './ScrollPane'
 import path from 'path'
+import { getHomePath, isDashboardPath, isStudentRole } from '@/utils/home'
 
 export default {
   components: { ScrollPane },
@@ -174,7 +175,8 @@ export default {
     isFirstView() {
       try {
         const tag = this.selectedTag && this.selectedTag.fullPath ? this.selectedTag : this.selectedDropdownTag
-        return tag.fullPath === '/index' || tag.fullPath === this.visitedViews[1].fullPath
+        const firstView = this.visitedViews[0]
+        return tag.fullPath === getHomePath(this.$store.getters.roles) || (firstView && tag.fullPath === firstView.fullPath)
       } catch (err) {
         return false
       }
@@ -192,12 +194,14 @@ export default {
       routes.forEach(route => {
         if (route.meta && route.meta.affix) {
           const tagPath = path.resolve(basePath, route.path)
-          tags.push({
-            fullPath: tagPath,
-            path: tagPath,
-            name: route.name,
-            meta: { ...route.meta }
-          })
+          if (!(isStudentRole(this.$store.getters.roles) && isDashboardPath(tagPath))) {
+            tags.push({
+              fullPath: tagPath,
+              path: tagPath,
+              name: route.name,
+              meta: { ...route.meta }
+            })
+          }
         }
         if (route.children) {
           const tempTags = this.filterAffixTags(route.children, route.path)
@@ -367,7 +371,7 @@ export default {
         if (view && view.name === 'Dashboard') {
           this.$router.replace({ path: '/redirect' + view.fullPath })
         } else {
-          this.$router.push('/')
+          this.$router.push(getHomePath(this.$store.getters.roles))
         }
       }
     },
