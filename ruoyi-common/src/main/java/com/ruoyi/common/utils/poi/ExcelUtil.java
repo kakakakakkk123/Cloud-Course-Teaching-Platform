@@ -101,6 +101,8 @@ public class ExcelUtil<T>
 
     public static final String[] FORMULA_STR = { "=", "-", "+", "@" };
 
+    private static final Object IMPORT_CELL_SKIP = new Object();
+
     /**
      * 用于dictType属性数据存储，避免重复查缓存
      */
@@ -421,108 +423,128 @@ public class ExcelUtil<T>
                 for (Map.Entry<Integer, Object[]> entry : fieldsMap.entrySet())
                 {
                     Object val = this.getCellValue(row, entry.getKey());
-
                     // 如果不存在实例则新建.
                     entity = (entity == null ? clazz.getDeclaredConstructor().newInstance() : entity);
                     // 从map中得到对应列的field.
                     Field field = (Field) entry.getValue()[0];
                     Excel attr = (Excel) entry.getValue()[1];
-                    // 取得类型,并根据对象类型设置值.
-                    Class<?> fieldType = field.getType();
-                    if (String.class == fieldType)
+                    String propertyName = getImportPropertyName(field, attr);
+                    val = getImportCellValue(row, entry.getKey(), field, attr, val, pictures);
+                    if (val == IMPORT_CELL_SKIP)
                     {
-                        String s = Convert.toStr(val);
-                        if (s.matches("^\\d+\\.0$"))
-                        {
-                            val = StringUtils.substringBefore(s, ".0");
-                        }
-                        else
-                        {
-                            String dateFormat = field.getAnnotation(Excel.class).dateFormat();
-                            if (StringUtils.isNotEmpty(dateFormat))
-                            {
-                                val = parseDateToStr(dateFormat, val);
-                            }
-                            else
-                            {
-                                val = Convert.toStr(val);
-                            }
-                        }
+                        continue;
                     }
-                    else if ((Integer.TYPE == fieldType || Integer.class == fieldType) && StringUtils.isNumeric(Convert.toStr(val)))
-                    {
-                        val = Convert.toInt(val);
-                    }
-                    else if ((Long.TYPE == fieldType || Long.class == fieldType) && StringUtils.isNumeric(Convert.toStr(val)))
-                    {
-                        val = Convert.toLong(val);
-                    }
-                    else if (Double.TYPE == fieldType || Double.class == fieldType)
-                    {
-                        val = Convert.toDouble(val);
-                    }
-                    else if (Float.TYPE == fieldType || Float.class == fieldType)
-                    {
-                        val = Convert.toFloat(val);
-                    }
-                    else if (BigDecimal.class == fieldType)
-                    {
-                        val = Convert.toBigDecimal(val);
-                    }
-                    else if (Date.class == fieldType)
-                    {
-                        if (val instanceof String)
-                        {
-                            val = DateUtils.parseDate(val);
-                        }
-                        else if (val instanceof Double)
-                        {
-                            val = DateUtil.getJavaDate((Double) val);
-                        }
-                    }
-                    else if (Boolean.TYPE == fieldType || Boolean.class == fieldType)
-                    {
-                        val = Convert.toBool(val, false);
-                    }
-                    if (StringUtils.isNotNull(fieldType))
-                    {
-                        String propertyName = field.getName();
-                        if (StringUtils.isNotEmpty(attr.targetAttr()))
-                        {
-                            propertyName = field.getName() + "." + attr.targetAttr();
-                        }
-                        if (StringUtils.isNotEmpty(attr.readConverterExp()))
-                        {
-                            val = reverseByExp(Convert.toStr(val), attr.readConverterExp(), attr.separator());
-                        }
-                        else if (StringUtils.isNotEmpty(attr.dictType()))
-                        {
-                            if (!sysDictMap.containsKey(attr.dictType() + val))
-                            {
-                                String dictValue = reverseDictByExp(Convert.toStr(val), attr.dictType(), attr.separator());
-                                sysDictMap.put(attr.dictType() + val, dictValue);
-                            }
-                            val = sysDictMap.get(attr.dictType() + val);
-                        }
-                        else if (!attr.handler().equals(ExcelHandlerAdapter.class))
-                        {
-                            val = dataFormatHandlerAdapter(val, attr, null);
-                        }
-                        else if (ColumnType.IMAGE == attr.cellType() && StringUtils.isNotEmpty(pictures))
-                        {
-                            val = getImageCellValue(pictures.get(row.getRowNum() + "_" + entry.getKey()));
-                            if (StringUtils.isEmpty((String) val))
-                            {
-                                continue;
-                            }
-                        }
-                        ReflectUtils.invokeSetter(entity, propertyName, val);
-                    }
+                    ReflectUtils.invokeSetter(entity, propertyName, val);
                 }
                 list.add(entity);
             }
         }
         return list;
+    }
+
+    private String getImportPropertyName(Field field, Excel attr)
+    {
+        if (StringUtils.isNotEmpty(attr.targetAttr()))
+        {
+            return field.getName() + "." + attr.targetAttr();
+        }
+        return field.getName();
+    }
+
+    private Object getImportCellValue(Row row, Integer columnIndex, Field field, Excel attr, Object val, Map<String, List<PictureData>> pictures) throws Exception
+    {
+        Object cellValue = convertImportCellType(field, val);
+        if (StringUtils.isNotEmpty(attr.readConverterExp()))
+        {
+            return reverseByExp(Convert.toStr(cellValue), attr.readConverterExp(), attr.separator());
+        }
+        if (StringUtils.isNotEmpty(attr.dictType()))
+        {
+            return getImportDictValue(attr, cellValue);
+        }
+        if (!attr.handler().equals(ExcelHandlerAdapter.class))
+        {
+            return dataFormatHandlerAdapter(cellValue, attr, null);
+        }
+        if (ColumnType.IMAGE == attr.cellType() && StringUtils.isNotEmpty(pictures))
+        {
+            String imageValue = getImageCellValue(pictures.get(row.getRowNum() + "_" + columnIndex));
+            return StringUtils.isEmpty(imageValue) ? IMPORT_CELL_SKIP : imageValue;
+        }
+        return cellValue;
+    }
+
+    private Object convertImportCellType(Field field, Object val)
+    {
+        Class<?> fieldType = field.getType();
+        if (String.class == fieldType)
+        {
+            return getStringCellValue(field, val);
+        }
+        if ((Integer.TYPE == fieldType || Integer.class == fieldType) && StringUtils.isNumeric(Convert.toStr(val)))
+        {
+            return Convert.toInt(val);
+        }
+        if ((Long.TYPE == fieldType || Long.class == fieldType) && StringUtils.isNumeric(Convert.toStr(val)))
+        {
+            return Convert.toLong(val);
+        }
+        if (Double.TYPE == fieldType || Double.class == fieldType)
+        {
+            return Convert.toDouble(val);
+        }
+        if (Float.TYPE == fieldType || Float.class == fieldType)
+        {
+            return Convert.toFloat(val);
+        }
+        if (BigDecimal.class == fieldType)
+        {
+            return Convert.toBigDecimal(val);
+        }
+        if (Date.class == fieldType)
+        {
+            return getDateCellValue(val);
+        }
+        if (Boolean.TYPE == fieldType || Boolean.class == fieldType)
+        {
+            return Convert.toBool(val, false);
+        }
+        return val;
+    }
+
+    private Object getStringCellValue(Field field, Object val)
+    {
+        String s = Convert.toStr(val);
+        if (s.matches("^\\d+\\.0$"))
+        {
+            return StringUtils.substringBefore(s, ".0");
+        }
+        String dateFormat = field.getAnnotation(Excel.class).dateFormat();
+        return StringUtils.isNotEmpty(dateFormat) ? parseDateToStr(dateFormat, val) : Convert.toStr(val);
+    }
+
+    private Object getDateCellValue(Object val)
+    {
+        if (val instanceof String)
+        {
+            return DateUtils.parseDate(val);
+        }
+        if (val instanceof Double)
+        {
+            return DateUtil.getJavaDate((Double) val);
+        }
+        return val;
+    }
+
+    private Object getImportDictValue(Excel attr, Object val)
+    {
+        String key = attr.dictType() + val;
+        if (!sysDictMap.containsKey(key))
+        {
+            String dictValue = reverseDictByExp(Convert.toStr(val), attr.dictType(), attr.separator());
+            sysDictMap.put(key, dictValue);
+        }
+        return sysDictMap.get(key);
     }
 
     private String getImageCellValue(List<PictureData> images) throws Exception
