@@ -2,6 +2,7 @@ package com.ruoyi.framework.aspectj;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -31,6 +32,8 @@ public class DataScopeAspect
      * 数据权限过滤关键字
      */
     public static final String DATA_SCOPE = "dataScope";
+
+    private static final Pattern SQL_IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
 
     @Before("@annotation(controllerDataScope)")
     public void doBefore(JoinPoint point, DataScope controllerDataScope) throws Throwable
@@ -66,6 +69,10 @@ public class DataScopeAspect
      */
     public static void dataScopeFilter(JoinPoint joinPoint, SysUser user, String userAlias, String deptAlias, String userField, String deptField, String permission)
     {
+        userAlias = safeSqlIdentifier(userAlias, "userAlias", true);
+        deptAlias = safeSqlIdentifier(deptAlias, "deptAlias", false);
+        userField = safeSqlIdentifier(userField, "userField", false);
+        deptField = safeSqlIdentifier(deptField, "deptField", false);
         StringBuilder sqlString = new StringBuilder();
         List<String> conditions = new ArrayList<String>();
         List<String> scopeCustomIds = new ArrayList<String>();
@@ -136,7 +143,12 @@ public class DataScopeAspect
 
         if (StringUtils.isNotBlank(sqlString.toString()))
         {
-            Object params = joinPoint.getArgs()[0];
+            Object[] args = joinPoint.getArgs();
+            if (args.length == 0)
+            {
+                return;
+            }
+            Object params = args[0];
             if (StringUtils.isNotNull(params) && params instanceof BaseEntity)
             {
                 BaseEntity baseEntity = (BaseEntity) params;
@@ -150,12 +162,35 @@ public class DataScopeAspect
      */
     private void clearDataScope(final JoinPoint joinPoint)
     {
-        Object params = joinPoint.getArgs()[0];
+        Object[] args = joinPoint.getArgs();
+        if (args.length == 0)
+        {
+            return;
+        }
+        Object params = args[0];
         if (StringUtils.isNotNull(params) && params instanceof BaseEntity)
         {
             BaseEntity baseEntity = (BaseEntity) params;
             baseEntity.getParams().put(DATA_SCOPE, "");
         }
+    }
+
+    private static String safeSqlIdentifier(String value, String label, boolean allowEmpty)
+    {
+        String identifier = StringUtils.trim(value);
+        if (StringUtils.isEmpty(identifier))
+        {
+            if (allowEmpty)
+            {
+                return "";
+            }
+            throw new IllegalArgumentException("数据权限标识符不能为空：" + label);
+        }
+        if (!SQL_IDENTIFIER.matcher(identifier).matches())
+        {
+            throw new IllegalArgumentException("数据权限标识符不合法：" + label);
+        }
+        return identifier;
     }
 
     private boolean hasTeacherRole(SysUser user)
