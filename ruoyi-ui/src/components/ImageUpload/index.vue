@@ -7,7 +7,7 @@
       list-type="picture-card"
       :on-success="handleUploadSuccess"
       :before-upload="handleBeforeUpload"
-      :data="data"
+      :data="uploadData"
       :limit="limit"
       :on-error="handleUploadError"
       :on-exceed="handleExceed"
@@ -60,6 +60,10 @@ export default {
     // 上传携带的参数
     data: {
       type: Object
+    },
+    directory: {
+      type: String,
+      default: ""
     },
     // 图片数量限制
     limit: {
@@ -149,6 +153,9 @@ export default {
     // 是否显示提示
     showTip() {
       return this.isShowTip && (this.fileType || this.fileSize)
+    },
+    uploadData() {
+      return this.directory ? Object.assign({}, this.data, { directory: this.directory }) : this.data
     },
   },
   methods: {

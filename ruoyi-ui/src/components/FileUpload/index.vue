@@ -5,7 +5,7 @@
       :action="uploadFileUrl"
       :before-upload="handleBeforeUpload"
       :file-list="fileList"
-      :data="data"
+      :data="uploadData"
       :limit="limit"
       :on-error="handleUploadError"
       :on-exceed="handleExceed"
@@ -30,7 +30,7 @@
     <!-- 文件列表 -->
     <transition-group ref="uploadFileList" class="upload-file-list el-upload-list el-upload-list--text" name="el-fade-in-linear" tag="ul">
       <li :key="file.url" class="el-upload-list__item ele-upload-list__item-content" v-for="(file, index) in fileList">
-        <el-link :href="`${baseUrl}${file.url}`" :underline="false" target="_blank">
+        <el-link :href="getFileUrl(file.url)" :underline="false" target="_blank">
           <span class="el-icon-document"> {{ getFileName(file.name) }} </span>
         </el-link>
         <div class="ele-upload-list__item-content-action">
@@ -43,6 +43,7 @@
 
 <script>
 import { getToken } from "@/utils/auth"
+import { resolveResourceUrl } from "@/utils/resource"
 import Sortable from 'sortablejs'
 
 export default {
@@ -58,6 +59,10 @@ export default {
     // 上传携带的参数
     data: {
       type: Object
+    },
+    directory: {
+      type: String,
+      default: ""
     },
     // 数量限制
     limit: {
@@ -146,6 +151,9 @@ export default {
     showTip() {
       return this.isShowTip && (this.fileType || this.fileSize)
     },
+    uploadData() {
+      return this.directory ? Object.assign({}, this.data, { directory: this.directory }) : this.data
+    },
   },
   methods: {
     // 上传前校检格式和大小
@@ -225,6 +233,9 @@ export default {
       }
     },
     // 对象转成指定字符串分隔
+    getFileUrl(url) {
+      return resolveResourceUrl(url)
+    },
     listToString(list, separator) {
       let strs = ""
       separator = separator || ","
