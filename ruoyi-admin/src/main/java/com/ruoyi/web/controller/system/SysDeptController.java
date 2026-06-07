@@ -77,6 +77,11 @@ public class SysDeptController extends BaseController
     @PostMapping
     public AjaxResult add(@Validated @RequestBody SysDept dept)
     {
+        AjaxResult validation = validateSchoolDept(dept);
+        if (StringUtils.isNotNull(validation))
+        {
+            return validation;
+        }
         if (!deptService.checkDeptNameUnique(dept))
         {
             return error("新增部门'" + dept.getDeptName() + "'失败，部门名称已存在");
@@ -98,6 +103,11 @@ public class SysDeptController extends BaseController
         if (!deptService.checkDeptNameUnique(dept))
         {
             return error("修改部门'" + dept.getDeptName() + "'失败，部门名称已存在");
+        }
+        AjaxResult validation = validateSchoolDept(dept);
+        if (StringUtils.isNotNull(validation))
+        {
+            return validation;
         }
         else if (dept.getParentId().equals(deptId))
         {
@@ -143,5 +153,58 @@ public class SysDeptController extends BaseController
         }
         deptService.checkDeptDataScope(deptId);
         return toAjax(deptService.deleteDeptById(deptId));
+    }
+
+    private AjaxResult validateSchoolDept(SysDept dept)
+    {
+        if (StringUtils.isNull(dept) || StringUtils.isNull(dept.getParentId()))
+        {
+            return null;
+        }
+        SysDept parent = deptService.selectDeptById(dept.getParentId());
+        if (StringUtils.isNull(parent) || !isTeachingDept(parent))
+        {
+            return null;
+        }
+        int targetLevel = schoolTargetLevel(parent);
+        if (targetLevel > 3)
+        {
+            return error("学院、专业、班级仅允许三层结构，班级下不能再创建层级");
+        }
+        if (targetLevel == 3 && StringUtils.isNotEmpty(parent.getDeptName())
+                && StringUtils.isNotEmpty(dept.getDeptName())
+                && !dept.getDeptName().startsWith(parent.getDeptName()))
+        {
+            return error("班级名称应以所属专业名称开头，不能跨专业错挂");
+        }
+        return null;
+    }
+
+    private boolean isTeachingDept(SysDept dept)
+    {
+        return Long.valueOf(120L).equals(dept.getDeptId())
+                || ArrayUtils.contains(StringUtils.split(dept.getAncestors(), ","), "120");
+    }
+
+    private int schoolTargetLevel(SysDept parent)
+    {
+        if (Long.valueOf(120L).equals(parent.getDeptId()))
+        {
+            return 1;
+        }
+        int parentLevel = 1;
+        boolean afterTeachingRoot = false;
+        for (String ancestor : StringUtils.split(parent.getAncestors(), ","))
+        {
+            if (afterTeachingRoot && StringUtils.isNotEmpty(ancestor))
+            {
+                parentLevel++;
+            }
+            if ("120".equals(ancestor))
+            {
+                afterTeachingRoot = true;
+            }
+        }
+        return parentLevel + 1;
     }
 }
