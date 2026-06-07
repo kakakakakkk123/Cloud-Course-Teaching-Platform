@@ -127,6 +127,31 @@ function buildData(conf, dataList) {
   dataList.push(`${conf.vModel}: ${defaultValue},`)
 }
 
+function buildRegExpLiteral(pattern) {
+  const raw = String(pattern || '').trim()
+  if (!raw) return ''
+  let body = raw
+  let flags = ''
+  if (raw[0] === '/') {
+    const lastSlash = raw.lastIndexOf('/')
+    if (lastSlash > 0) {
+      body = raw.slice(1, lastSlash)
+      flags = raw.slice(lastSlash + 1).replace(/[^gimsuy]/g, '')
+    }
+  }
+  try {
+    // Validate only; do not execute user-provided JavaScript.
+    new RegExp(body, flags)
+  } catch (e) {
+    return ''
+  }
+  return `/${body.replace(/\//g, '\\/')}/${flags}`
+}
+
+function escapeRuleMessage(message) {
+  return String(message || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ')
+}
+
 function buildRules(conf, ruleList) {
   if (conf.vModel === undefined) return
   const rules = []
@@ -140,7 +165,10 @@ function buildRules(conf, ruleList) {
     if (conf.regList && Array.isArray(conf.regList)) {
       conf.regList.forEach(item => {
         if (item.pattern) {
-          rules.push(`{ pattern: ${eval(item.pattern)}, message: '${item.message}', trigger: '${trigger[conf.tag]}' }`)
+          const pattern = buildRegExpLiteral(item.pattern)
+          if (pattern) {
+            rules.push(`{ pattern: ${pattern}, message: '${escapeRuleMessage(item.message)}', trigger: '${trigger[conf.tag]}' }`)
+          }
         }
       })
     }

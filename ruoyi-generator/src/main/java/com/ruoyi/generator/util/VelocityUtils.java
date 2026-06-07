@@ -148,17 +148,20 @@ public class VelocityUtils
         String tplCategory = table.getTplCategory();
         JSONObject paramsObj = JSONObject.parseObject(table.getOptions());
         boolean isView = genView(paramsObj);
-        String useWebType = "vm/vue";
-        String apiTemplate = "vm/js/api.js.vm";
-        if (StringUtils.equals(ELEMENT_PLUS, tplWebType))
+
+        String useWebType = getWebTemplatePath(tplWebType);
+        List<String> templates = getBaseTemplates(getApiTemplate(tplWebType));
+        addTypeScriptTemplates(templates, tplWebType);
+        addPageTemplates(templates, tplCategory, useWebType);
+        if (isView)
         {
-            useWebType = "vm/vue/v3";
+            templates.add(useWebType + "/view.vue.vm");
         }
-        else if (StringUtils.equals(ELEMENT_PLUS_TYPESSRIPT, tplWebType))
-        {
-            useWebType = "vm/vue/v3ts";
-            apiTemplate = "vm/ts/api.ts.vm";
-        }
+        return templates;
+    }
+
+    private static List<String> getBaseTemplates(String apiTemplate)
+    {
         List<String> templates = new ArrayList<String>();
         templates.add("vm/java/domain.java.vm");
         templates.add("vm/java/mapper.java.vm");
@@ -168,11 +171,38 @@ public class VelocityUtils
         templates.add("vm/xml/mapper.xml.vm");
         templates.add("vm/sql/sql.vm");
         templates.add(apiTemplate);
+        return templates;
+    }
+
+    private static String getWebTemplatePath(String tplWebType)
+    {
+        if (StringUtils.equals(ELEMENT_PLUS, tplWebType))
+        {
+            return "vm/vue/v3";
+        }
+        if (StringUtils.equals(ELEMENT_PLUS_TYPESSRIPT, tplWebType))
+        {
+            return "vm/vue/v3ts";
+        }
+        return "vm/vue";
+    }
+
+    private static String getApiTemplate(String tplWebType)
+    {
+        return StringUtils.equals(ELEMENT_PLUS_TYPESSRIPT, tplWebType) ? "vm/ts/api.ts.vm" : "vm/js/api.js.vm";
+    }
+
+    private static void addTypeScriptTemplates(List<String> templates, String tplWebType)
+    {
         if (StringUtils.equals(ELEMENT_PLUS_TYPESSRIPT, tplWebType))
         {
             templates.add("vm/ts/type.ts.vm");
             templates.add("vm/ts/index.ts.vm");
         }
+    }
+
+    private static void addPageTemplates(List<String> templates, String tplCategory, String useWebType)
+    {
         if (GenConstants.TPL_CRUD.equals(tplCategory))
         {
             templates.add(useWebType + "/index.vue.vm");
@@ -186,11 +216,6 @@ public class VelocityUtils
             templates.add(useWebType + "/index.vue.vm");
             templates.add("vm/java/sub-domain.java.vm");
         }
-        if (isView)
-        {
-            templates.add(useWebType + "/view.vue.vm");
-        }
-        return templates;
     }
 
     /**
@@ -198,8 +223,6 @@ public class VelocityUtils
      */
     public static String getFileName(String template, GenTable genTable)
     {
-        // 文件名称
-        String fileName = "";
         // 包路径
         String packageName = genTable.getPackageName();
         // 模块名
@@ -213,67 +236,112 @@ public class VelocityUtils
         String mybatisPath = MYBATIS_PATH + "/" + moduleName;
         String vuePath = "vue";
 
-        if (template.contains("domain.java.vm"))
+        String javaFileName = getJavaFileName(template, genTable, javaPath, className);
+        if (StringUtils.isNotEmpty(javaFileName))
         {
-            fileName = StringUtils.format("{}/domain/{}.java", javaPath, className);
+            return javaFileName;
         }
+        String mapperFileName = getMapperXmlFileName(template, mybatisPath, className);
+        if (StringUtils.isNotEmpty(mapperFileName))
+        {
+            return mapperFileName;
+        }
+        String apiFileName = getApiFileName(template, vuePath, moduleName, businessName);
+        if (StringUtils.isNotEmpty(apiFileName))
+        {
+            return apiFileName;
+        }
+        String vueFileName = getVueFileName(template, vuePath, moduleName, businessName);
+        if (StringUtils.isNotEmpty(vueFileName))
+        {
+            return vueFileName;
+        }
+        return getSqlFileName(template, businessName);
+    }
+
+    private static String getJavaFileName(String template, GenTable genTable, String javaPath, String className)
+    {
         if (template.contains("sub-domain.java.vm") && StringUtils.equals(GenConstants.TPL_SUB, genTable.getTplCategory()))
         {
-            fileName = StringUtils.format("{}/domain/{}.java", javaPath, genTable.getSubTable().getClassName());
+            return StringUtils.format("{}/domain/{}.java", javaPath, genTable.getSubTable().getClassName());
         }
-        else if (template.contains("mapper.java.vm"))
+        if (template.contains("domain.java.vm"))
         {
-            fileName = StringUtils.format("{}/mapper/{}Mapper.java", javaPath, className);
+            return StringUtils.format("{}/domain/{}.java", javaPath, className);
         }
-        else if (template.contains("service.java.vm"))
+        if (template.contains("mapper.java.vm"))
         {
-            fileName = StringUtils.format("{}/service/I{}Service.java", javaPath, className);
+            return StringUtils.format("{}/mapper/{}Mapper.java", javaPath, className);
         }
-        else if (template.contains("serviceImpl.java.vm"))
+        if (template.contains("service.java.vm"))
         {
-            fileName = StringUtils.format("{}/service/impl/{}ServiceImpl.java", javaPath, className);
+            return StringUtils.format("{}/service/I{}Service.java", javaPath, className);
         }
-        else if (template.contains("controller.java.vm"))
+        if (template.contains("serviceImpl.java.vm"))
         {
-            fileName = StringUtils.format("{}/controller/{}Controller.java", javaPath, className);
+            return StringUtils.format("{}/service/impl/{}ServiceImpl.java", javaPath, className);
         }
-        else if (template.contains("mapper.xml.vm"))
+        if (template.contains("controller.java.vm"))
         {
-            fileName = StringUtils.format("{}/{}Mapper.xml", mybatisPath, className);
+            return StringUtils.format("{}/controller/{}Controller.java", javaPath, className);
         }
-        else if (template.contains("sql.vm"))
+        return StringUtils.EMPTY;
+    }
+
+    private static String getMapperXmlFileName(String template, String mybatisPath, String className)
+    {
+        if (template.contains("mapper.xml.vm"))
         {
-            fileName = businessName + "Menu.sql";
+            return StringUtils.format("{}/{}Mapper.xml", mybatisPath, className);
         }
-        else if (template.contains("api.js.vm"))
+        return StringUtils.EMPTY;
+    }
+
+    private static String getSqlFileName(String template, String businessName)
+    {
+        if (template.contains("sql.vm"))
         {
-            fileName = StringUtils.format("{}/api/{}/{}.js", vuePath, moduleName, businessName);
+            return businessName + "Menu.sql";
         }
-        else if (template.contains("api.ts.vm"))
+        return StringUtils.EMPTY;
+    }
+
+    private static String getApiFileName(String template, String vuePath, String moduleName, String businessName)
+    {
+        if (template.contains("api.js.vm"))
         {
-            fileName = StringUtils.format("{}/api/{}/{}.ts", vuePath, moduleName, businessName);
+            return StringUtils.format("{}/api/{}/{}.js", vuePath, moduleName, businessName);
         }
-        else if (template.contains("type.ts.vm"))
+        if (template.contains("api.ts.vm"))
         {
-            fileName = StringUtils.format("{}/types/api/{}/{}.ts", vuePath, moduleName, businessName);
+            return StringUtils.format("{}/api/{}/{}.ts", vuePath, moduleName, businessName);
         }
-        else if (template.contains("index.ts.vm"))
+        if (template.contains("type.ts.vm"))
         {
-            fileName = StringUtils.format("{}/types/api/index-bak.ts", vuePath);
+            return StringUtils.format("{}/types/api/{}/{}.ts", vuePath, moduleName, businessName);
         }
-        else if (template.contains("index.vue.vm"))
+        if (template.contains("index.ts.vm"))
         {
-            fileName = StringUtils.format("{}/views/{}/{}/index.vue", vuePath, moduleName, businessName);
+            return StringUtils.format("{}/types/api/index-bak.ts", vuePath);
         }
-        else if (template.contains("index-tree.vue.vm"))
+        return StringUtils.EMPTY;
+    }
+
+    private static String getVueFileName(String template, String vuePath, String moduleName, String businessName)
+    {
+        if (template.contains("index.vue.vm"))
         {
-            fileName = StringUtils.format("{}/views/{}/{}/index.vue", vuePath, moduleName, businessName);
+            return StringUtils.format("{}/views/{}/{}/index.vue", vuePath, moduleName, businessName);
         }
-        else if (template.contains("view.vue.vm"))
+        if (template.contains("index-tree.vue.vm"))
         {
-            fileName = StringUtils.format("{}/views/{}/{}/view.vue", vuePath, moduleName, businessName);
+            return StringUtils.format("{}/views/{}/{}/index.vue", vuePath, moduleName, businessName);
         }
-        return fileName;
+        if (template.contains("view.vue.vm"))
+        {
+            return StringUtils.format("{}/views/{}/{}/view.vue", vuePath, moduleName, businessName);
+        }
+        return StringUtils.EMPTY;
     }
 
     /**

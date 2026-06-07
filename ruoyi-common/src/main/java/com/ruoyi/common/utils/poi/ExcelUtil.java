@@ -510,15 +510,11 @@ public class ExcelUtil<T>
                         }
                         else if (ColumnType.IMAGE == attr.cellType() && StringUtils.isNotEmpty(pictures))
                         {
-                            StringBuilder propertyString = new StringBuilder();
-                            List<PictureData> images = pictures.get(row.getRowNum() + "_" + entry.getKey());
-                            for (PictureData picture : images)
+                            val = getImageCellValue(pictures.get(row.getRowNum() + "_" + entry.getKey()));
+                            if (StringUtils.isEmpty((String) val))
                             {
-                                byte[] data = picture.getData();
-                                String fileName = FileUtils.writeImportBytes(data);
-                                propertyString.append(fileName).append(SEPARATOR);
+                                continue;
                             }
-                            val = StringUtils.stripEnd(propertyString.toString(), SEPARATOR);
                         }
                         ReflectUtils.invokeSetter(entity, propertyName, val);
                     }
@@ -529,9 +525,25 @@ public class ExcelUtil<T>
         return list;
     }
 
+    private String getImageCellValue(List<PictureData> images) throws Exception
+    {
+        if (StringUtils.isEmpty(images))
+        {
+            return StringUtils.EMPTY;
+        }
+        StringBuilder propertyString = new StringBuilder();
+        for (PictureData picture : images)
+        {
+            byte[] data = picture.getData();
+            String fileName = FileUtils.writeImportBytes(data);
+            propertyString.append(fileName).append(SEPARATOR);
+        }
+        return StringUtils.stripEnd(propertyString.toString(), SEPARATOR);
+    }
+
     /**
      * 对list数据源将其里面的数据导入到excel表单
-     * 
+     *
      * @param list 导出数据集合
      * @param sheetName 工作表的名称
      * @return 结果
