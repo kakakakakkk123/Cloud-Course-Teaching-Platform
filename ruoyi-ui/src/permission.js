@@ -6,6 +6,7 @@ import 'nprogress/nprogress.css'
 import { getToken } from '@/utils/auth'
 import { isPathMatch } from '@/utils/validate'
 import { isRelogin } from '@/utils/request'
+import { getHomePath, isDashboardPath, normalizeHomePath } from '@/utils/home'
 
 NProgress.configure({ showSpinner: false })
 
@@ -20,9 +21,10 @@ router.beforeEach((to, from, next) => {
   if (getToken()) {
     to.meta.title && store.dispatch('settings/setTitle', to.meta.title)
     const isLock = store.getters.isLock
+    const currentHomePath = getHomePath(store.getters.roles)
     /* has token*/
     if (to.path === '/login') {
-      next({ path: '/index' })
+      next({ path: currentHomePath })
       NProgress.done()
     } else if (isWhiteList(to.path)) {
       next()
@@ -30,7 +32,7 @@ router.beforeEach((to, from, next) => {
       next({ path: '/lock' })
       NProgress.done()
     } else if (!isLock && to.path === '/lock') {
-      next({ path: '/index' })
+      next({ path: currentHomePath })
       NProgress.done()
     } else {
       if (store.getters.roles.length === 0) {
@@ -41,7 +43,12 @@ router.beforeEach((to, from, next) => {
           store.dispatch('GenerateRoutes').then(accessRoutes => {
             // 根据roles权限生成可访问的路由表
             router.addRoutes(accessRoutes) // 动态添加可访问路由表
-            next({ ...to, replace: true }) // hack方法 确保addRoutes已完成
+            const targetPath = normalizeHomePath(store.getters.roles, to.path)
+            if (targetPath !== to.path) {
+              next({ path: targetPath, replace: true })
+            } else {
+              next({ ...to, replace: true }) // hack方法 确保addRoutes已完成
+            }
           })
         }).catch(err => {
             store.dispatch('LogOut').then(() => {
@@ -49,6 +56,8 @@ router.beforeEach((to, from, next) => {
               next({ path: '/' })
             })
           })
+      } else if (isDashboardPath(to.path) && currentHomePath !== to.path) {
+        next({ path: currentHomePath, replace: true })
       } else {
         next()
       }

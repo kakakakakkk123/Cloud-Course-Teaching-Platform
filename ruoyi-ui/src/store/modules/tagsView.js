@@ -1,5 +1,6 @@
 import store from '@/store'
 import cache from '@/plugins/cache'
+import { isDashboardPath, isStudentRole } from '@/utils/home'
 
 const PERSIST_KEY = 'tags-view-visited'
 
@@ -21,6 +22,10 @@ function clearVisitedViews() {
   cache.local.remove(PERSIST_KEY)
 }
 
+function canKeepVisitedView(view) {
+  return !(isStudentRole(store.getters.roles) && isDashboardPath(view && view.path))
+}
+
 const state = {
   visitedViews: [],
   cachedViews: [],
@@ -37,6 +42,7 @@ const mutations = {
     )
   },
   ADD_VISITED_VIEW: (state, view) => {
+    if (!canKeepVisitedView(view)) return
     if (state.visitedViews.some(v => v.path === view.path)) return
     state.visitedViews.push(
       Object.assign({}, view, {
@@ -46,6 +52,7 @@ const mutations = {
     saveVisitedViews(state.visitedViews)
   },
   ADD_VISITED_VIEW_FIRST: (state, view) => {
+    if (!canKeepVisitedView(view)) return
     if (state.visitedViews.some(v => v.path === view.path)) return
     state.visitedViews.unshift(
       Object.assign({}, view, {
@@ -95,7 +102,7 @@ const mutations = {
   DEL_ALL_VISITED_VIEWS: state => {
     // keep affix tags
     const affixTags = state.visitedViews.filter(tag => tag.meta.affix)
-    state.visitedViews = affixTags
+    state.visitedViews = affixTags.filter(canKeepVisitedView)
     state.iframeViews = []
     clearVisitedViews()
   },
@@ -267,7 +274,7 @@ const actions = {
   // 恢复持久化的 tags
   loadPersistedViews({ commit }) {
     const views = loadVisitedViews()
-    views.forEach(view => {
+    views.filter(canKeepVisitedView).forEach(view => {
       commit('ADD_VISITED_VIEW', view)
     })
   },
