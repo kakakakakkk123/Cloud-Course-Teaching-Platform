@@ -1,11 +1,12 @@
 <template>
-  <div class="app-container tree-sidebar-manage-wrap">
+  <div class="app-container account-page" :class="{ 'has-tree': showOrgFilter }">
     <tree-panel
+      v-if="showOrgFilter"
       ref="accountTreeRef"
-      :title="currentTreeTitle"
-      :tree-data="currentTreeData"
-      :search-placeholder="currentTreeSearchPlaceholder"
-      :storage-key="currentTreeStorageKey"
+      title="院系分类"
+      :tree-data="deptTreeOptions"
+      search-placeholder="请输入学院 / 专业 / 班级"
+      storage-key="account-dept-sidebar-width"
       :defaultExpandAll="true"
       @node-click="handleTreeNodeClick"
       @refresh="resetTreeFilter"
@@ -18,159 +19,127 @@
         </span>
       </template>
     </tree-panel>
-    <div class="tree-sidebar-content">
-      <div class="content-inner">
-        <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-          <el-form-item label="用户名" prop="userName">
-            <el-input v-model="queryParams.userName" placeholder="请输入用户名" clearable style="width: 240px" @keyup.enter.native="handleQuery" />
-          </el-form-item>
-          <el-form-item label="手机号" prop="phonenumber">
-            <el-input v-model="queryParams.phonenumber" placeholder="请输入手机号" clearable style="width: 240px" @keyup.enter.native="handleQuery" />
-          </el-form-item>
-          <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" placeholder="用户状态" clearable style="width: 240px">
-              <el-option v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="创建时间">
-            <el-date-picker
-              v-model="dateRange"
-              style="width: 240px"
-              value-format="yyyy-MM-dd"
-              type="daterange"
-              range-separator="-"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-            <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-          </el-form-item>
-        </el-form>
 
-        <div class="policy-strip">
-          <div class="policy-strip__text">
-            <span class="policy-strip__title">学生自主注册</span>
-            <span class="policy-strip__desc">开启后学生可自由注册，关闭后注册页将不可继续提交。</span>
-          </div>
-          <div class="policy-strip__action">
+    <div class="account-content">
+      <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="72px">
+        <el-form-item label="登录账号" prop="userName">
+          <el-input v-model="queryParams.userName" placeholder="请输入登录账号" clearable style="width: 220px" @keyup.enter.native="handleQuery" />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phonenumber">
+          <el-input v-model="queryParams.phonenumber" placeholder="请输入手机号" clearable style="width: 220px" @keyup.enter.native="handleQuery" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="queryParams.status" placeholder="账号状态" clearable style="width: 180px">
+            <el-option v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="创建时间">
+          <el-date-picker
+            v-model="dateRange"
+            style="width: 240px"
+            value-format="yyyy-MM-dd"
+            type="daterange"
+            range-separator="-"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+          <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
+
+      <el-row :gutter="10" class="mb8">
+        <el-col v-if="canManageAccounts" :span="1.5">
+          <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
+        </el-col>
+        <el-col v-if="canManageAccounts" :span="1.5">
+          <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate">修改</el-button>
+        </el-col>
+        <el-col v-if="canManageStudents" :span="1.5">
+          <el-button type="success" plain icon="el-icon-video-play" size="mini" :disabled="multiple" @click="handleBatchStatusChange('0')">批量启用</el-button>
+        </el-col>
+        <el-col v-if="canManageStudents" :span="1.5">
+          <el-button type="warning" plain icon="el-icon-video-pause" size="mini" :disabled="multiple" @click="handleBatchStatusChange('1')">批量禁用</el-button>
+        </el-col>
+        <el-col v-if="canManageStudents" :span="1.5">
+          <el-button type="primary" plain icon="el-icon-key" size="mini" :disabled="multiple" @click="handleBatchResetPwd">批量重置密码</el-button>
+        </el-col>
+        <el-col v-if="canManageStudents" :span="1.5">
+          <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete">批量删除</el-button>
+        </el-col>
+        <el-col v-if="canManageAccounts" :span="1.5">
+          <el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport">导入</el-button>
+        </el-col>
+        <el-col v-if="canManageAccounts" :span="1.5">
+          <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport">导出</el-button>
+        </el-col>
+        <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" />
+      </el-row>
+
+      <el-table ref="userTable" v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="50" align="center" :selectable="selectableRow" />
+        <el-table-column label="用户编号" align="center" prop="userId" width="90" />
+        <el-table-column label="登录账号" align="center" min-width="130" :show-overflow-tooltip="true">
+          <template slot-scope="scope">
+            <a class="link-type" @click="handleViewData(scope.row)">{{ scope.row.userName }}</a>
+          </template>
+        </el-table-column>
+        <el-table-column label="用户昵称" align="center" prop="nickName" min-width="120" :show-overflow-tooltip="true" />
+        <el-table-column label="身份" align="center" prop="identityName" min-width="110" />
+        <el-table-column v-if="showOrgColumns" label="所属学院" align="center" min-width="140" :show-overflow-tooltip="true">
+          <template slot-scope="scope">{{ getAcademyName(scope.row) }}</template>
+        </el-table-column>
+        <el-table-column v-if="showOrgColumns" label="年级" align="center" width="100">
+          <template slot-scope="scope">{{ getGradeName(scope.row) }}</template>
+        </el-table-column>
+        <el-table-column v-if="showOrgColumns" label="专业" align="center" min-width="140" :show-overflow-tooltip="true">
+          <template slot-scope="scope">{{ getMajorName(scope.row) }}</template>
+        </el-table-column>
+        <el-table-column v-if="showOrgColumns" label="班级" align="center" min-width="140" :show-overflow-tooltip="true">
+          <template slot-scope="scope">{{ getClassName(scope.row) }}</template>
+        </el-table-column>
+        <el-table-column label="手机号" align="center" prop="phonenumber" width="120" />
+        <el-table-column label="状态" align="center" width="90">
+          <template slot-scope="scope">
             <el-switch
-              v-model="registerEnabled"
-              active-text="开启"
-              inactive-text="关闭"
-              @change="handleRegisterToggle"
+              v-model="scope.row.status"
+              active-value="0"
+              inactive-value="1"
+              :disabled="isAdminAccount(scope.row)"
+              @change="handleStatusChange(scope.row)"
             />
-            <el-button type="text" class="policy-strip__refresh" @click="refreshPolicies">刷新</el-button>
-          </div>
-        </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="创建时间" align="center" prop="createTime" width="160">
+          <template slot-scope="scope">{{ parseTime(scope.row.createTime) }}</template>
+        </el-table-column>
+        <el-table-column label="操作" align="center" width="180" class-name="small-padding fixed-width">
+          <template slot-scope="scope">
+            <span v-if="isAdminAccount(scope.row)" class="locked-tip">管理员账号不可操作</span>
+            <template v-else>
+              <el-button size="mini" type="text" icon="el-icon-key" @click="handleResetPwd(scope.row)">重置密码</el-button>
+              <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
+            </template>
+          </template>
+        </el-table-column>
+      </el-table>
 
-        <el-row :gutter="10" class="mb8">
-          <el-col v-if="canManageAccounts" :span="1.5">
-            <el-button class="action-btn" type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
-          </el-col>
-          <el-col v-if="canManageAccounts" :span="1.5">
-            <el-button class="action-btn" type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate">修改</el-button>
-          </el-col>
-          <el-col v-if="canManageStudents" :span="1.5">
-            <el-button class="action-btn" type="primary" plain icon="el-icon-check" size="mini" :disabled="!userList || !userList.length" @click="handleToggleAllSelection">全选</el-button>
-          </el-col>
-          <el-col v-if="canManageStudents" :span="1.5">
-            <el-button class="action-btn" type="success" plain icon="el-icon-video-play" size="mini" :disabled="multiple" @click="handleBatchStatusChange('0')">批量启用</el-button>
-          </el-col>
-          <el-col v-if="canManageStudents" :span="1.5">
-            <el-button class="action-btn" type="warning" plain icon="el-icon-video-pause" size="mini" :disabled="multiple" @click="handleBatchStatusChange('1')">批量禁用</el-button>
-          </el-col>
-          <el-col v-if="canManageStudents" :span="1.5">
-            <el-button class="action-btn" type="primary" plain icon="el-icon-key" size="mini" :disabled="multiple" @click="handleBatchResetPwd">批量重置密码</el-button>
-          </el-col>
-          <el-col v-if="canManageStudents" :span="1.5">
-            <el-button class="action-btn" type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete">批量删除</el-button>
-          </el-col>
-          <el-col v-if="canManageAccounts" :span="1.5">
-            <el-button class="action-btn" type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport">导入</el-button>
-          </el-col>
-          <el-col v-if="canManageAccounts" :span="1.5">
-            <el-button class="action-btn" type="warning" plain icon="el-icon-download" size="mini" @click="handleExport">导出</el-button>
-          </el-col>
-          <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns" />
-        </el-row>
-
-        <el-table ref="userTable" v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
-          <el-table-column type="selection" width="50" align="center" :selectable="selectableRow" />
-          <el-table-column label="用户编号" align="center" key="userId" prop="userId" v-if="columns.userId.visible" />
-          <el-table-column label="用户名" align="center" key="userName" v-if="columns.userName.visible" :show-overflow-tooltip="true">
-            <template slot-scope="scope">
-              <a class="link-type" style="cursor: pointer" @click="handleViewData(scope.row)">{{ scope.row.userName }}</a>
-            </template>
-          </el-table-column>
-          <el-table-column label="用户昵称" align="center" key="nickName" prop="nickName" v-if="columns.nickName.visible" :show-overflow-tooltip="true" />
-          <el-table-column label="身份" align="center" key="identityName" prop="identityName" v-if="columns.identityName.visible" :show-overflow-tooltip="true" />
-          <el-table-column label="所属学院" align="center" key="academyName" v-if="columns.academyName.visible" min-width="140" :show-overflow-tooltip="true">
-            <template slot-scope="scope">
-              <span>{{ getAcademyName(scope.row) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="年级" align="center" key="gradeName" v-if="columns.gradeName.visible" width="110">
-            <template slot-scope="scope">
-              <span>{{ getGradeName(scope.row) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="专业" align="center" key="majorName" v-if="columns.majorName.visible" min-width="140" :show-overflow-tooltip="true">
-            <template slot-scope="scope">
-              <span>{{ getMajorName(scope.row) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="班级" align="center" key="className" v-if="columns.className.visible" min-width="140" :show-overflow-tooltip="true">
-            <template slot-scope="scope">
-              <span>{{ getClassName(scope.row) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="手机号" align="center" key="phonenumber" prop="phonenumber" v-if="columns.phonenumber.visible" width="120" />
-          <el-table-column label="状态" align="center" key="status" v-if="columns.status.visible">
-            <template slot-scope="scope">
-              <el-switch
-                v-model="scope.row.status"
-                active-value="0"
-                inactive-value="1"
-                :disabled="isAdminAccount(scope.row)"
-                @change="handleStatusChange(scope.row)"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column label="创建时间" align="center" prop="createTime" v-if="columns.createTime.visible" width="160">
-            <template slot-scope="scope">
-              <span>{{ parseTime(scope.row.createTime) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" align="center" width="160" class-name="small-padding fixed-width">
-            <template slot-scope="scope">
-              <span v-if="isAdminAccount(scope.row)" class="locked-tip">管理员账号不可操作</span>
-              <template v-else>
-                <el-button size="mini" type="text" icon="el-icon-key" @click="handleResetPwd(scope.row)">重置密码</el-button>
-                <el-button size="mini" type="text" icon="el-icon-switch-button" @click="handleStatusChange(scope.row)">
-                  {{ scope.row.status === '0' ? '禁用' : '启用' }}
-                </el-button>
-                <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
-              </template>
-            </template>
-          </el-table-column>
-        </el-table>
-        <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
-      </div>
+      <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
     </div>
 
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+    <el-dialog :title="title" :visible.sync="open" width="640px" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="90px">
         <el-row>
           <el-col :span="12">
             <el-form-item label="用户昵称" prop="nickName">
               <el-input v-model="form.nickName" placeholder="请输入用户昵称" maxlength="30" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="所属学院" prop="deptId">
-              <treeselect v-model="form.deptId" :options="enabledDeptOptions" :show-count="true" placeholder="请选择所属学院" />
+          <el-col v-if="showOrgColumns" :span="12">
+            <el-form-item label="所属院系" prop="deptId">
+              <treeselect v-model="form.deptId" :options="enabledDeptOptions" :show-count="true" placeholder="请选择学院 / 专业 / 班级" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -188,13 +157,13 @@
         </el-row>
         <el-row>
           <el-col :span="12">
-            <el-form-item v-if="form.userId === undefined" label="用户名" prop="userName">
-              <el-input v-model="form.userName" placeholder="请输入用户名" maxlength="30" />
+            <el-form-item v-if="form.userId === undefined" label="登录账号" prop="userName">
+              <el-input v-model="form.userName" placeholder="请输入登录账号" maxlength="30" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item v-if="form.userId === undefined" label="用户密码" prop="password" :rules="pwdValidator">
-              <el-input v-model="form.password" placeholder="请输入用户密码" type="password" maxlength="20" show-password />
+            <el-form-item v-if="form.userId === undefined" label="登录密码" prop="password" :rules="pwdValidator">
+              <el-input v-model="form.password" placeholder="请输入登录密码" type="password" maxlength="20" show-password />
             </el-form-item>
           </el-col>
         </el-row>
@@ -216,27 +185,16 @@
         </el-row>
         <el-row>
           <el-col :span="12">
-            <el-form-item label="所属班级">
-              <el-select v-model="form.postIds" multiple placeholder="请选择所属班级">
-                <el-option v-for="item in postOptions" :key="item.postId" :label="item.postName" :value="item.postId" :disabled="item.status === 1" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="用户身份">
-              <el-select v-model="form.roleIds" multiple placeholder="请选择用户身份">
+            <el-form-item label="用户角色">
+              <el-select v-model="form.roleIds" multiple placeholder="请选择用户角色">
                 <el-option v-for="item in roleOptions" :key="item.roleId" :label="item.roleName" :value="item.roleId" :disabled="item.status === 1" />
               </el-select>
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row>
-          <el-col :span="24">
-            <el-form-item label="备注">
-              <el-input v-model="form.remark" type="textarea" placeholder="请输入备注" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <el-form-item label="备注">
+          <el-input v-model="form.remark" type="textarea" placeholder="请输入备注" />
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确定</el-button>
@@ -266,7 +224,6 @@ import ExcelImportDialog from "@/components/ExcelImportDialog"
 import UserViewDrawer from "./view"
 import passwordRule from "@/utils/passwordRule"
 import { mapGetters } from "vuex"
-import { getRegisterEnabled, setRegisterEnabled } from "@/api/account"
 
 export default {
   name: "User",
@@ -275,20 +232,23 @@ export default {
   components: { Treeselect, TreePanel, ExcelImportDialog, UserViewDrawer },
   computed: {
     ...mapGetters(["roles"]),
-    currentTreeTitle() {
-      return "院系分类"
+    currentRoleId() {
+      const routeRoleId = Number(this.$route.query.roleId)
+      if (Number.isFinite(routeRoleId) && routeRoleId > 0) {
+        return routeRoleId
+      }
+      const pathRoleMap = {
+        "/account/admin": 1,
+        "/account/teacher": 3,
+        "/account/student": 4
+      }
+      return pathRoleMap[this.$route.path] || undefined
     },
-    currentTreeData() {
-      return this.deptTreeOptions
+    showOrgFilter() {
+      return this.currentRoleId !== 1
     },
-    currentTreeSearchPlaceholder() {
-      return "请输入学院/专业/班级"
-    },
-    currentTreeStorageKey() {
-      return "account-dept-sidebar-width"
-    },
-    isAdminRole() {
-      return this.roles.includes("admin")
+    showOrgColumns() {
+      return this.currentRoleId !== 1
     },
     canManageAccounts() {
       return this.roles.includes("teacher") || this.roles.includes("admin")
@@ -306,13 +266,11 @@ export default {
       multiple: true,
       showSearch: true,
       total: 0,
-      userList: null,
+      userList: [],
       title: "",
-      registerEnabled: false,
-      deptOptions: undefined,
       deptTreeOptions: [],
       deptMetaMap: {},
-      enabledDeptOptions: undefined,
+      enabledDeptOptions: [],
       open: false,
       initPassword: undefined,
       dateRange: [],
@@ -328,23 +286,10 @@ export default {
         deptId: undefined,
         roleId: undefined
       },
-      columns: {
-        userId: { label: "用户编号", visible: true },
-        userName: { label: "用户名", visible: true },
-        nickName: { label: "用户昵称", visible: true },
-        identityName: { label: "身份", visible: true },
-        academyName: { label: "所属学院", visible: true },
-        gradeName: { label: "年级", visible: true },
-        majorName: { label: "专业", visible: true },
-        className: { label: "班级", visible: true },
-        phonenumber: { label: "手机号", visible: true },
-        status: { label: "状态", visible: true },
-        createTime: { label: "创建时间", visible: true }
-      },
       rules: {
         userName: [
-          { required: true, message: "用户名不能为空", trigger: "blur" },
-          { min: 2, max: 20, message: "用户名长度必须介于 2 到 20 之间", trigger: "blur" }
+          { required: true, message: "登录账号不能为空", trigger: "blur" },
+          { min: 2, max: 20, message: "登录账号长度必须在 2 到 20 个字符之间", trigger: "blur" }
         ],
         nickName: [
           { required: true, message: "用户昵称不能为空", trigger: "blur" }
@@ -353,7 +298,7 @@ export default {
           { type: "email", message: "请输入正确的邮箱地址", trigger: ["blur", "change"] }
         ],
         phonenumber: [
-          { pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号码", trigger: "blur" }
+          { pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号", trigger: "blur" }
         ]
       }
     }
@@ -362,7 +307,6 @@ export default {
     this.applyRouteScope()
     this.getList()
     this.getDeptTree()
-    this.refreshPolicies()
     this.getConfigKey("sys.user.initPassword").then(response => {
       this.initPassword = response.msg
     })
@@ -375,17 +319,10 @@ export default {
   },
   methods: {
     applyRouteScope() {
-      const roleId = Number(this.$route.query.roleId)
-      if (Number.isFinite(roleId) && roleId > 0) {
-        this.queryParams.roleId = roleId
-        return
+      this.queryParams.roleId = this.currentRoleId
+      if (!this.showOrgFilter) {
+        this.queryParams.deptId = undefined
       }
-      const pathRoleMap = {
-        "/account/admin": 1,
-        "/account/teacher": 3,
-        "/account/student": 4
-      }
-      this.queryParams.roleId = pathRoleMap[this.$route.path] || undefined
     },
     getList() {
       this.loading = true
@@ -397,16 +334,15 @@ export default {
     },
     getDeptTree() {
       deptTreeSelect().then(response => {
-        this.deptOptions = response.data
-        this.deptMetaMap = this.buildDeptMetaMap(response.data || [])
-        this.deptTreeOptions = this.buildDeptFilterTree(response.data || [])
-        this.enabledDeptOptions = this.filterDisabledDept(JSON.parse(JSON.stringify(response.data || [])))
+        const data = response.data || []
+        this.deptMetaMap = this.buildDeptMetaMap(data)
+        this.deptTreeOptions = this.buildDeptFilterTree(data)
+        this.enabledDeptOptions = this.filterDisabledDept(JSON.parse(JSON.stringify(data)))
       })
     },
     buildDeptMetaMap(nodes, path = []) {
-      return (nodes || []).reduce((acc, node, index) => {
-        const level = path.length
-        const label = this.formatSchoolDeptLabel(node.label, level, index)
+      return (nodes || []).reduce((acc, node) => {
+        const label = node.label || ""
         const currentPath = [...path, label]
         acc[node.id] = {
           deptId: node.id,
@@ -421,67 +357,29 @@ export default {
       }, {})
     },
     buildDeptFilterTree(deptList) {
-      const tree = [
-        {
-          id: "dept-0",
-          deptId: 0,
-          label: "全部院系",
-          levelLabel: "全部",
-          children: this.decorateDeptNodes(JSON.parse(JSON.stringify(deptList || [])))
-        }
-      ]
-      return tree
+      return [{
+        id: "dept-0",
+        deptId: 0,
+        label: "全部院系",
+        levelLabel: "全部",
+        children: this.decorateDeptNodes(JSON.parse(JSON.stringify(deptList || [])))
+      }]
     },
     decorateDeptNodes(nodes, level = 0) {
       const levelLabels = ["学院", "专业", "班级"]
-      return (nodes || []).map((node, index) => {
-        const children = this.decorateDeptNodes(node.children || [], level + 1)
-        return {
-          ...node,
-          id: `dept-${node.id}`,
-          deptId: node.id,
-          label: this.formatSchoolDeptLabel(node.label, level, index),
-          levelLabel: levelLabels[level] || "层级",
-          children
-        }
-      })
-    },
-    formatSchoolDeptLabel(label, level, index = 0) {
-      const rawLabel = label || ""
-      if (!rawLabel) {
-        return rawLabel
-      }
-      const schoolFallbackMap = {
-        0: ["计算机学院", "经济管理学院", "外国语学院", "马克思主义学院", "艺术学院"],
-        1: ["软件工程", "工商管理", "英语", "思想政治教育", "视觉传达设计"],
-        2: ["软件工程1班", "工商管理1班", "英语1班", "思政1班", "视觉传达1班"]
-      }
-      const directMatch = schoolFallbackMap[level] && schoolFallbackMap[level][index]
-      if (directMatch) {
-        return directMatch
-      }
-      if (level === 0) {
-        return rawLabel
-          .replace(/科技|公司/g, "学院")
-          .replace(/总学院|分学院/g, "学院")
-      }
-      if (level === 1) {
-        return rawLabel
-          .replace(/总公司|分公司/g, "")
-          .replace(/部门/g, "专业")
-      }
-      if (level >= 2) {
-        return rawLabel
-          .replace(/部门/g, "班")
-          .replace(/专业$/, "1班")
-      }
-      return rawLabel
+      return (nodes || []).map(node => ({
+        ...node,
+        id: `dept-${node.id}`,
+        deptId: node.id,
+        levelLabel: levelLabels[level] || "层级",
+        children: this.decorateDeptNodes(node.children || [], level + 1)
+      }))
     },
     isStudentRow(row) {
-      return (row.identityName || "").indexOf("学生") !== -1
+      return (row.identityName || "").indexOf("学生") !== -1 || row.roleId === 4
     },
     isTeacherRow(row) {
-      return (row.identityName || "").indexOf("教师") !== -1
+      return (row.identityName || "").indexOf("教师") !== -1 || row.roleId === 3
     },
     getDeptMeta(row) {
       return this.deptMetaMap[row.deptId] || {}
@@ -511,8 +409,7 @@ export default {
       if (row.grade) {
         return row.grade
       }
-      const studentNo = row.studentNo || ""
-      const matchedYear = String(studentNo).match(/^(20\d{2})/)
+      const matchedYear = String(row.studentNo || "").match(/^(20\d{2})/)
       return matchedYear ? `${matchedYear[1]}级` : "-"
     },
     filterDisabledDept(deptList) {
@@ -527,49 +424,30 @@ export default {
       })
     },
     handleTreeNodeClick(data) {
-      this.applyRouteScope()
       this.queryParams.deptId = data.deptId > 0 ? data.deptId : undefined
       this.handleQuery()
     },
     resetTreeFilter() {
       this.queryParams.deptId = undefined
-      this.applyRouteScope()
       if (this.$refs.accountTreeRef) {
         this.$refs.accountTreeRef.setCurrentKey(null)
       }
       this.handleQuery()
     },
-    refreshPolicies() {
-      getRegisterEnabled().then(res => {
-        this.registerEnabled = !!res.data
-      })
-    },
-    handleRegisterToggle(val) {
-      setRegisterEnabled(val ? "0" : "1").then(() => {
-        this.$modal.msgSuccess(val ? "已开启学生自主注册" : "已关闭学生自主注册")
-      }).catch(() => {
-        this.registerEnabled = !val
-      })
-    },
     isAdminAccount(row) {
       const identityName = row.identityName || ""
-      return row.userId === 1 || identityName.indexOf("管理员") !== -1
+      return row.userId === 1 || identityName.indexOf("管理员") !== -1 || row.roleId === 1
     },
     selectableRow(row) {
       return !this.isAdminAccount(row)
     },
-    handleToggleAllSelection() {
-      if (this.$refs.userTable) {
-        this.$refs.userTable.toggleAllSelection()
-      }
-    },
     getManageRows(rows) {
-      return rows.filter(row => !this.isAdminAccount(row))
+      return (rows || []).filter(row => !this.isAdminAccount(row))
     },
     handleBatchStatusChange(status) {
       const rows = this.getManageRows(this.selectedRows)
       if (!rows.length) {
-        this.$modal.msgWarning("请先选择要操作的学生账号")
+        this.$modal.msgWarning("请先选择要操作的账号")
         return
       }
       const actionText = status === "0" ? "启用" : "禁用"
@@ -583,7 +461,7 @@ export default {
     handleBatchResetPwd() {
       const rows = this.getManageRows(this.selectedRows)
       if (!rows.length) {
-        this.$modal.msgWarning("请先选择要操作的学生账号")
+        this.$modal.msgWarning("请先选择要操作的账号")
         return
       }
       this.$prompt(`请输入所选 ${rows.length} 个账号的新密码`, "批量重置密码", {
@@ -604,10 +482,10 @@ export default {
         return
       }
       const text = row.status === "0" ? "启用" : "停用"
-      this.$modal.confirm('确认要' + text + '“' + row.userName + '”用户吗？').then(function() {
+      this.$modal.confirm(`确认要${text}“${row.userName}”账号吗？`).then(() => {
         return changeUserStatus(row.userId, row.status)
       }).then(() => {
-        this.$modal.msgSuccess(text + "成功")
+        this.$modal.msgSuccess(`${text}成功`)
       }).catch(() => {
         row.status = row.status === "0" ? "1" : "0"
       })
@@ -628,7 +506,6 @@ export default {
         sex: undefined,
         status: "0",
         remark: undefined,
-        postIds: [],
         roleIds: []
       }
       this.resetForm("form")
@@ -640,7 +517,6 @@ export default {
     resetQuery() {
       this.dateRange = []
       this.resetForm("queryForm")
-      this.queryParams.deptId = undefined
       this.applyRouteScope()
       if (this.$refs.accountTreeRef) {
         this.$refs.accountTreeRef.setCurrentKey(null)
@@ -649,21 +525,9 @@ export default {
     },
     handleSelectionChange(selection) {
       this.selectedRows = selection || []
-      this.ids = selection.map(item => item.userId)
-      this.single = selection.length !== 1
-      this.multiple = !selection.length
-    },
-    handleCommand(command, row) {
-      switch (command) {
-        case "handleResetPwd":
-          this.handleResetPwd(row)
-          break
-        case "handleAuthRole":
-          this.handleAuthRole(row)
-          break
-        default:
-          break
-      }
+      this.ids = this.selectedRows.map(item => item.userId)
+      this.single = this.selectedRows.length !== 1
+      this.multiple = !this.selectedRows.length
     },
     handleAdd() {
       this.reset()
@@ -682,7 +546,6 @@ export default {
         this.form = response.data || {}
         this.postOptions = response.posts || []
         this.roleOptions = response.roles || []
-        this.$set(this.form, "postIds", response.postIds || [])
         this.$set(this.form, "roleIds", response.roleIds || [])
         this.open = true
         this.title = "修改账号"
@@ -701,13 +564,13 @@ export default {
         })
       }).catch(() => {})
     },
-    handleAuthRole(row) {
-      this.$router.push("/system/user-auth/role/" + row.userId)
-    },
     submitForm() {
       this.$refs.form.validate(valid => {
         if (!valid) {
           return
+        }
+        if (!this.showOrgColumns) {
+          this.form.deptId = undefined
         }
         if (this.form.userId !== undefined) {
           updateUser(this.form).then(() => {
@@ -731,7 +594,7 @@ export default {
         this.$modal.msgError("管理员账号不能删除")
         return
       }
-      this.$modal.confirm('是否确认删除用户编号为“' + userIds.join("、") + '”的数据项？').then(function() {
+      this.$modal.confirm(`是否确认删除账号编号为“${userIds.join("、")}”的数据项？`).then(() => {
         return delUser(userIds)
       }).then(() => {
         this.getList()
@@ -754,47 +617,18 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.policy-strip {
+.account-page {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin: 8px 0 16px;
-  padding: 12px 16px;
-  border: 1px solid #e5eaf3;
-  border-radius: 10px;
-  background: #f8fbff;
+  min-height: calc(100vh - 84px);
 }
 
-.policy-strip__text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.account-page:not(.has-tree) {
+  display: block;
 }
 
-.policy-strip__title {
-  color: #1f2d3d;
-  font-weight: 600;
-}
-
-.policy-strip__desc {
-  color: #909399;
-  font-size: 12px;
-}
-
-.policy-strip__action {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.policy-strip__refresh {
-  padding: 0;
-}
-
-.tree-mode-select {
-  width: 110px;
-  margin-left: 8px;
+.account-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .account-tree-node {
@@ -813,8 +647,8 @@ export default {
   line-height: 18px;
 }
 
-.action-btn {
-  min-width: 96px;
+.locked-tip {
+  color: #909399;
 }
 
 .mb8 {

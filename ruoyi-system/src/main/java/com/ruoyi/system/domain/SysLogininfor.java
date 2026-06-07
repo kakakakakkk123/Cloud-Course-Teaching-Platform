@@ -43,6 +43,15 @@ public class SysLogininfor extends BaseEntity
     @Excel(name = "操作系统")
     private String os;
 
+    @Excel(name = "设备号")
+    private String deviceId;
+
+    @Excel(name = "MAC地址")
+    private String macAddress;
+
+    @Excel(name = "User-Agent")
+    private String userAgent;
+
     /** 提示消息 */
     @Excel(name = "提示消息")
     private String msg;
@@ -120,6 +129,36 @@ public class SysLogininfor extends BaseEntity
     public void setOs(String os)
     {
         this.os = os;
+    }
+
+    public String getDeviceId()
+    {
+        return deviceId;
+    }
+
+    public void setDeviceId(String deviceId)
+    {
+        this.deviceId = deviceId;
+    }
+
+    public String getMacAddress()
+    {
+        return macAddress;
+    }
+
+    public void setMacAddress(String macAddress)
+    {
+        this.macAddress = macAddress;
+    }
+
+    public String getUserAgent()
+    {
+        return userAgent;
+    }
+
+    public void setUserAgent(String userAgent)
+    {
+        this.userAgent = userAgent;
     }
 
     public String getMsg()

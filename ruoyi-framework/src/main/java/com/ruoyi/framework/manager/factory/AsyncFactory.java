@@ -38,6 +38,8 @@ public class AsyncFactory
             final Object... args)
     {
         final String userAgent = ServletUtils.getRequest().getHeader("User-Agent");
+        final String deviceId = ServletUtils.getRequest().getHeader("X-Device-Id");
+        final String macAddress = ServletUtils.getRequest().getHeader("X-Mac-Address");
         final String ip = IpUtils.getIpAddr();
         return new TimerTask()
         {
@@ -64,6 +66,9 @@ public class AsyncFactory
                 logininfor.setLoginLocation(address);
                 logininfor.setBrowser(browser);
                 logininfor.setOs(os);
+                logininfor.setDeviceId(deviceId);
+                logininfor.setMacAddress(macAddress);
+                logininfor.setUserAgent(userAgent);
                 logininfor.setMsg(message);
                 // 日志状态
                 if (StringUtils.equalsAny(status, Constants.LOGIN_SUCCESS, Constants.LOGOUT, Constants.REGISTER))
