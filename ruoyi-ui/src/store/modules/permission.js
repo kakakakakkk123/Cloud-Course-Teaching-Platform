@@ -181,10 +181,13 @@ function getStudentLearningFallbackRoutes() {
   return [
     createStudentLearningRoute('/learning/my-course', 'learning/my-course/index', 'StudentMyCourseFallback', '我的课程'),
     createStudentLearningRoute('/learning/online', 'learning/online/index', 'StudentOnlineLearningFallback', '在线学习'),
-    createStudentLearningRoute('/learning/exam', 'learning/exam/index', 'StudentMyExamFallback', '我的考试'),
+    createStudentLearningRoute('/learning/todo', 'learning/todo/index', 'StudentLearningTodoFallback', '学习待办'),
+    createStudentLearningRoute('/learning/history', 'learning/history/index', 'StudentLearningHistoryFallback', '学习历史'),
+    createStudentLearningRoute('/learning/note', 'learning/note/index', 'StudentNoteFallback', '学习笔记'),
+    createStudentLearningRoute('/learning/favorite', 'learning/favorite/index', 'StudentFavoriteFallback', '我的收藏'),
     createStudentLearningRoute('/learning/wrong', 'learning/wrong/index', 'StudentWrongQuestionsFallback', '我的错题'),
-    createStudentLearningRoute('/learning/favorite', 'learning/favorite/index', 'StudentFavoriteFallback', '收藏'),
-    createStudentLearningRoute('/learning/note', 'learning/note/index', 'StudentNoteFallback', '笔记')
+    createStudentLearningRoute('/learning/discussion', 'learning/discussion/index', 'StudentLearningDiscussionFallback', '我的讨论'),
+    createStudentLearningRoute('/learning/exam', 'learning/exam/index', 'StudentMyExamFallback', '我的考试')
   ]
 }
 
