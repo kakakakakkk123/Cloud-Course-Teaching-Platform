@@ -18,6 +18,8 @@ public interface IStudentAccountService
 
     public String forgotPassword(ForgotPasswordBody body);
 
+    public String validateForgotPasswordEmail(ForgotPasswordBody body);
+
     public StudentProfile selectStudentProfileByUserId(Long userId);
 
     public int updateStudentProfile(SysUser user, StudentProfile profile);
@@ -37,6 +39,8 @@ public interface IStudentAccountService
     public int deleteStudentUsers(Long[] userIds);
 
     public boolean studentRegisterEnabled();
+
+    public boolean forgotPasswordEmailRequired();
 
     public boolean updateStudentRegisterEnabled(boolean enabled, String operName);
 

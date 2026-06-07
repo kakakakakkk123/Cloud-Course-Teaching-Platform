@@ -77,7 +77,9 @@ public class SecurityConfig
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> {
                     permitAllUrl.getUrls().forEach(url -> requests.requestMatchers(url).permitAll());
-                    requests.requestMatchers("/login", "/register", "/captchaImage", "/account/forgotPassword", "/account/registerEnabled").permitAll()
+                    requests.requestMatchers("/login", "/register", "/registerEmailCode", "/registerDeptOptions",
+                                    "/captchaImage", "/account/forgotPassword", "/account/forgotPasswordEmailCode",
+                                    "/account/registerEnabled").permitAll()
                             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                             .requestMatchers(HttpMethod.GET, "/", "/*.html", "/**.html", "/**.css", "/**.js", "/profile/**").permitAll()
                             .requestMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**", "/druid/**").permitAll()

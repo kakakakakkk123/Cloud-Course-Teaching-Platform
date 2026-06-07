@@ -44,6 +44,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     private static final String REGISTER_CONFIG_KEY = "sys.account.registerUser";
     private static final String LOGIN_BLACK_IP_KEY = "sys.login.blackIPList";
     private static final String LOGIN_BLOCKED_UA_KEY = "sys.login.blockedUserAgentKeywords";
+    private static final String FORGOT_PASSWORD_EMAIL_REQUIRED_KEY = "sys.account.forgotPasswordEmailRequired";
     private static final String INIT_PASSWORD_KEY = "sys.user.initPassword";
     @Autowired
     private ISysUserService userService;
@@ -159,6 +160,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
             throw new ServiceException("系统缺少学生角色（role_key=student）。");
         }
 
+        ensurePasswordValid(password, "密码");
         user.setRoleIds(new Long[] { studentRole.getRoleId() });
         user.setPassword(SecurityUtils.encryptPassword(password));
         user.setStatus(UserConstants.NORMAL);
@@ -180,36 +182,45 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     @Override
     public String forgotPassword(ForgotPasswordBody body)
     {
-        String username = StringUtils.trim(body.getUsername());
-        String studentNo = StringUtils.trim(body.getStudentNo());
+        if (body == null)
+        {
+            return "找回密码请求不能为空。";
+        }
         String newPassword = StringUtils.trim(body.getNewPassword());
 
-        if (StringUtils.isEmpty(username) || StringUtils.isEmpty(studentNo))
-        {
-            return "账号和学号不能为空。";
-        }
         if (StringUtils.isEmpty(newPassword))
         {
             return "新密码不能为空。";
         }
 
-        SysUser user = userService.selectUserByUserName(username);
-        if (StringUtils.isNull(user))
+        ensurePasswordValid(newPassword, "新密码");
+        SysUser user;
+        try
         {
-            return "未找到该账号。";
+            user = validateForgotPasswordUser(body);
+            ensureForgotPasswordEmailMatches(user, body);
         }
-        if (!StringUtils.equals(studentNo, user.getStudentNo()))
+        catch (ServiceException e)
         {
-            return "学号校验失败。";
-        }
-        if (!selectStudentRoleNames(user).contains(STUDENT_ROLE_KEY) && !user.isAdmin())
-        {
-            return "只有学生账号支持自助重置密码。";
+            return e.getMessage();
         }
 
         String encoded = SecurityUtils.encryptPassword(newPassword);
         userService.resetUserPwd(user.getUserId(), encoded);
         return StringUtils.EMPTY;
+    }
+
+    @Override
+    public String validateForgotPasswordEmail(ForgotPasswordBody body)
+    {
+        SysUser user = validateForgotPasswordUser(body);
+        ensureForgotPasswordEmailMatches(user, body);
+        String email = StringUtils.trim(user.getEmail());
+        if (StringUtils.isEmpty(email))
+        {
+            throw new ServiceException("该学生账号未绑定邮箱，无法发送邮箱验证码。");
+        }
+        return email;
     }
 
     @Override
@@ -279,6 +290,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     public int resetStudentPassword(Long userId, String password)
     {
         ensureStudentUser(userId);
+        ensurePasswordValid(password, "新密码");
         return userService.resetUserPwd(userId, SecurityUtils.encryptPassword(password));
     }
 
@@ -286,6 +298,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     @Transactional
     public int resetStudentPasswords(Long[] userIds, String password)
     {
+        ensureStudentIds(userIds);
         int count = 0;
         for (Long userId : userIds)
         {
@@ -298,6 +311,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     public int changeStudentStatus(Long userId, String status)
     {
         ensureStudentUser(userId);
+        ensureUserStatus(status);
         SysUser user = new SysUser();
         user.setUserId(userId);
         user.setStatus(status);
@@ -308,6 +322,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     @Transactional
     public int changeStudentStatuses(Long[] userIds, String status)
     {
+        ensureStudentIds(userIds);
         int count = 0;
         for (Long userId : userIds)
         {
@@ -319,6 +334,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     @Override
     public int deleteStudentUsers(Long[] userIds)
     {
+        ensureStudentIds(userIds);
         for (Long userId : userIds)
         {
             ensureStudentUser(userId);
@@ -331,6 +347,12 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     {
         String value = configValue(REGISTER_CONFIG_KEY);
         return StringUtils.isEmpty(value) || StringUtils.equals("true", value);
+    }
+
+    @Override
+    public boolean forgotPasswordEmailRequired()
+    {
+        return "true".equalsIgnoreCase(configValue(FORGOT_PASSWORD_EMAIL_REQUIRED_KEY));
     }
 
     @Override
@@ -355,15 +377,22 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         AccountSecuritySettings settings = new AccountSecuritySettings();
         settings.setBlackIpList(configValue(LOGIN_BLACK_IP_KEY));
         settings.setBlockedUserAgentKeywords(configValue(LOGIN_BLOCKED_UA_KEY));
+        settings.setForgotPasswordEmailRequired(forgotPasswordEmailRequired());
         return settings;
     }
 
     @Override
     public boolean updateAccountSecuritySettings(AccountSecuritySettings settings, String operName)
     {
+        if (settings == null)
+        {
+            throw new ServiceException("安全策略不能为空。");
+        }
         boolean updated = upsertConfig(LOGIN_BLACK_IP_KEY, "登录 IP 黑名单", StringUtils.trim(settings.getBlackIpList()), operName);
         boolean uaUpdated = upsertConfig(LOGIN_BLOCKED_UA_KEY, "登录终端关键字黑名单", StringUtils.trim(settings.getBlockedUserAgentKeywords()), operName);
-        return updated || uaUpdated;
+        boolean emailUpdated = upsertConfig(FORGOT_PASSWORD_EMAIL_REQUIRED_KEY, "找回密码强制邮箱验证",
+                Boolean.toString(Boolean.TRUE.equals(settings.getForgotPasswordEmailRequired())), operName);
+        return updated || uaUpdated || emailUpdated;
     }
 
     @Override
@@ -512,6 +541,86 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         if (StringUtils.isNull(accountMapper.selectStudentProfileByUserId(userId)))
         {
             accountMapper.insertStudentProfile(buildEmptyProfile(userId, operName));
+        }
+    }
+
+    private SysUser validateForgotPasswordUser(ForgotPasswordBody body)
+    {
+        if (body == null)
+        {
+            throw new ServiceException("找回密码请求不能为空。");
+        }
+        String username = StringUtils.trim(body.getUsername());
+        String studentNo = StringUtils.trim(body.getStudentNo());
+        if (StringUtils.isEmpty(username) || StringUtils.isEmpty(studentNo))
+        {
+            throw new ServiceException("账号和学号不能为空。");
+        }
+
+        SysUser user = userService.selectUserByUserName(username);
+        if (StringUtils.isNull(user))
+        {
+            throw new ServiceException("未找到该账号。");
+        }
+        if (!StringUtils.equals(studentNo, user.getStudentNo()))
+        {
+            throw new ServiceException("学号校验失败。");
+        }
+        if (user.isAdmin() || !selectStudentRoleNames(user).contains(STUDENT_ROLE_KEY))
+        {
+            throw new ServiceException("只有学生账号支持自助重置密码。");
+        }
+        return user;
+    }
+
+    private void ensureForgotPasswordEmailMatches(SysUser user, ForgotPasswordBody body)
+    {
+        String requestEmail = StringUtils.trim(body == null ? null : body.getEmail());
+        if (StringUtils.isEmpty(requestEmail))
+        {
+            return;
+        }
+        String userEmail = StringUtils.trim(user == null ? null : user.getEmail());
+        if (StringUtils.isEmpty(userEmail) || !userEmail.equalsIgnoreCase(requestEmail))
+        {
+            throw new ServiceException("邮箱与账号绑定邮箱不一致。");
+        }
+    }
+
+    private void ensurePasswordValid(String password, String label)
+    {
+        String target = StringUtils.trim(password);
+        if (StringUtils.isEmpty(target))
+        {
+            throw new ServiceException(label + "不能为空。");
+        }
+        if (target.length() < UserConstants.PASSWORD_MIN_LENGTH || target.length() > UserConstants.PASSWORD_MAX_LENGTH)
+        {
+            throw new ServiceException(label + "长度必须在 " + UserConstants.PASSWORD_MIN_LENGTH + " 到 "
+                    + UserConstants.PASSWORD_MAX_LENGTH + " 个字符之间。");
+        }
+    }
+
+    private void ensureStudentIds(Long[] userIds)
+    {
+        if (userIds == null || userIds.length == 0)
+        {
+            throw new ServiceException("请选择学生账号。");
+        }
+        for (Long userId : userIds)
+        {
+            if (userId == null)
+            {
+                throw new ServiceException("学生账号 ID 不能为空。");
+            }
+        }
+    }
+
+    private void ensureUserStatus(String status)
+    {
+        if (!UserConstants.NORMAL.equals(status) && !UserConstants.USER_DISABLE.equals(status))
+        {
+            throw new ServiceException("用户状态不正确。");
         }
     }
 
