@@ -5,6 +5,7 @@
       :before-upload="handleBeforeUpload"
       :on-success="handleUploadSuccess"
       :on-error="handleUploadError"
+      :data="uploadData"
       name="file"
       :show-file-list="false"
       :headers="headers"
@@ -24,6 +25,7 @@ import "quill/dist/quill.core.css"
 import "quill/dist/quill.snow.css"
 import "quill/dist/quill.bubble.css"
 import { getToken } from "@/utils/auth"
+import { resolveResourceUrl } from "@/utils/resource"
 
 export default {
   name: "Editor",
@@ -57,6 +59,10 @@ export default {
     type: {
       type: String,
       default: "url",
+    },
+    directory: {
+      type: String,
+      default: "editor/image",
     }
   },
   data() {
@@ -101,6 +107,9 @@ export default {
         style.height = `${this.height}px`
       }
       return style
+    },
+    uploadData() {
+      return this.directory ? { directory: this.directory } : {}
     }
   },
   watch: {
@@ -184,7 +193,7 @@ export default {
         // 获取光标所在位置
         let length = quill.getSelection().index
         // 插入图片  res.url为服务器返回的图片地址
-        quill.insertEmbed(length, "image", process.env.VUE_APP_BASE_API + res.fileName)
+        quill.insertEmbed(length, "image", resolveResourceUrl(res.fileName))
         // 调整光标到最后
         quill.setSelection(length + 1)
       } else {
@@ -211,6 +220,9 @@ export default {
     insertImage(file) {
       const formData = new FormData()
       formData.append("file", file)
+      if (this.directory) {
+        formData.append("directory", this.directory)
+      }
       axios.post(this.uploadUrl, formData, { headers: { "Content-Type": "multipart/form-data", Authorization: this.headers.Authorization } }).then(res => {
         this.handleUploadSuccess(res.data)
       })

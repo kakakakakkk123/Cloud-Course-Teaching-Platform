@@ -312,7 +312,7 @@
         </el-form-item>
 
         <el-form-item label="内容正文" prop="contentBody">
-          <editor v-model="form.contentBody" :min-height="220" />
+          <editor v-model="form.contentBody" :min-height="220" directory="course/content/image" />
         </el-form-item>
 
         <el-form-item label="备注" prop="remark">

@@ -45,7 +45,8 @@ public class CommonController
             "course/content/video",
             "course/content/image",
             "course/content/document",
-            "course/content/cover"
+            "course/content/cover",
+            "editor/image"
     ));
 
     /**
