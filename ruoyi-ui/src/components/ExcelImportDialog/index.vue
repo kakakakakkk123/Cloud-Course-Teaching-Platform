@@ -68,6 +68,10 @@ export default {
     extraSupportParam: {
       type: String,
       default: 'extraSupport'
+    },
+    extraSupportConfirm: {
+      type: String,
+      default: ''
     }
   },
   data() {
@@ -135,7 +139,12 @@ export default {
         this.$modal.msgError('请选择后缀为"xls"或"xlsx"的文件')
         return
       }
-      this.$refs.uploadRef.submit()
+      const submit = () => this.$refs.uploadRef.submit()
+      if (this.extraSupport && this.extraSupportConfirm) {
+        this.$modal.confirm(this.extraSupportConfirm).then(submit).catch(() => {})
+        return
+      }
+      submit()
     }
   }
 }

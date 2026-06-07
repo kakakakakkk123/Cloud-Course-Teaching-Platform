@@ -121,7 +121,6 @@
 <script>
 import { getCodeImg } from "@/api/login"
 import Cookies from "js-cookie"
-import { encrypt, decrypt } from '@/utils/jsencrypt'
 import defaultSettings from '@/settings'
 
 export default {
@@ -132,8 +131,8 @@ export default {
       footerContent: defaultSettings.footerContent,
       codeUrl: "",
       loginForm: {
-        username: "admin",
-        password: "admin123",
+        username: "",
+        password: "",
         rememberMe: false,
         code: "",
         uuid: ""
@@ -177,13 +176,13 @@ export default {
     },
     getCookie() {
       const username = Cookies.get("username")
-      const password = Cookies.get("password")
       const rememberMe = Cookies.get('rememberMe')
-      this.loginForm = {
+      Cookies.remove("password")
+      this.loginForm = Object.assign({}, this.loginForm, {
         username: username === undefined ? this.loginForm.username : username,
-        password: password === undefined ? this.loginForm.password : decrypt(password),
-        rememberMe: rememberMe === undefined ? false : Boolean(rememberMe)
-      }
+        password: "",
+        rememberMe: rememberMe === 'true'
+      })
     },
     handleLogin() {
       this.$refs.loginForm.validate(valid => {
@@ -191,13 +190,12 @@ export default {
           this.loading = true
           if (this.loginForm.rememberMe) {
             Cookies.set("username", this.loginForm.username, { expires: 30 })
-            Cookies.set("password", encrypt(this.loginForm.password), { expires: 30 })
             Cookies.set('rememberMe', this.loginForm.rememberMe, { expires: 30 })
           } else {
             Cookies.remove("username")
-            Cookies.remove("password")
             Cookies.remove('rememberMe')
           }
+          Cookies.remove("password")
           this.$store.dispatch("Login", this.loginForm).then(() => {
             this.$router.push({ path: this.redirect || "/index" }).catch(() => {})
           }).catch(() => {

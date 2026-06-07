@@ -135,6 +135,7 @@
       update-support-label="是否更新已经存在的学生数据"
       extra-support-label="导入后停用名单外学生"
       extra-support-param="disableMissing"
+      extra-support-confirm="导入后将自动停用系统中已存在但不在本次名单内的学生账号，请确认已核对名单。"
       @success="handleImportSuccess"
     />
   </div>
