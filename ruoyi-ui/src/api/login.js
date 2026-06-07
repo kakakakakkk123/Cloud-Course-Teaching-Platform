@@ -66,6 +66,18 @@ export function forgotPassword(data) {
 }
 
 // 获取用户详细信息
+export function sendForgotPasswordEmailCode(data) {
+  return request({
+    url: '/account/forgotPasswordEmailCode',
+    headers: {
+      isToken: false,
+      repeatSubmit: false
+    },
+    method: 'post',
+    data: data
+  })
+}
+
 export function getInfo() {
   return request({
     url: '/getInfo',
