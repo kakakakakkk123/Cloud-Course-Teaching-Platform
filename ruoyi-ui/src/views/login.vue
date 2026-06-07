@@ -122,6 +122,7 @@
 import { getCodeImg } from "@/api/login"
 import Cookies from "js-cookie"
 import defaultSettings from '@/settings'
+import { DEFAULT_HOME_PATH } from '@/utils/home'
 
 export default {
   name: "Login",
@@ -197,7 +198,7 @@ export default {
           }
           Cookies.remove("password")
           this.$store.dispatch("Login", this.loginForm).then(() => {
-            this.$router.push({ path: this.redirect || "/index" }).catch(() => {})
+            this.$router.push({ path: this.redirect || DEFAULT_HOME_PATH }).catch(() => {})
           }).catch(() => {
             this.loading = false
             if (this.captchaEnabled) {

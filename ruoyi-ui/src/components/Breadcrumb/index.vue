@@ -10,10 +10,17 @@
 </template>
 
 <script>
+import { DEFAULT_HOME_PATH, STUDENT_HOME_PATH, isStudentRole } from '@/utils/home'
+
 export default {
   data() {
     return {
       levelList: null
+    }
+  },
+  computed: {
+    isStudent() {
+      return isStudentRole(this.$store.getters.roles)
     }
   },
   watch: {
@@ -45,9 +52,8 @@ export default {
       } else {
         matched = router.matched.filter(item => item.meta && item.meta.title)
       }
-      // 判断是否为仪表盘
-      if (!this.isDashboard(matched[0])) {
-        matched = [{ path: "/index", meta: { title: "仪表盘" } }].concat(matched)
+      if (!this.isHomeRoute(matched[0])) {
+        matched = [this.homeBreadcrumb()].concat(matched)
       }
       this.levelList = matched.filter(item => item.meta && item.meta.title && item.meta.breadcrumb !== false)
     },
@@ -76,6 +82,18 @@ export default {
         return false
       }
       return name.trim() === 'Dashboard' || name.trim() === 'Index'
+    },
+    isHomeRoute(route) {
+      if (this.isStudent) {
+        return route && route.path === STUDENT_HOME_PATH
+      }
+      return this.isDashboard(route)
+    },
+    homeBreadcrumb() {
+      if (this.isStudent) {
+        return { path: STUDENT_HOME_PATH, meta: { title: '\u6211\u7684\u8bfe\u7a0b' } }
+      }
+      return { path: DEFAULT_HOME_PATH, meta: { title: '\u4eea\u8868\u76d8' } }
     },
     handleLink(item) {
       const { redirect, path } = item

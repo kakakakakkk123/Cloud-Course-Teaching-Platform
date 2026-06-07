@@ -4,6 +4,7 @@ import { getRouters } from '@/api/menu'
 import Layout from '@/layout/index'
 import ParentView from '@/components/ParentView'
 import InnerLink from '@/layout/components/InnerLink'
+import { isStudentRole } from '@/utils/home'
 
 const permission = {
   state: {
@@ -14,12 +15,16 @@ const permission = {
     sidebarRouters: []
   },
   mutations: {
-    SET_ROUTES: (state, routes) => {
+    SET_ROUTES: (state, payload) => {
+      const routes = Array.isArray(payload) ? payload : payload.routes
+      const baseRoutes = Array.isArray(payload) ? constantRoutes : (payload.baseRoutes || constantRoutes)
       state.addRoutes = routes
-      state.routes = constantRoutes.concat(routes)
+      state.routes = baseRoutes.concat(routes)
     },
-    SET_DEFAULT_ROUTES: (state, routes) => {
-      state.defaultRoutes = constantRoutes.concat(routes)
+    SET_DEFAULT_ROUTES: (state, payload) => {
+      const routes = Array.isArray(payload) ? payload : payload.routes
+      const baseRoutes = Array.isArray(payload) ? constantRoutes : (payload.baseRoutes || constantRoutes)
+      state.defaultRoutes = baseRoutes.concat(routes)
     },
     SET_TOPBAR_ROUTES: (state, routes) => {
       state.topbarRouters = routes
@@ -43,8 +48,9 @@ const permission = {
         getRouters().then(res => {
           const sdata = JSON.parse(JSON.stringify(res.data))
           const rdata = JSON.parse(JSON.stringify(res.data))
-          const isStudent = hasExactRole(rootState, 'student')
+          const isStudent = isStudentRole(rootState.user.roles)
           const isAdmin = hasExactRole(rootState, 'admin')
+          const baseRoutes = filterStudentDashboardRoutes(constantRoutes, isStudent)
           const sidebarRoutes = filterAdminLearningRoutes(filterAsyncRouter(sdata), isAdmin, isStudent)
           const rewriteRoutes = filterAdminLearningRoutes(filterAsyncRouter(rdata, false, true), isAdmin, isStudent)
           const roleRoutes = filterDynamicRoutes(dynamicRoutes)
@@ -56,11 +62,11 @@ const permission = {
           router.addRoutes(accessRoutes)
           if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
             window.__ACCESS_ROUTES__ = accessRoutes
-            window.__SIDEBAR_ROUTES__ = constantRoutes.concat(visibleRoleRoutes, sidebarRoutes)
+            window.__SIDEBAR_ROUTES__ = baseRoutes.concat(visibleRoleRoutes, sidebarRoutes)
           }
-          commit('SET_ROUTES', accessRoutes)
-          commit('SET_SIDEBAR_ROUTERS', constantRoutes.concat(visibleRoleRoutes, sidebarRoutes))
-          commit('SET_DEFAULT_ROUTES', visibleRoleRoutes.concat(sidebarRoutes))
+          commit('SET_ROUTES', { routes: accessRoutes, baseRoutes })
+          commit('SET_SIDEBAR_ROUTERS', baseRoutes.concat(visibleRoleRoutes, sidebarRoutes))
+          commit('SET_DEFAULT_ROUTES', { routes: visibleRoleRoutes.concat(sidebarRoutes), baseRoutes })
           commit('SET_TOPBAR_ROUTES', visibleRoleRoutes.concat(sidebarRoutes))
           resolve(accessRoutes)
         })
@@ -140,6 +146,30 @@ function filterAdminLearningRoutes(routes, isAdmin, isStudent) {
     }
     return true
   })
+}
+
+function filterStudentDashboardRoutes(routes, isStudent) {
+  if (!isStudent) {
+    return routes
+  }
+  return routes.reduce((list, route) => {
+    if (isDashboardRoute(route)) {
+      return list
+    }
+    const nextRoute = { ...route }
+    if (nextRoute.children) {
+      nextRoute.children = filterStudentDashboardRoutes(nextRoute.children, isStudent)
+      if (nextRoute.children.length === 0 && route.children) {
+        return list
+      }
+    }
+    list.push(nextRoute)
+    return list
+  }, [])
+}
+
+function isDashboardRoute(route) {
+  return route && (route.name === 'Dashboard' || route.path === 'index' || route.redirect === '/index')
 }
 
 function hasExactRole(rootState, role) {
