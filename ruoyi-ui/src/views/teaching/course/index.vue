@@ -349,6 +349,7 @@ import {
   listCourseCategoryTree,
   updateCourse
 } from "@/api/edu/course"
+import { resolveResourceUrl } from "@/utils/resource"
 
 export default {
   name: "TeachingCourse",
@@ -457,10 +458,7 @@ export default {
       if (!coverImage) {
         return ""
       }
-      if (/^(https?:)?\/\//.test(coverImage)) {
-        return coverImage
-      }
-      return process.env.VUE_APP_BASE_API + coverImage
+      return resolveResourceUrl(coverImage)
     },
     dictOptions(type, fallback) {
       const options = this.dict && this.dict.type ? this.dict.type[type] : []

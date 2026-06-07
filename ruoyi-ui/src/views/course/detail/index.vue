@@ -103,6 +103,7 @@
 import { getToken } from "@/utils/auth"
 import { getPortalCourseDetail, enrollPortalCourse, likePortalCourse, cancelLikePortalCourse } from "@/api/portal"
 import CourseContentResource from "@/components/CourseContentResource"
+import { resolveResourceUrl } from "@/utils/resource"
 
 export default {
   name: "CourseDetail",
@@ -130,10 +131,7 @@ export default {
       if (!cover) {
         return ""
       }
-      if (/^https?:\/\//.test(cover)) {
-        return cover
-      }
-      return process.env.VUE_APP_BASE_API + cover
+      return resolveResourceUrl(cover)
     },
     /** 课程难度文案 */
     difficultyText() {

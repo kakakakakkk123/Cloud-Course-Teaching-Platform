@@ -90,6 +90,7 @@
 
 <script>
 import { listMyPortalCourses } from "@/api/portal"
+import { resolveResourceUrl } from "@/utils/resource"
 
 export default {
   name: "MyCourse",
@@ -127,10 +128,7 @@ export default {
       if (!coverImage) {
         return ""
       }
-      if (/^(https?:)?\/\//.test(coverImage)) {
-        return coverImage
-      }
-      return process.env.VUE_APP_BASE_API + coverImage
+      return resolveResourceUrl(coverImage)
     },
     /** 获取课程简称 */
     getShortName(name) {
