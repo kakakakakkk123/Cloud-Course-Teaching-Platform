@@ -1,6 +1,7 @@
 package com.ruoyi.framework.aspectj;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,5 +38,25 @@ class DataScopeAspectTest
 
         assertDoesNotThrow(() ->
                 DataScopeAspect.dataScopeFilter(joinPoint, user, "u", "d", "user_id", "dept_id", ""));
+    }
+
+    @Test
+    void dataScopeFilterWritesDeptConditionToBaseEntity()
+    {
+        SysUser query = new SysUser();
+        JoinPoint joinPoint = mock(JoinPoint.class);
+        when(joinPoint.getArgs()).thenReturn(new Object[] { query });
+
+        SysRole role = new SysRole();
+        role.setStatus(UserConstants.ROLE_NORMAL);
+        role.setDataScope(Constants.Dept.DATA_SCOPE_DEPT);
+
+        SysUser user = new SysUser();
+        user.setDeptId(100L);
+        user.setRoles(List.of(role));
+
+        DataScopeAspect.dataScopeFilter(joinPoint, user, "u", "d", "user_id", "dept_id", "");
+
+        assertEquals(" AND (d.dept_id = 100 )", query.getParams().get(DataScopeAspect.DATA_SCOPE));
     }
 }
