@@ -65,6 +65,10 @@ public class StudentAccountServiceImpl implements IStudentAccountService
     @Transactional(rollbackFor = Exception.class)
     public String register(RegisterBody registerBody)
     {
+        if (registerBody == null)
+        {
+            return "注册信息不能为空。";
+        }
         String username = StringUtils.trim(registerBody.getUsername());
         String password = StringUtils.trim(registerBody.getPassword());
         String studentNo = StringUtils.trim(registerBody.getStudentNo());
@@ -79,13 +83,13 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         {
             return "当前未开放学生自主注册。";
         }
-        if (StringUtils.isEmpty(username))
-        {
-            return "登录账号不能为空。";
-        }
         if (StringUtils.isEmpty(studentNo))
         {
             return "学号不能为空。";
+        }
+        if (StringUtils.isEmpty(username))
+        {
+            username = studentNo;
         }
         if (StringUtils.isEmpty(password))
         {
@@ -454,6 +458,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
                 }
                 else if (isUpdateSupport)
                 {
+                    ensureExistingImportTargetIsStudent(exist);
                     user.setUserId(exist.getUserId());
                     user.setDeptId(exist.getDeptId());
                     user.setStatus(exist.getStatus());
@@ -526,6 +531,18 @@ public class StudentAccountServiceImpl implements IStudentAccountService
             }
         }
         return successMsg.toString();
+    }
+
+    private void ensureExistingImportTargetIsStudent(SysUser user)
+    {
+        if (StringUtils.isNull(user))
+        {
+            throw new ServiceException("账号不存在");
+        }
+        if (user.isAdmin() || !selectStudentRoleNames(user).contains(STUDENT_ROLE_KEY))
+        {
+            throw new ServiceException("账号已存在且不是学生账号，不能通过学生名单导入更新");
+        }
     }
 
     private StudentProfile buildEmptyProfile(Long userId, String operName)
