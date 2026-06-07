@@ -133,8 +133,8 @@
         </el-table-column>
         <el-table-column label="状态" width="90" align="center">
           <template slot-scope="scope">
-            <el-tag size="mini" :type="scope.row.status === '0' ? 'success' : 'info'">
-              {{ scope.row.status === "0" ? "启用" : "停用" }}
+            <el-tag size="mini" :type="getStatusTag(scope.row.status)">
+              {{ getStatusText(scope.row.status) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -259,6 +259,7 @@ import { listCourse } from "@/api/edu/course"
 
 export default {
   name: "TeachingPaper",
+  dicts: ["edu_bank_visibility", "sys_normal_disable"],
   data() {
     return {
       loading: false,
@@ -291,17 +292,21 @@ export default {
           { required: true, message: "请选择状态", trigger: "change" }
         ]
       },
-      visibilityOptions: [
-        { label: "私有", value: "0" },
-        { label: "公开", value: "1" }
-      ],
-      statusOptions: [
-        { label: "启用", value: "0" },
-        { label: "停用", value: "1" }
-      ]
     }
   },
   computed: {
+    visibilityOptions() {
+      return this.dictOptions("edu_bank_visibility", [
+        { label: "私有", value: "0", raw: { listClass: "info" } },
+        { label: "公开", value: "1", raw: { listClass: "success" } }
+      ])
+    },
+    statusOptions() {
+      return this.dictOptions("sys_normal_disable", [
+        { label: "启用", value: "0", raw: { listClass: "primary" } },
+        { label: "停用", value: "1", raw: { listClass: "danger" } }
+      ])
+    },
     /** 公开题库数量 */
     publicCount() {
       return this.bankList.filter(item => item.visibility === "1").length
@@ -316,6 +321,21 @@ export default {
     this.getCourseOptions()
   },
   methods: {
+    dictOptions(type, fallback) {
+      const options = this.dict && this.dict.type ? this.dict.type[type] : []
+      return options && options.length ? options : fallback
+    },
+    getOptionLabel(options, value, fallback) {
+      const option = options.find(item => item.value === String(value))
+      return option ? option.label : fallback
+    },
+    getOptionTagType(options, value, fallback = "info") {
+      const option = options.find(item => item.value === String(value))
+      if (!option || !option.raw) {
+        return fallback
+      }
+      return option.raw.listClass === "primary" ? "" : (option.raw.listClass || fallback)
+    },
     /** 查询题库列表 */
     getList() {
       this.loading = true
@@ -346,8 +366,15 @@ export default {
     },
     /** 获取可见范围文案 */
     getVisibilityText(value) {
-      const option = this.visibilityOptions.find(item => item.value === value)
-      return option ? option.label : "未知"
+      return this.getOptionLabel(this.visibilityOptions, value, "未知")
+    },
+    /** 获取状态文案 */
+    getStatusText(value) {
+      return this.getOptionLabel(this.statusOptions, value, "未知")
+    },
+    /** 获取状态标签样式 */
+    getStatusTag(value) {
+      return this.getOptionTagType(this.statusOptions, value)
     },
     /** 格式化正确率 */
     formatRate(value) {

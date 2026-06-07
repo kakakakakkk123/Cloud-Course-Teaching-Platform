@@ -13,6 +13,7 @@ import com.ruoyi.common.utils.ip.IpUtils;
 import com.ruoyi.common.utils.spring.SpringUtils;
 import com.ruoyi.system.domain.SysLogininfor;
 import com.ruoyi.system.domain.SysOperLog;
+import com.ruoyi.system.service.ISysConfigService;
 import com.ruoyi.system.service.ISysLogininforService;
 import com.ruoyi.system.service.ISysOperLogService;
 
@@ -59,6 +60,8 @@ public class AsyncFactory
                 String os = UserAgentUtils.getOperatingSystem(userAgent);
                 // 获取客户端浏览器
                 String browser = UserAgentUtils.getBrowser(userAgent);
+                boolean recordDeviceInfo = configBool("sys.login.recordDeviceInfo", true);
+                boolean recordFailureReason = configBool("sys.audit.recordFailureReason", true);
                 // 封装对象
                 SysLogininfor logininfor = new SysLogininfor();
                 logininfor.setUserName(username);
@@ -66,10 +69,10 @@ public class AsyncFactory
                 logininfor.setLoginLocation(address);
                 logininfor.setBrowser(browser);
                 logininfor.setOs(os);
-                logininfor.setDeviceId(deviceId);
-                logininfor.setMacAddress(macAddress);
-                logininfor.setUserAgent(userAgent);
-                logininfor.setMsg(message);
+                logininfor.setDeviceId(recordDeviceInfo ? deviceId : null);
+                logininfor.setMacAddress(recordDeviceInfo ? macAddress : null);
+                logininfor.setUserAgent(recordDeviceInfo ? userAgent : null);
+                logininfor.setMsg(recordFailureReason || !Constants.LOGIN_FAIL.equals(status) ? message : "登录失败");
                 // 日志状态
                 if (StringUtils.equalsAny(status, Constants.LOGIN_SUCCESS, Constants.LOGOUT, Constants.REGISTER))
                 {
@@ -83,6 +86,19 @@ public class AsyncFactory
                 SpringUtils.getBean(ISysLogininforService.class).insertLogininfor(logininfor);
             }
         };
+    }
+
+    private static boolean configBool(String key, boolean fallback)
+    {
+        try
+        {
+            String value = SpringUtils.getBean(ISysConfigService.class).selectConfigByKey(key);
+            return StringUtils.isEmpty(value) ? fallback : Boolean.parseBoolean(value);
+        }
+        catch (Exception ignored)
+        {
+            return fallback;
+        }
     }
 
     /**

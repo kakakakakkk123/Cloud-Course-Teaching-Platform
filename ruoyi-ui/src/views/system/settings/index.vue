@@ -114,6 +114,7 @@ import { getConfigKey, updateConfig, addConfig, listConfig } from "@/api/system/
 
 const CONFIG_KEYS = {
   initPassword: "sys.user.initPassword",
+  chrtype: "sys.account.chrtype",
   studentDefaultStatus: "sys.account.studentDefaultStatus",
   missingStudentPolicy: "sys.account.missingStudentPolicy",
   passwordMinLength: "sys.account.passwordMinLength",
@@ -210,6 +211,7 @@ export default {
       this.accountPolicy.passwordNeedLetter = value(CONFIG_KEYS.passwordNeedLetter, "true") === "true"
       this.accountPolicy.passwordNeedNumber = value(CONFIG_KEYS.passwordNeedNumber, "true") === "true"
       this.accountPolicy.passwordNeedSymbol = value(CONFIG_KEYS.passwordNeedSymbol, "false") === "true"
+      this.applyChrtype(value(CONFIG_KEYS.chrtype, this.currentChrtype()))
       this.auditPolicy.loginLogRetentionDays = Number(value(CONFIG_KEYS.loginLogRetentionDays, this.auditPolicy.loginLogRetentionDays))
       this.auditPolicy.operLogRetentionDays = Number(value(CONFIG_KEYS.operLogRetentionDays, this.auditPolicy.operLogRetentionDays))
       this.auditPolicy.recordFailureReason = value(CONFIG_KEYS.recordFailureReason, "true") === "true"
@@ -217,6 +219,27 @@ export default {
       this.securitySettings.maxRetryCount = Number(value(CONFIG_KEYS.maxRetryCount, this.securitySettings.maxRetryCount))
       this.securitySettings.lockTime = Number(value(CONFIG_KEYS.lockTime, this.securitySettings.lockTime))
       this.securitySettings.recordDeviceInfo = value(CONFIG_KEYS.recordDeviceInfo, "true") === "true"
+    },
+    currentChrtype() {
+      if (this.accountPolicy.passwordNeedSymbol) {
+        return "4"
+      }
+      if (this.accountPolicy.passwordNeedLetter && this.accountPolicy.passwordNeedNumber) {
+        return "3"
+      }
+      if (this.accountPolicy.passwordNeedLetter) {
+        return "2"
+      }
+      if (this.accountPolicy.passwordNeedNumber) {
+        return "1"
+      }
+      return "0"
+    },
+    applyChrtype(chrtype) {
+      const value = String(chrtype || "0")
+      this.accountPolicy.passwordNeedLetter = ["2", "3", "4"].includes(value)
+      this.accountPolicy.passwordNeedNumber = ["1", "3", "4"].includes(value)
+      this.accountPolicy.passwordNeedSymbol = value === "4"
     },
     handleRegisterToggle(value) {
       setRegisterEnabled(value ? "0" : "1").then(() => {
@@ -245,6 +268,7 @@ export default {
       Promise.all([
         updateSecuritySettings(securityPayload),
         this.upsertConfig(CONFIG_KEYS.initPassword, this.accountPolicy.initPassword, "用户初始密码"),
+        this.upsertConfig(CONFIG_KEYS.chrtype, this.currentChrtype(), "密码复杂度规则"),
         this.upsertConfig(CONFIG_KEYS.studentDefaultStatus, this.accountPolicy.studentDefaultStatus, "学生默认账号状态"),
         this.upsertConfig(CONFIG_KEYS.missingStudentPolicy, this.accountPolicy.missingStudentPolicy, "学生名单外账号策略"),
         this.upsertConfig(CONFIG_KEYS.passwordMinLength, this.accountPolicy.passwordMinLength, "密码最小长度"),

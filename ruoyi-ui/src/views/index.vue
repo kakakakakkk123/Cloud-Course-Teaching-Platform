@@ -101,8 +101,8 @@
             <h2>推荐课程轮播</h2>
           </div>
           <div class="home-visual-section__summary">
-            <span class="home-visual-section__hint">聚合推荐课程与最新课程，帮助用户快速进入重点内容</span>
-            <span class="home-visual-section__count">当前展示 {{ homeVisualCourses.length }} 门重点课程</span>
+            <span class="home-visual-section__hint">展示后台维护的首页推荐内容，帮助用户快速进入重点课程</span>
+            <span class="home-visual-section__count">当前展示 {{ homeVisualCourses.length }} 个推荐</span>
           </div>
         </div>
 
@@ -113,17 +113,17 @@
           arrow="always"
           :interval="4200"
         >
-          <el-carousel-item v-for="(course, index) in homeVisualCourses" :key="course.courseId">
-            <div class="home-visual-slide" @click="openCourseDetail(course.courseId)">
+          <el-carousel-item v-for="(course, index) in homeVisualCourses" :key="course.bannerId || course.courseId || index">
+            <div class="home-visual-slide" @click="handleBannerClick(course)">
               <div class="home-visual-slide__shape home-visual-slide__shape--primary"></div>
               <div class="home-visual-slide__shape home-visual-slide__shape--secondary"></div>
               <div class="home-visual-slide__content">
                 <div class="home-visual-slide__meta">
-                  <span class="home-visual-slide__category">{{ course.categoryName || "课程内容" }}</span>
+                  <span class="home-visual-slide__category">{{ course.categoryName || "首页推荐" }}</span>
                   <span v-if="changedCourseIds.includes(course.courseId)" class="home-visual-slide__new">新</span>
                   <span class="home-visual-slide__index">0{{ index + 1 }}</span>
                 </div>
-                <h3>{{ course.courseName }}</h3>
+                <h3>{{ course.bannerTitle || course.courseName }}</h3>
                 <p>{{ course.courseSubtitle || course.intro || "暂无课程简介" }}</p>
                 <div class="home-visual-slide__stats">
                   <span>注册 {{ course.enrollCount || 0 }}</span>
@@ -131,18 +131,18 @@
                   <span>教师 {{ course.teacherName || "未设置" }}</span>
                 </div>
                 <div class="home-visual-slide__actions">
-                  <el-button class="primary-action" @click.stop="openCourseDetail(course.courseId)">查看课程详情</el-button>
+                  <el-button class="primary-action" @click.stop="handleBannerClick(course)">查看推荐内容</el-button>
                   <el-button class="secondary-action" @click.stop="goCourseSquare">进入课程广场</el-button>
                 </div>
               </div>
               <div class="home-visual-slide__cover">
                 <div class="home-visual-slide__cover-inner">
-                  <img :src="getCourseCover(course.coverImage)" :alt="course.courseName">
+                  <img :src="getCourseCover(course.bannerImage || course.coverImage)" :alt="course.bannerTitle || course.courseName">
                 </div>
                 <div class="home-visual-slide__cover-mask"></div>
                 <div class="home-visual-slide__cover-content">
                   <span class="home-visual-slide__cover-label">{{ course.categoryName || "课程推荐" }}</span>
-                  <strong>{{ course.teacherName || "课程教师" }}</strong>
+                  <strong>{{ course.teacherName || "首页轮播" }}</strong>
                 </div>
               </div>
             </div>
@@ -274,6 +274,7 @@ import { mapGetters } from "vuex"
 import { getPortalHome, listMyPortalCourses } from "@/api/portal"
 import CourseSection from "@/views/course/components/CourseSection"
 import heroIllustration from "@/assets/images/education-hero.svg"
+import coursePlaceholder from "@/assets/images/course-placeholder.svg"
 import { getToken } from "@/utils/auth"
 
 export default {
@@ -282,6 +283,7 @@ export default {
   data() {
     return {
       heroIllustration,
+      coursePlaceholder,
       loading: false,
       searchKeyword: "",
       changeTips: [],
@@ -291,7 +293,8 @@ export default {
       homeData: {
         recommendCourses: [],
         hotCourses: [],
-        latestCourses: []
+        latestCourses: [],
+        banners: []
       }
     }
   },
@@ -332,17 +335,7 @@ export default {
     },
     /** 首页主视觉轮播数据 */
     homeVisualCourses() {
-      const source = [
-        ...(this.homeData.recommendCourses || []),
-        ...(this.homeData.latestCourses || [])
-      ]
-      const courseMap = new Map()
-      source.forEach(item => {
-        if (item && item.courseId && !courseMap.has(item.courseId)) {
-          courseMap.set(item.courseId, item)
-        }
-      })
-      return Array.from(courseMap.values()).slice(0, 5)
+      return (this.homeData.banners || []).slice(0, 5)
     },
     /** 跑马灯展示文案 */
     marqueeTips() {
@@ -375,7 +368,8 @@ export default {
         this.homeData = {
           recommendCourses: data.recommendCourses || [],
           hotCourses: data.hotCourses || [],
-          latestCourses: data.latestCourses || []
+          latestCourses: data.latestCourses || [],
+          banners: data.banners || []
         }
       })
     },
@@ -517,10 +511,18 @@ export default {
       }
       this.$router.push(`/course/${courseId}`)
     },
+    /** 打开首页推荐内容 */
+    handleBannerClick(banner) {
+      if (banner && banner.jumpUrl) {
+        window.open(banner.jumpUrl, "_blank")
+        return
+      }
+      this.openCourseDetail(banner && banner.courseId)
+    },
     /** 获取课程封面地址 */
     getCourseCover(cover) {
       if (!cover) {
-        return "https://dummyimage.com/720x420/dbeafe/1d4ed8&text=Course"
+        return this.coursePlaceholder
       }
       if (/^https?:\/\//.test(cover)) {
         return cover

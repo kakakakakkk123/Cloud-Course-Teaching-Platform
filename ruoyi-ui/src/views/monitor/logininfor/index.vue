@@ -181,7 +181,7 @@ export default {
       }).catch(() => {})
     },
     handleClean() {
-      this.$modal.confirm("是否确认清空所有登录审计数据？").then(() => {
+      this.$modal.confirm("是否确认清理超过保留期的登录审计数据？").then(() => {
         return cleanLogininfor()
       }).then(() => {
         this.getList()

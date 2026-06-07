@@ -64,6 +64,9 @@ public class CaptchaController
         ajax.put("captchaEnabled", captchaEnabled);
         ajax.put("registerEnabled", registerEnabled);
         ajax.put("forgotPasswordEmailRequired", forgotPasswordEmailRequired);
+        ajax.put("pwdChrtype", configService.selectConfigByKey("sys.account.chrtype"));
+        ajax.put("pwdMinLength", configService.selectConfigByKey("sys.account.passwordMinLength"));
+        ajax.put("pwdMaxLength", configService.selectConfigByKey("sys.account.passwordMaxLength"));
         if (!captchaEnabled)
         {
             return ajax;

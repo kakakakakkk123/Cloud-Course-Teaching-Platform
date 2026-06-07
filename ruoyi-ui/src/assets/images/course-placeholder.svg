@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" role="img" aria-label="课程封面占位图">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dbeafe"/>
+      <stop offset="0.55" stop-color="#e0f2fe"/>
+      <stop offset="1" stop-color="#ccfbf1"/>
+    </linearGradient>
+  </defs>
+  <rect width="720" height="420" fill="url(#bg)"/>
+  <rect x="86" y="86" width="548" height="248" rx="18" fill="#ffffff" opacity="0.72"/>
+  <path d="M178 154h242M178 206h364M178 258h276" fill="none" stroke="#2563eb" stroke-width="20" stroke-linecap="round" opacity="0.42"/>
+  <circle cx="552" cy="142" r="38" fill="#14b8a6" opacity="0.58"/>
+  <path d="M520 262l36-48 42 60" fill="none" stroke="#0ea5e9" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" opacity="0.68"/>
+</svg>

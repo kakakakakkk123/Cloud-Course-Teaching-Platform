@@ -45,4 +45,11 @@ public interface ISysOperLogService
      * 清空操作日志
      */
     public void cleanOperLog();
+
+    /**
+     * 清理指定时间之前的操作日志
+     *
+     * @param cutoffTime 截止时间
+     */
+    public void cleanOperLogBefore(String cutoffTime);
 }

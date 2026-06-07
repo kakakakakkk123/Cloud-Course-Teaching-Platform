@@ -17,16 +17,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.annotation.Log;
+import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysDept;
 import com.ruoyi.common.core.domain.entity.SysRole;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.core.text.Convert;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.PasswordPolicyUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
+import com.ruoyi.system.service.ISysConfigService;
 import com.ruoyi.system.service.ISysDeptService;
 import com.ruoyi.system.service.ISysPostService;
 import com.ruoyi.system.service.ISysRoleService;
@@ -52,6 +56,9 @@ public class SysUserController extends BaseController
 
     @Autowired
     private ISysPostService postService;
+
+    @Autowired
+    private ISysConfigService configService;
 
     /**
      * 获取用户列表
@@ -142,6 +149,11 @@ public class SysUserController extends BaseController
         {
             return error("新增用户'" + user.getUserName() + "'失败，学号已存在");
         }
+        AjaxResult passwordValidation = validatePlainPassword(user.getPassword());
+        if (passwordValidation != null)
+        {
+            return passwordValidation;
+        }
         user.setCreateBy(getUsername());
         user.setPassword(SecurityUtils.encryptPassword(user.getPassword()));
         return toAjax(userService.insertUser(user));
@@ -213,6 +225,11 @@ public class SysUserController extends BaseController
         {
             return error("管理员账号不能重置密码");
         }
+        AjaxResult passwordValidation = validatePlainPassword(user.getPassword());
+        if (passwordValidation != null)
+        {
+            return passwordValidation;
+        }
         userService.checkUserAllowed(user);
         userService.checkUserDataScope(user.getUserId());
         user.setPassword(SecurityUtils.encryptPassword(user.getPassword()));
@@ -236,6 +253,17 @@ public class SysUserController extends BaseController
         userService.checkUserDataScope(user.getUserId());
         user.setUpdateBy(getUsername());
         return toAjax(userService.updateUserStatus(user));
+    }
+
+    private AjaxResult validatePlainPassword(String password)
+    {
+        String error = PasswordPolicyUtils.validate(password,
+                Convert.toInt(configService.selectConfigByKey("sys.account.passwordMinLength"),
+                        UserConstants.PASSWORD_MIN_LENGTH),
+                Convert.toInt(configService.selectConfigByKey("sys.account.passwordMaxLength"),
+                        UserConstants.PASSWORD_MAX_LENGTH),
+                configService.selectConfigByKey("sys.account.chrtype"));
+        return StringUtils.isEmpty(error) ? null : error(error);
     }
 
     /**
