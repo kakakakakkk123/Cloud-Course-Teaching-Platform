@@ -108,6 +108,10 @@ public class SysProfileController extends BaseController
     @PutMapping("/student")
     public AjaxResult updateStudentProfile(@RequestBody StudentProfile profile)
     {
+        if (profile == null)
+        {
+            return error("学生档案不能为空");
+        }
         LoginUser loginUser = getLoginUser();
         SysUser user = new SysUser();
         user.setUserId(loginUser.getUserId());

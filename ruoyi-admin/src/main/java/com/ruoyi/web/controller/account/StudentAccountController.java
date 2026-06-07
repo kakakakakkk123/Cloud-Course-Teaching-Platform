@@ -83,6 +83,10 @@ public class StudentAccountController extends BaseController
     @PostMapping("/forgotPasswordEmailCode")
     public AjaxResult forgotPasswordEmailCode(@RequestBody ForgotPasswordBody body)
     {
+        if (body == null)
+        {
+            return error("找回密码请求不能为空");
+        }
         String email = studentAccountService.validateForgotPasswordEmail(body);
         emailCodeService.sendForgotPasswordCode(email);
         return success("邮箱验证码已发送");
@@ -114,6 +118,10 @@ public class StudentAccountController extends BaseController
     @PostMapping("/students/importData")
     public AjaxResult importData(MultipartFile file, boolean updateSupport, boolean disableMissing) throws Exception
     {
+        if (file == null || file.isEmpty())
+        {
+            return error("请选择要导入的学生名单文件");
+        }
         ExcelUtil<SysUser> util = new ExcelUtil<SysUser>(SysUser.class);
         java.util.List<SysUser> userList = util.importExcel(file.getInputStream());
         String msg = studentAccountService.importStudentUsers(userList, updateSupport, disableMissing, getUsername());
@@ -201,6 +209,10 @@ public class StudentAccountController extends BaseController
     @PutMapping("/registerEnabled")
     public AjaxResult setRegisterEnabled(@RequestBody SysUser body)
     {
+        if (body == null || StringUtils.isEmpty(body.getStatus()))
+        {
+            return error("注册开关状态不能为空");
+        }
         boolean enabled = "0".equals(body.getStatus()) || "true".equalsIgnoreCase(body.getStatus());
         return toAjax(studentAccountService.updateStudentRegisterEnabled(enabled, getUsername()));
     }
