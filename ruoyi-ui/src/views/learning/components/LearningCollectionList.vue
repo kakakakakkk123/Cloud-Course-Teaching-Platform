@@ -24,6 +24,13 @@
           icon="el-icon-plus"
           @click="openWrongAdd"
         >添加错题</el-button>
+        <el-button
+          v-if="allowCourseFavoriteAdd"
+          type="warning"
+          size="small"
+          icon="el-icon-star-on"
+          @click="openCourseFavorite"
+        >收藏课程</el-button>
       </div>
     </div>
 
@@ -94,6 +101,72 @@
       </div>
     </el-form>
 
+    <el-dialog
+      title="收藏课程"
+      :visible.sync="favoriteDialogOpen"
+      width="860px"
+      append-to-body
+    >
+      <div class="favorite-picker">
+        <div class="favorite-picker__toolbar">
+          <el-input
+            v-model.trim="courseQuery.courseName"
+            clearable
+            prefix-icon="el-icon-search"
+            placeholder="搜索课程名称"
+            @keyup.enter.native="loadCourseOptions"
+          />
+          <el-button type="primary" :loading="courseLoading" @click="loadCourseOptions">搜索</el-button>
+        </div>
+        <el-table
+          v-loading="courseLoading"
+          :data="courseOptions"
+          height="420"
+          border
+        >
+          <el-table-column label="课程" min-width="260">
+            <template slot-scope="scope">
+              <div class="course-option">
+                <img
+                  v-if="scope.row.coverImage"
+                  :src="resolveImageUrl(scope.row.coverImage)"
+                  :alt="scope.row.courseName"
+                />
+                <div v-else class="course-option__fallback">{{ getCourseShortName(scope.row.courseName) }}</div>
+                <div>
+                  <strong>{{ scope.row.courseName }}</strong>
+                  <p>{{ scope.row.courseSubtitle || scope.row.intro || "暂无简介" }}</p>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="categoryName" label="分类" width="140" />
+          <el-table-column prop="teacherName" label="教师" width="140" />
+          <el-table-column label="数据" width="150">
+            <template slot-scope="scope">
+              <span>{{ scope.row.enrollCount || 0 }} 人学习</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="120" fixed="right">
+            <template slot-scope="scope">
+              <el-button
+                type="text"
+                :disabled="isCourseFavorited(scope.row.courseId)"
+                @click="addCourseFavorite(scope.row)"
+              >{{ isCourseFavorited(scope.row.courseId) ? "已收藏" : "收藏" }}</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <pagination
+          v-show="courseTotal > 0"
+          :total="courseTotal"
+          :page.sync="courseQuery.pageNum"
+          :limit.sync="courseQuery.pageSize"
+          @pagination="loadCourseOptions"
+        />
+      </div>
+    </el-dialog>
+
     <div v-if="filteredItems.length" class="collection-list">
       <button
         v-for="item in filteredItems"
@@ -112,10 +185,10 @@
           <span>{{ item.courseName || "未关联课程" }}</span>
         </div>
         <img
-          v-if="item.questionImage || item.imageUrl"
+          v-if="item.questionImage || item.imageUrl || item.coverImage"
           class="collection-item__image"
-          :src="resolveImageUrl(item.questionImage || item.imageUrl)"
-          alt="错题图片"
+          :src="resolveImageUrl(item.questionImage || item.imageUrl || item.coverImage)"
+          :alt="item.courseName || item.title"
         />
         <p>{{ item.summary || item.detail || item.note || item.content || "暂无摘要" }}</p>
         <div class="collection-item__tags">
@@ -179,6 +252,10 @@
           <h4>资源地址</h4>
           <el-link :href="activeItem.resourceUrl" target="_blank" type="primary">{{ activeItem.resourceUrl }}</el-link>
         </section>
+        <section v-if="activeItem.courseId">
+          <h4>课程操作</h4>
+          <el-button type="primary" size="small" @click="openCourse(activeItem.courseId)">查看课程</el-button>
+        </section>
       </div>
     </el-dialog>
   </div>
@@ -186,6 +263,7 @@
 
 <script>
 import { getStudentProfile, updateStudentProfile } from "@/api/system/user"
+import { listPortalCourses } from "@/api/portal"
 import ImageUpload from "@/components/ImageUpload"
 import { resolveResourceUrl } from "@/utils/resource"
 
@@ -216,6 +294,10 @@ export default {
     allowWrongQuestionAdd: {
       type: Boolean,
       default: false
+    },
+    allowCourseFavoriteAdd: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -242,6 +324,15 @@ export default {
         questionImage: [
           { validator: this.validateWrongQuestionContent, trigger: "change" }
         ]
+      },
+      favoriteDialogOpen: false,
+      courseLoading: false,
+      courseOptions: [],
+      courseTotal: 0,
+      courseQuery: {
+        pageNum: 1,
+        pageSize: 10,
+        courseName: ""
       }
     }
   },
@@ -255,6 +346,7 @@ export default {
         return [
           item.title,
           item.courseName,
+          item.courseSubtitle,
           item.chapterTitle,
           item.contentTitle,
           item.summary,
@@ -349,8 +441,8 @@ export default {
         return {
           ...item,
           id: item.id || `${this.field}-${index}`,
-          title: item.title || item.questionTitle || item.contentTitle || this.createTitle(item.questionStem) || `第 ${index + 1} 条记录`,
-          summary: item.summary || item.reason || item.note || item.content || item.detail || item.questionStem || "",
+          title: item.title || item.questionTitle || item.contentTitle || item.courseName || this.createTitle(item.questionStem) || `第 ${index + 1} 条记录`,
+          summary: item.summary || item.reason || item.note || item.content || item.detail || item.courseSubtitle || item.intro || item.questionStem || "",
           tags
         }
       })
@@ -430,6 +522,61 @@ export default {
     },
     resolveImageUrl(url) {
       return resolveResourceUrl(url)
+    },
+    openCourseFavorite() {
+      this.favoriteDialogOpen = true
+      this.courseQuery.pageNum = 1
+      this.loadCourseOptions()
+    },
+    loadCourseOptions() {
+      this.courseLoading = true
+      listPortalCourses(this.courseQuery).then(res => {
+        this.courseOptions = res.rows || []
+        this.courseTotal = res.total || 0
+      }).finally(() => {
+        this.courseLoading = false
+      })
+    },
+    isCourseFavorited(courseId) {
+      return this.items.some(item => String(item.courseId) === String(courseId))
+    },
+    getCourseShortName(name) {
+      return (name || "课程").slice(0, 2)
+    },
+    addCourseFavorite(course) {
+      if (this.isCourseFavorited(course.courseId)) {
+        this.$modal.msgWarning("该课程已收藏")
+        return
+      }
+      const now = new Date()
+      const pad = value => String(value).padStart(2, "0")
+      const collectedAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+      const storedItems = this.parseStoredList(this.form[this.field])
+      const item = {
+        id: `favorite-course-${course.courseId}`,
+        courseId: course.courseId,
+        title: course.courseName,
+        courseName: course.courseName,
+        courseSubtitle: course.courseSubtitle,
+        coverImage: course.coverImage,
+        categoryName: course.categoryName,
+        teacherName: course.teacherName,
+        summary: course.courseSubtitle || course.intro || "",
+        detail: course.intro || "",
+        collectedAt,
+        updatedAt: collectedAt,
+        tags: ["课程收藏"]
+      }
+      storedItems.unshift(item)
+      this.form[this.field] = JSON.stringify(storedItems, null, 2)
+      updateStudentProfile(this.form).then(() => {
+        this.items = this.parseItems(this.form[this.field])
+        this.$modal.msgSuccess("收藏成功")
+      })
+    },
+    openCourse(courseId) {
+      this.detailOpen = false
+      this.$router.push(`/course/${courseId}`)
     }
   }
 }
@@ -488,6 +635,50 @@ export default {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.favorite-picker__toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.course-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.course-option img,
+.course-option__fallback {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 48px;
+  border-radius: 4px;
+}
+
+.course-option img {
+  object-fit: cover;
+}
+
+.course-option__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  font-weight: 700;
+  background: #eff6ff;
+}
+
+.course-option strong {
+  display: block;
+  color: #111827;
+}
+
+.course-option p {
+  margin: 5px 0 0;
+  color: #6b7280;
+  line-height: 1.5;
 }
 
 .collection-list {
