@@ -5,6 +5,7 @@
     type-label="笔记"
     tag-type="success"
     empty-text="暂无笔记记录"
+    :allow-learning-note-add="true"
   />
 </template>
 

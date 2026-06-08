@@ -236,7 +236,7 @@
 
         <el-form-item v-if="showFileUrlUpload" :label="fileUploadLabel">
           <template v-if="isImageContent">
-            <image-upload v-model="form.fileUrl" :limit="1" />
+            <image-upload v-model="form.fileUrl" :limit="1" directory="course/content/image" />
           </template>
           <template v-else>
             <file-upload
@@ -244,6 +244,7 @@
               :limit="1"
               :file-size="currentFileSize"
               :file-type="currentFileTypes"
+              :directory="currentUploadDirectory"
               @success="handleFileUploadSuccess"
             />
           </template>
@@ -283,7 +284,7 @@
         </el-form-item>
 
         <el-form-item label="内容封面">
-          <image-upload v-model="form.coverImage" :limit="1" />
+          <image-upload v-model="form.coverImage" :limit="1" directory="course/content/cover" />
         </el-form-item>
 
         <el-row :gutter="18">
@@ -311,7 +312,7 @@
         </el-form-item>
 
         <el-form-item label="内容正文" prop="contentBody">
-          <editor v-model="form.contentBody" :min-height="220" />
+          <editor v-model="form.contentBody" :min-height="220" directory="course/content/image" />
         </el-form-item>
 
         <el-form-item label="备注" prop="remark">
@@ -480,6 +481,10 @@ export default {
     /** 当前文件大小限制，单位 MB */
     currentFileSize() {
       return this.form.contentType === "2" ? 200 : 50
+    },
+    /** 当前上传资源目录 */
+    currentUploadDirectory() {
+      return this.form.contentType === "2" ? "course/content/video" : "course/content/document"
     }
   },
   watch: {

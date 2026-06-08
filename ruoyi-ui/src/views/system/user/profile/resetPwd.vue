@@ -58,7 +58,7 @@ export default {
       if (!this.isStudent) {
         return "定期更新密码可以更好地保护教学资料、个人信息与平台账号安全。"
       }
-      return "定期更新密码可以更好地保护课程记录、个人资料和学习档案安全。"
+      return "定期更新密码可以更好地保护课程记录、个人资料和学习记录安全。"
     },
     formRules() {
       return {
