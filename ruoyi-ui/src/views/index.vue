@@ -17,7 +17,7 @@
             <el-button class="primary-action" @click="goCourseSquare">查看课程广场</el-button>
             <el-button v-if="isStudent" class="secondary-action" @click="goMyCourses">继续学习</el-button>
             <el-button v-else-if="isTeacherOrAdmin" class="secondary-action" @click="goCourseManage">课程管理</el-button>
-            <el-button v-else class="secondary-action" @click="goLoginWithRedirect('/learning/my-course')">登录学习</el-button>
+            <el-button v-else class="secondary-action" @click="goPortalEntryLogin">登录学习</el-button>
           </div>
         </div>
 
@@ -67,7 +67,7 @@
             <button class="search-chip" @click="goProfile">个人中心</button>
             <button v-if="isStudent" class="search-chip" @click="goMyCourses">我的课程</button>
             <button v-else-if="isTeacherOrAdmin" class="search-chip" @click="goCourseManage">课程管理</button>
-            <button v-else class="search-chip" @click="goLoginWithRedirect('/learning/my-course')">登录学习</button>
+            <button v-else class="search-chip" @click="goPortalEntryLogin">登录学习</button>
           </div>
         </div>
       </section>
@@ -400,6 +400,9 @@ export default {
       this.$router.push("/learning/my-course")
     },
     /** 跳转个人中心 */
+    goPortalEntryLogin() {
+      this.goLoginWithRedirect("/portal-entry")
+    },
     goProfile() {
       if (!getToken()) {
         this.goLoginWithRedirect("/user/profile")
