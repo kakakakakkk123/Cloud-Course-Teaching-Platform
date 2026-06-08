@@ -71,6 +71,12 @@ export const constantRoutes = [
     meta: { title: '课程详情' }
   },
   {
+    path: '/portal-entry',
+    component: () => import('@/views/portal-entry'),
+    hidden: true,
+    meta: { title: '鍓嶅彴鍏ュ彛' }
+  },
+  {
     path: '/404',
     component: () => import('@/views/error/404'),
     hidden: true

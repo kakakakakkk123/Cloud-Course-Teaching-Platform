@@ -125,6 +125,13 @@ export default {
         this.$router.push("/")
       }
     },
+    getActionLoginRedirect() {
+      const currentPath = this.$route.path || "/"
+      if (currentPath === "/") {
+        return "/portal-entry"
+      }
+      return this.$route.fullPath || currentPath
+    },
     goLoginWithRedirect(redirect) {
       this.$router.push({
         path: "/login",
@@ -132,6 +139,10 @@ export default {
       })
     },
     handleNavClick(item) {
+      if (item.key === "login" && this.$route.path === "/") {
+        this.goLoginWithRedirect("/portal-entry")
+        return
+      }
       if (item.requiresAuth && !this.isLogin) {
         this.goLoginWithRedirect(item.path)
         return
@@ -146,7 +157,7 @@ export default {
     },
     handleActionClick() {
       if (!this.isLogin) {
-        this.goLoginWithRedirect(this.$route.fullPath || "/")
+        this.goLoginWithRedirect(this.getActionLoginRedirect())
         return
       }
       if (this.isStudent) {
