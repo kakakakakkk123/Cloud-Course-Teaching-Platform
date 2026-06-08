@@ -22,7 +22,7 @@
             icon="el-icon-plus"
             @click="openQuickAdd"
           >{{ quickAddButtonText }}</el-button>
-          <el-button type="primary" size="mini" @click="submit">保存内容</el-button>
+          <el-button v-if="showRawEditor" type="primary" size="mini" @click="submit">保存内容</el-button>
         </div>
       </div>
 
@@ -97,6 +97,7 @@
       />
 
       <el-input
+        v-if="showRawEditor"
         v-model="rawValue"
         class="memo-editor"
         type="textarea"
@@ -168,6 +169,10 @@ export default {
     quickAddButtonText: {
       type: String,
       default: "新增一条"
+    },
+    showRawEditor: {
+      type: Boolean,
+      default: true
     }
   },
   data() {
