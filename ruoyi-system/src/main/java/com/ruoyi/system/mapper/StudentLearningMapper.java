@@ -25,5 +25,9 @@ public interface StudentLearningMapper
 
     public int insertExamRecord(EduExamRecord record);
 
-    public int submitExamRecord(@Param("recordId") Long recordId, @Param("studentId") Long studentId);
+    public EduExamRecord selectExamRecordById(@Param("recordId") Long recordId, @Param("studentId") Long studentId);
+
+    public int finishExamRecord(EduExamRecord record);
+
+    public int finishExamReview(EduExamRecord record);
 }

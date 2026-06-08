@@ -4,12 +4,11 @@ import java.math.BigDecimal;
 import java.util.Date;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
  * 考试记录对象 edu_exam_record
- *
- * @author ruoyi
  */
 public class EduExamRecord extends BaseEntity
 {
@@ -20,18 +19,43 @@ public class EduExamRecord extends BaseEntity
     private Long paperId;
     private Long courseId;
     private Long studentId;
+
+    @Excel(name = "作答次数")
     private Integer attemptNo;
+
+    @Excel(name = "开始时间", dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date startTime;
+
+    @Excel(name = "提交时间", dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date submitTime;
+
+    @Excel(name = "用时(秒)")
     private Integer durationSeconds;
+
+    @Excel(name = "作答状态", readConverterExp = "0=未开始,1=作答中,2=已提交,3=已完成")
     private String recordStatus;
+
+    @Excel(name = "客观分", scale = 2)
     private BigDecimal objectiveScore;
+
+    @Excel(name = "主观分", scale = 2)
     private BigDecimal subjectiveScore;
+
+    @Excel(name = "总分", scale = 2)
     private BigDecimal totalScore;
+
+    @Excel(name = "成绩结果", readConverterExp = "0=未及格,1=及格")
     private String resultStatus;
+
+    @Excel(name = "批改状态", readConverterExp = "0=待批改,1=已完成")
     private String checkedFlag;
+
     private String studentKeyword;
+
+    @Excel(name = "学生账号")
     private String studentUserName;
+
+    @Excel(name = "学生姓名")
     private String studentName;
 
     public Long getRecordId()
@@ -184,16 +208,6 @@ public class EduExamRecord extends BaseEntity
         this.checkedFlag = checkedFlag;
     }
 
-    public String getStudentUserName()
-    {
-        return studentUserName;
-    }
-
-    public void setStudentUserName(String studentUserName)
-    {
-        this.studentUserName = studentUserName;
-    }
-
     public String getStudentKeyword()
     {
         return studentKeyword;
@@ -202,6 +216,16 @@ public class EduExamRecord extends BaseEntity
     public void setStudentKeyword(String studentKeyword)
     {
         this.studentKeyword = studentKeyword;
+    }
+
+    public String getStudentUserName()
+    {
+        return studentUserName;
+    }
+
+    public void setStudentUserName(String studentUserName)
+    {
+        this.studentUserName = studentUserName;
     }
 
     public String getStudentName()

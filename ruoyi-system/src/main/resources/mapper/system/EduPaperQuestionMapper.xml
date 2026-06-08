@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.EduPaperQuestionMapper">
+
+    <resultMap id="EduPaperQuestionResult" type="com.ruoyi.system.domain.exam.EduPaperQuestion">
+        <id property="id" column="id"/>
+        <result property="paperId" column="paper_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="questionOrder" column="question_order"/>
+        <result property="questionScore" column="question_score"/>
+        <result property="questionType" column="question_type"/>
+        <result property="difficultyLevel" column="difficulty_level"/>
+    </resultMap>
+
+    <select id="selectPaperQuestionList" parameterType="Long" resultMap="EduPaperQuestionResult">
+        select id, paper_id, question_id, question_order, question_score, question_type, difficulty_level
+        from edu_paper_question
+        where paper_id = #{paperId}
+        order by question_order asc, id asc
+    </select>
+</mapper>

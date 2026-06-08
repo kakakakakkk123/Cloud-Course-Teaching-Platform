@@ -146,6 +146,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and student_id = #{studentId}
     </select>
 
+    <select id="selectExamRecordById" resultMap="EduExamRecordResult">
+        select record_id, exam_id, paper_id, course_id, student_id, attempt_no, start_time,
+               submit_time, duration_seconds, exam_status as record_status, objective_score,
+               subjective_score, total_score, pass_flag as result_status, checked_flag
+        from edu_exam_record
+        where record_id = #{recordId}
+          and student_id = #{studentId}
+        limit 1
+    </select>
+
     <insert id="insertExamRecord" parameterType="com.ruoyi.system.domain.exam.EduExamRecord" useGeneratedKeys="true" keyProperty="recordId">
         insert into edu_exam_record (
             exam_id, paper_id, course_id, student_id, attempt_no, start_time,
@@ -157,15 +167,31 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         )
     </insert>
 
-    <update id="submitExamRecord">
+    <update id="finishExamRecord" parameterType="com.ruoyi.system.domain.exam.EduExamRecord">
         update edu_exam_record
         set submit_time = sysdate(),
             duration_seconds = ifnull(timestampdiff(second, start_time, sysdate()), 0),
-            exam_status = '2',
-            checked_flag = '0'
+            exam_status = #{recordStatus},
+            objective_score = #{objectiveScore},
+            subjective_score = #{subjectiveScore},
+            total_score = #{totalScore},
+            pass_flag = #{resultStatus},
+            checked_flag = #{checkedFlag}
         where record_id = #{recordId}
-          and student_id = #{studentId}
           and exam_status = '1'
+    </update>
+
+    <update id="finishExamReview" parameterType="com.ruoyi.system.domain.exam.EduExamRecord">
+        update edu_exam_record
+        set exam_status = #{recordStatus},
+            objective_score = #{objectiveScore},
+            subjective_score = #{subjectiveScore},
+            total_score = #{totalScore},
+            pass_flag = #{resultStatus},
+            checked_flag = #{checkedFlag},
+            update_by = #{updateBy},
+            update_time = sysdate()
+        where record_id = #{recordId}
     </update>
 
 </mapper>

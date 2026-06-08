@@ -42,11 +42,42 @@ export function startStudentExam(examId) {
 }
 
 /**
+ * 查询答题页
+ */
+export function getStudentExamPaper(recordId) {
+  return request({
+    url: "/student/learning/exam-records/" + recordId + "/paper",
+    method: "get"
+  })
+}
+
+/**
+ * 暂存考试答案
+ */
+export function saveStudentExamAnswers(recordId, data) {
+  return request({
+    url: "/student/learning/exam-records/" + recordId + "/answers",
+    method: "post",
+    data
+  })
+}
+
+/**
  * 提交考试
  */
 export function submitStudentExam(recordId) {
   return request({
     url: "/student/learning/exam-records/" + recordId + "/submit",
     method: "post"
+  })
+}
+
+/**
+ * 查询考试结果
+ */
+export function getStudentExamResult(recordId) {
+  return request({
+    url: "/student/learning/exam-records/" + recordId + "/result",
+    method: "get"
   })
 }

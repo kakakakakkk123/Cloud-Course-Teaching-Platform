@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.EduExamRuntimeMapper">
+
+    <resultMap id="EduExamQuestionResult" type="com.ruoyi.system.domain.exam.EduExamQuestion">
+        <id property="id" column="id"/>
+        <result property="examId" column="exam_id"/>
+        <result property="paperId" column="paper_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="questionType" column="question_type"/>
+        <result property="questionOrder" column="question_order"/>
+        <result property="questionScore" column="question_score"/>
+        <result property="difficultyLevel" column="difficulty_level"/>
+        <result property="questionTitle" column="question_title"/>
+        <result property="optionSnapshot" column="option_snapshot"/>
+        <result property="standardAnswer" column="standard_answer"/>
+        <result property="analysisSnapshot" column="analysis_snapshot"/>
+        <result property="attachmentUrl" column="attachment_url"/>
+        <result property="autoMarking" column="auto_marking"/>
+    </resultMap>
+
+    <resultMap id="EduExamAnswerResult" type="com.ruoyi.system.domain.exam.EduExamAnswer">
+        <id property="answerId" column="answer_id"/>
+        <result property="recordId" column="record_id"/>
+        <result property="examId" column="exam_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="questionType" column="question_type"/>
+        <result property="questionOrder" column="question_order"/>
+        <result property="standardAnswer" column="standard_answer"/>
+        <result property="studentAnswer" column="student_answer"/>
+        <result property="isCorrect" column="is_correct"/>
+        <result property="questionScore" column="question_score"/>
+        <result property="actualScore" column="actual_score"/>
+        <result property="teacherComment" column="teacher_comment"/>
+        <result property="checkedBy" column="checked_by"/>
+        <result property="checkedTime" column="checked_time"/>
+    </resultMap>
+
+    <select id="selectExamQuestionList" parameterType="Long" resultMap="EduExamQuestionResult">
+        select id, exam_id, paper_id, question_id, question_type, question_order, question_score,
+               difficulty_level, question_title, option_snapshot, standard_answer, analysis_snapshot,
+               attachment_url, auto_marking
+        from edu_exam_question
+        where exam_id = #{examId}
+        order by question_order asc, id asc
+    </select>
+
+    <select id="countExamQuestion" parameterType="Long" resultType="int">
+        select count(1) from edu_exam_question where exam_id = #{examId}
+    </select>
+
+    <insert id="batchInsertExamQuestion" parameterType="java.util.List">
+        insert ignore into edu_exam_question (
+            exam_id, paper_id, question_id, question_type, question_order, question_score,
+            difficulty_level, question_title, option_snapshot, standard_answer, analysis_snapshot,
+            attachment_url, auto_marking
+        ) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.examId}, #{item.paperId}, #{item.questionId}, #{item.questionType}, #{item.questionOrder},
+             #{item.questionScore}, #{item.difficultyLevel}, #{item.questionTitle}, #{item.optionSnapshot},
+             #{item.standardAnswer}, #{item.analysisSnapshot}, #{item.attachmentUrl}, #{item.autoMarking})
+        </foreach>
+    </insert>
+
+    <select id="selectExamAnswerListByRecordId" parameterType="Long" resultMap="EduExamAnswerResult">
+        select answer_id, record_id, exam_id, question_id, question_type, question_order, standard_answer,
+               student_answer, is_correct, question_score, actual_score, teacher_comment, checked_by, checked_time
+        from edu_exam_answer
+        where record_id = #{recordId}
+        order by question_order asc, answer_id asc
+    </select>
+
+    <select id="selectExamAnswerListByRecordIds" resultMap="EduExamAnswerResult">
+        select answer_id, record_id, exam_id, question_id, question_type, question_order, standard_answer,
+               student_answer, is_correct, question_score, actual_score, teacher_comment, checked_by, checked_time
+        from edu_exam_answer
+        where record_id in
+        <foreach collection="recordIds" item="recordId" open="(" separator="," close=")">
+            #{recordId}
+        </foreach>
+        order by question_order asc, answer_id asc
+    </select>
+
+    <select id="selectExamAnswerById" parameterType="Long" resultMap="EduExamAnswerResult">
+        select answer_id, record_id, exam_id, question_id, question_type, question_order, standard_answer,
+               student_answer, is_correct, question_score, actual_score, teacher_comment, checked_by, checked_time
+        from edu_exam_answer
+        where answer_id = #{answerId}
+    </select>
+
+    <insert id="batchInsertExamAnswer" parameterType="java.util.List">
+        insert ignore into edu_exam_answer (
+            record_id, exam_id, question_id, question_type, question_order, standard_answer,
+            student_answer, is_correct, question_score, actual_score, teacher_comment, checked_by, checked_time
+        ) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.recordId}, #{item.examId}, #{item.questionId}, #{item.questionType}, #{item.questionOrder},
+             #{item.standardAnswer}, #{item.studentAnswer}, #{item.isCorrect}, #{item.questionScore},
+             #{item.actualScore}, #{item.teacherComment}, #{item.checkedBy}, #{item.checkedTime})
+        </foreach>
+    </insert>
+
+    <update id="updateStudentAnswer" parameterType="com.ruoyi.system.domain.exam.EduExamAnswer">
+        update edu_exam_answer
+        <set>
+            <if test="studentAnswer != null">student_answer = #{studentAnswer},</if>
+            <if test="isCorrect != null">is_correct = #{isCorrect},</if>
+            <if test="actualScore != null">actual_score = #{actualScore},</if>
+            <if test="teacherComment != null">teacher_comment = #{teacherComment},</if>
+            <if test="checkedBy != null">checked_by = #{checkedBy},</if>
+            <if test="checkedTime != null">checked_time = #{checkedTime},</if>
+        </set>
+        where answer_id = #{answerId}
+    </update>
+</mapper>

@@ -24,3 +24,29 @@ export function listExamStatRecord(query) {
     params: query
   })
 }
+
+/**
+ * 查询考试批改详情
+ * @param {number} recordId 作答记录ID
+ * @returns {Promise}
+ */
+export function getExamReviewDetail(recordId) {
+  return request({
+    url: "/edu/exam/stat/review/" + recordId,
+    method: "get"
+  })
+}
+
+/**
+ * 保存或提交考试批改
+ * @param {number} recordId 作答记录ID
+ * @param {Object} data 批改内容
+ * @returns {Promise}
+ */
+export function submitExamReview(recordId, data) {
+  return request({
+    url: "/edu/exam/stat/review/" + recordId,
+    method: "post",
+    data
+  })
+}

@@ -1,6 +1,7 @@
 package com.ruoyi.system.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.system.domain.course.EduCourseContent;
 
 /**
@@ -49,6 +50,10 @@ public interface EduCourseContentMapper
      * @return 内容数量
      */
     public int countPublishedContentByCourseId(Long courseId);
+
+    public Integer selectMaxSortOrderByCourseId(Long courseId);
+
+    public EduCourseContent selectExamContentByCourseIdAndExamId(@Param("courseId") Long courseId, @Param("examId") Long examId);
 
     /**
      * 查询当前内容之前的已发布内容数量

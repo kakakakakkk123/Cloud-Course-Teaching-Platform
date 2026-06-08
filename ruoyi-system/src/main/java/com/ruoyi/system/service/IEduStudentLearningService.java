@@ -2,6 +2,9 @@ package com.ruoyi.system.service;
 
 import java.util.List;
 import com.ruoyi.system.domain.exam.EduExamRecord;
+import com.ruoyi.system.domain.learning.StudentExamAnswerBody;
+import com.ruoyi.system.domain.learning.StudentExamPaperVO;
+import com.ruoyi.system.domain.learning.StudentExamResultVO;
 import com.ruoyi.system.domain.learning.StudentExamVO;
 import com.ruoyi.system.domain.learning.StudentLearningOverview;
 
@@ -20,5 +23,11 @@ public interface IEduStudentLearningService
 
     public EduExamRecord startExam(Long examId, Long studentId);
 
+    public StudentExamPaperVO selectStudentExamPaper(Long recordId, Long studentId);
+
+    public void saveExamAnswers(Long recordId, Long studentId, StudentExamAnswerBody body);
+
     public void submitExam(Long recordId, Long studentId);
+
+    public StudentExamResultVO selectStudentExamResult(Long recordId, Long studentId);
 }

@@ -1,67 +1,60 @@
 <template>
   <div v-loading="loading" class="app-container my-exam-page">
-    <el-card shadow="never" class="exam-toolbar">
-      <div class="toolbar-title">
-        <div class="page-title">我的考试</div>
-        <div class="page-desc">查看已注册课程下教师发布的考试，完成考试后可查看提交状态与成绩。</div>
+    <section class="my-exam-hero">
+      <div>
+        <p class="my-exam-hero__kicker">我的考试</p>
+        <h1>按课程完成考试任务</h1>
+        <p class="my-exam-hero__summary">查看老师已发布的考试，继续进行中的作答，或回看已经提交的结果。</p>
       </div>
       <el-radio-group v-model="query.status" size="small" @change="getList">
         <el-radio-button label="">全部</el-radio-button>
         <el-radio-button label="todo">待完成</el-radio-button>
-        <el-radio-button label="done">已完成</el-radio-button>
+        <el-radio-button label="done">已提交</el-radio-button>
       </el-radio-group>
-    </el-card>
+    </section>
 
-    <el-row :gutter="16" class="overview-row">
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="never" class="stat-card">
-          <div class="stat-value">{{ examList.length }}</div>
-          <div class="stat-label">考试总数</div>
-        </el-card>
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="never" class="stat-card">
-          <div class="stat-value">{{ todoCount }}</div>
-          <div class="stat-label">待完成</div>
-        </el-card>
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="never" class="stat-card">
-          <div class="stat-value">{{ doneCount }}</div>
-          <div class="stat-label">已提交</div>
-        </el-card>
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="never" class="stat-card">
-          <div class="stat-value">{{ passCount }}</div>
-          <div class="stat-label">已及格</div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <section class="my-exam-metrics">
+      <article class="metric-card">
+        <span>考试总数</span>
+        <strong>{{ examList.length }}</strong>
+      </article>
+      <article class="metric-card">
+        <span>待参加</span>
+        <strong>{{ todoCount }}</strong>
+      </article>
+      <article class="metric-card">
+        <span>进行中</span>
+        <strong>{{ runningCount }}</strong>
+      </article>
+      <article class="metric-card">
+        <span>已提交</span>
+        <strong>{{ doneCount }}</strong>
+      </article>
+    </section>
 
-    <el-card shadow="never">
+    <el-card shadow="never" class="my-exam-table-card">
       <el-table :data="examList" border>
-        <el-table-column prop="examName" label="考试名称" min-width="190" show-overflow-tooltip />
-        <el-table-column prop="courseName" label="所属课程" min-width="170" show-overflow-tooltip />
+        <el-table-column prop="examName" label="考试名称" min-width="210" show-overflow-tooltip />
+        <el-table-column prop="courseName" label="所属课程" min-width="180" show-overflow-tooltip />
         <el-table-column prop="paperName" label="试卷" min-width="150" show-overflow-tooltip />
-        <el-table-column label="考试时间" min-width="230">
+        <el-table-column label="考试时间" min-width="220">
           <template slot-scope="scope">
             <div>{{ parseTime(scope.row.startTime) || "不限开始时间" }}</div>
             <div class="muted">至 {{ parseTime(scope.row.endTime) || "不限结束时间" }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="成绩" width="120" align="center">
-          <template slot-scope="scope">
-            <span v-if="canShowScore(scope.row)">{{ scope.row.studentScore || 0 }} / {{ scope.row.totalScore || 0 }}</span>
-            <span v-else class="muted">暂未公布</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="110" align="center">
+        <el-table-column label="状态" width="120" align="center">
           <template slot-scope="scope">
             <el-tag :type="getStatusTag(scope.row)">{{ getStatusText(scope.row) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" align="center" fixed="right">
+        <el-table-column label="成绩" width="130" align="center">
+          <template slot-scope="scope">
+            <span v-if="canShowScore(scope.row)">{{ scope.row.studentScore || 0 }} / {{ scope.row.totalScore || 0 }}</span>
+            <span v-else class="muted">待公布</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="260" align="center" fixed="right">
           <template slot-scope="scope">
             <el-button
               v-if="canStart(scope.row)"
@@ -70,12 +63,18 @@
               @click="handleStart(scope.row)"
             >开始考试</el-button>
             <el-button
-              v-if="scope.row.recordStatus === '1'"
+              v-else-if="scope.row.recordStatus === '1'"
+              type="warning"
+              size="mini"
+              @click="goAnswer(scope.row.recordId)"
+            >继续作答</el-button>
+            <el-button
+              v-else-if="['2', '3'].includes(String(scope.row.recordStatus))"
               type="success"
               size="mini"
-              @click="handleSubmit(scope.row)"
-            >提交考试</el-button>
-            <el-button size="mini" @click="handleView(scope.row)">查看</el-button>
+              @click="goResult(scope.row.recordId)"
+            >查看结果</el-button>
+            <el-button size="mini" @click="handleView(scope.row)">查看详情</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -86,7 +85,7 @@
         <el-descriptions-item label="考试名称">{{ detail.examName }}</el-descriptions-item>
         <el-descriptions-item label="所属课程">{{ detail.courseName || "未关联课程" }}</el-descriptions-item>
         <el-descriptions-item label="考试时长">{{ detail.durationMinutes || 0 }} 分钟</el-descriptions-item>
-        <el-descriptions-item label="及格分">{{ detail.passScore || 0 }} / {{ detail.totalScore || 0 }}</el-descriptions-item>
+        <el-descriptions-item label="作答次数">{{ detail.attemptCount || 0 }} / {{ detail.maxAttemptCount || 1 }}</el-descriptions-item>
         <el-descriptions-item label="考试说明">{{ detail.examNotice || "暂无说明" }}</el-descriptions-item>
       </el-descriptions>
       <div slot="footer">
@@ -97,7 +96,7 @@
 </template>
 
 <script>
-import { listMyExams, startStudentExam, submitStudentExam } from "@/api/learning"
+import { listMyExams, startStudentExam } from "@/api/learning"
 
 export default {
   name: "MyExam",
@@ -114,19 +113,16 @@ export default {
   },
   computed: {
     todoCount() {
-      return this.examList.filter(item => !["2", "3"].includes(String(item.recordStatus))).length
+      return this.examList.filter(item => this.getStatusText(item) === "待考试").length
+    },
+    runningCount() {
+      return this.examList.filter(item => item.recordStatus === "1").length
     },
     doneCount() {
       return this.examList.filter(item => ["2", "3"].includes(String(item.recordStatus))).length
-    },
-    passCount() {
-      return this.examList.filter(item => String(item.resultStatus) === "1").length
     }
   },
   created() {
-    if (this.$route.query.examId) {
-      this.query.status = ""
-    }
     this.getList()
   },
   methods: {
@@ -143,18 +139,17 @@ export default {
       })
     },
     handleStart(row) {
-      startStudentExam(row.examId).then(() => {
+      startStudentExam(row.examId).then(res => {
+        const record = res.data || {}
         this.$modal.msgSuccess("考试已开始")
-        this.getList()
+        this.goAnswer(record.recordId)
       })
     },
-    handleSubmit(row) {
-      this.$modal.confirm("确认提交当前考试记录吗？").then(() => {
-        return submitStudentExam(row.recordId)
-      }).then(() => {
-        this.$modal.msgSuccess("提交成功")
-        this.getList()
-      }).catch(() => {})
+    goAnswer(recordId) {
+      this.$router.push(`/learning/exam/answer/${recordId}`)
+    },
+    goResult(recordId) {
+      this.$router.push(`/learning/exam/result/${recordId}`)
     },
     handleView(row) {
       this.detail = row
@@ -180,7 +175,7 @@ export default {
         return "进行中"
       }
       if (["2", "3"].includes(String(row.recordStatus))) {
-        return row.checkedFlag === "1" ? "已批改" : "已提交"
+        return row.checkedFlag === "1" ? "已完成" : "待批改"
       }
       const now = Date.now()
       const start = row.startTime ? new Date(row.startTime).getTime() : 0
@@ -194,16 +189,15 @@ export default {
       return "待考试"
     },
     getStatusTag(row) {
-      const text = this.getStatusText(row)
       const map = {
         "进行中": "warning",
-        "已批改": "success",
-        "已提交": "info",
+        "已完成": "success",
+        "待批改": "info",
         "已结束": "danger",
         "未开始": "info",
         "待考试": "primary"
       }
-      return map[text] || "info"
+      return map[this.getStatusText(row)] || "info"
     }
   }
 }
@@ -211,60 +205,86 @@ export default {
 
 <style lang="scss" scoped>
 .my-exam-page {
-  background: #f6f8fb;
+  min-height: 100vh;
+  background: #f4f7fb;
 }
 
-.exam-toolbar {
-  margin-bottom: 16px;
+.my-exam-hero,
+.metric-card,
+.my-exam-table-card {
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  border-radius: 18px;
+  background: #fff;
 }
 
-.exam-toolbar ::v-deep .el-card__body {
+.my-exam-hero {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 24px;
 }
 
-.page-title {
-  color: #0f172a;
-  font-size: 20px;
+.my-exam-hero__kicker {
+  margin: 0 0 8px;
+  color: #2563eb;
+  font-size: 12px;
   font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
-.page-desc,
+.my-exam-hero h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 28px;
+}
+
+.my-exam-hero__summary,
 .muted {
   color: #64748b;
 }
 
-.page-desc {
-  margin-top: 6px;
-  font-size: 13px;
+.my-exam-hero__summary {
+  max-width: 60ch;
+  margin: 12px 0 0;
+  line-height: 1.8;
 }
 
-.overview-row {
-  margin-bottom: 16px;
+.my-exam-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
 }
 
-.stat-card {
-  margin-bottom: 12px;
+.metric-card {
+  padding: 18px 20px;
 }
 
-.stat-value {
-  color: #0f172a;
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.stat-label {
-  margin-top: 4px;
+.metric-card span {
+  display: block;
   color: #64748b;
   font-size: 13px;
 }
 
-@media screen and (max-width: 768px) {
-  .exam-toolbar ::v-deep .el-card__body {
-    align-items: flex-start;
+.metric-card strong {
+  display: block;
+  margin-top: 8px;
+  color: #0f172a;
+  font-size: 28px;
+}
+
+@media (max-width: 900px) {
+  .my-exam-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .my-exam-hero {
     flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>
