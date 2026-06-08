@@ -92,8 +92,6 @@
 import { listMyPortalCourses } from "@/api/portal"
 import { resolveResourceUrl } from "@/utils/resource"
 
-import { listMyPortalCourses } from "@/api/portal"
-
 export default {
   name: "MyCourse",
   data() {
