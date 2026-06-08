@@ -1,5 +1,11 @@
 <template>
   <div v-loading="loading" class="course-detail-page">
+    <portal-topbar
+      active="course-square"
+      context-title="课程详情"
+      context-summary="在同一前台导航中继续浏览课程"
+    />
+
     <div class="course-detail-shell">
       <section class="course-detail-hero">
         <div class="course-detail-hero__content">
@@ -38,7 +44,7 @@
             >
               {{ favorited ? "已收藏" : "收藏课程" }}
             </el-button>
-            <el-button @click="$router.push('/course-square')">返回课程广场</el-button>
+            <el-button @click="$router.push('/course-square')">查看更多课程</el-button>
           </div>
         </div>
         <div class="course-detail-hero__cover">
@@ -114,12 +120,14 @@ import { getToken } from "@/utils/auth"
 import { getPortalCourseDetail, enrollPortalCourse, likePortalCourse, cancelLikePortalCourse } from "@/api/portal"
 import { getStudentProfile, updateStudentProfile } from "@/api/system/user"
 import CourseContentResource from "@/components/CourseContentResource"
+import PortalTopbar from "@/components/PortalTopbar"
 import { resolveResourceUrl } from "@/utils/resource"
 
 export default {
   name: "CourseDetail",
   components: {
-    CourseContentResource
+    CourseContentResource,
+    PortalTopbar
   },
   data() {
     return {

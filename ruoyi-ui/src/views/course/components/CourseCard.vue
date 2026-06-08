@@ -1,5 +1,12 @@
 <template>
-  <el-card class="portal-course-card" shadow="hover" @click.native="handleOpen">
+  <article
+    class="portal-course-card"
+    role="button"
+    tabindex="0"
+    @click="handleOpen"
+    @keydown.enter.prevent="handleOpen"
+    @keydown.space.prevent="handleOpen"
+  >
     <div class="portal-course-card__cover">
       <img v-if="coverUrl" :src="coverUrl" :alt="course.courseName">
       <div v-else class="portal-course-card__fallback">
@@ -21,7 +28,7 @@
         <span>浏览 {{ course.viewCount || 0 }}</span>
       </div>
     </div>
-  </el-card>
+  </article>
 </template>
 
 <script>
@@ -78,21 +85,31 @@ export default {
 <style lang="scss" scoped>
 .portal-course-card {
   overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.92);
   border-radius: 18px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .portal-course-card:hover {
   transform: translateY(-3px);
+  border-color: rgba(96, 165, 250, 0.72);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+}
+
+.portal-course-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
 }
 
 .portal-course-card__cover {
   position: relative;
   height: 180px;
   overflow: hidden;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #dbeafe 0%, #ecfeff 100%);
+  border-radius: 14px 14px 0 0;
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
 }
 
 .portal-course-card__cover img {
@@ -142,12 +159,13 @@ export default {
 }
 
 .portal-course-card__body {
-  padding-top: 10px;
+  padding: 14px 16px 16px;
 }
 
 .portal-course-card__meta,
 .portal-course-card__stats {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 10px;
   color: #64748b;
@@ -163,12 +181,14 @@ export default {
   margin: 12px 0 8px;
   color: #0f172a;
   font-size: 18px;
+  line-height: 1.4;
+  text-wrap: balance;
 }
 
 .portal-course-card__desc {
-  min-height: 48px;
+  min-height: 52px;
   margin: 0 0 12px;
   color: #475569;
-  line-height: 1.7;
+  line-height: 1.75;
 }
 </style>
