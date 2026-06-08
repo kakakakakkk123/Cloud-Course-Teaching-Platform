@@ -87,6 +87,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and publish_status = '1'
     </select>
 
+    <select id="selectMaxSortOrderByCourseId" parameterType="Long" resultType="int">
+        select ifnull(max(sort_order), 0)
+        from edu_course_content
+        where course_id = #{courseId}
+    </select>
+
+    <select id="selectExamContentByCourseIdAndExamId" resultMap="EduCourseContentResult">
+        <include refid="selectEduCourseContentVo"/>
+        where cc.course_id = #{courseId}
+          and cc.exam_id = #{examId}
+        limit 1
+    </select>
+
     <select id="countLearnedContentPosition" parameterType="com.ruoyi.system.domain.course.EduCourseContent" resultType="int">
         select count(1)
         from edu_course_content

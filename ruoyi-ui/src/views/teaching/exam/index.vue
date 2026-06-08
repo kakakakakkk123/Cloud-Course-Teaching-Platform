@@ -231,15 +231,22 @@
           />
         </el-form-item>
 
+        <el-form-item label="学生入口" prop="syncCourseContent">
+          <el-checkbox v-model="syncCourseContentChecked">
+            发布时自动生成或更新课程内容中的考试入口
+          </el-checkbox>
+          <div class="exam-publish-inline-tip">这样学生在课程学习页里能直接看到这场考试，不需要再手动去课程内容页挂载入口。</div>
+        </el-form-item>
+
         <el-form-item label="发布提示">
           <div class="exam-publish-tips">
-            当前页面先完成考试的基础发布配置。下一步将继续接入：
+            发布后的学生可见路径取决于课程绑定、发布时间和课程入口状态。
             <br />
-            1. 课程内容挂载考试入口
+            1. 已绑定课程后，系统可自动生成课程内容中的考试入口
             <br />
-            2. 学生端参加考试与自动判分
+            2. 学生从“我的考试”或课程学习页进入考试
             <br />
-            3. 教师端成绩统计与阅卷
+            3. 客观题会自动判分，主观题保留给教师后续批改
           </div>
         </el-form-item>
       </el-form>
@@ -294,6 +301,14 @@ export default {
     }
   },
   computed: {
+    syncCourseContentChecked: {
+      get() {
+        return this.form.syncCourseContent === "1"
+      },
+      set(value) {
+        this.form.syncCourseContent = value ? "1" : "0"
+      }
+    },
     statusOptions() {
       return this.dictOptions("edu_exam_status", [
         { label: "草稿", value: "0", raw: { listClass: "info" } },
@@ -408,7 +423,8 @@ export default {
         questionShuffle: "0",
         optionShuffle: "0",
         status: "0",
-        examNotice: ""
+        examNotice: "",
+        syncCourseContent: "1"
       }
       this.resetForm("form")
     },
@@ -433,7 +449,8 @@ export default {
         const data = response.data || {}
         this.form = Object.assign({}, this.form, data, {
           courseId: data.courseId || this.currentCourseId,
-          totalScore: data.totalScore || this.currentPaperTotalScore
+          totalScore: data.totalScore || this.currentPaperTotalScore,
+          syncCourseContent: data.syncCourseContent || "1"
         })
         this.open = true
         this.title = "修改考试"
@@ -566,6 +583,13 @@ export default {
   border-radius: 16px;
   background: #f8fafc;
   line-height: 1.8;
+}
+
+.exam-publish-inline-tip {
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.7;
 }
 
 .mb16 {

@@ -1,29 +1,38 @@
-package com.ruoyi.system.domain.learning;
+package com.ruoyi.system.domain.exam;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
-import com.ruoyi.system.domain.exam.EduQuestionOption;
 
 /**
- * 学生答题页题目视图
+ * 教师批改题目视图
  */
-public class StudentExamQuestionVO implements Serializable
+public class EduExamReviewQuestionVO
 {
-    private static final long serialVersionUID = 1L;
-
+    private Long answerId;
     private Long questionId;
     private String questionType;
     private Integer questionOrder;
-    private BigDecimal questionScore;
     private String questionTitle;
     private String attachmentUrl;
-    private List<EduQuestionOption> optionList;
-    private String studentAnswer;
     private String standardAnswer;
+    private String studentAnswer;
     private String analysisSnapshot;
     private String isCorrect;
+    private BigDecimal questionScore;
     private BigDecimal actualScore;
+    private String teacherComment;
+    private String autoMarking;
+    private List<EduQuestionOption> optionList;
+
+    public Long getAnswerId()
+    {
+        return answerId;
+    }
+
+    public void setAnswerId(Long answerId)
+    {
+        this.answerId = answerId;
+    }
 
     public Long getQuestionId()
     {
@@ -55,26 +64,6 @@ public class StudentExamQuestionVO implements Serializable
         this.questionOrder = questionOrder;
     }
 
-    public BigDecimal getQuestionScore()
-    {
-        return questionScore;
-    }
-
-    public void setQuestionScore(BigDecimal questionScore)
-    {
-        this.questionScore = questionScore;
-    }
-
-    public BigDecimal getScore()
-    {
-        return questionScore;
-    }
-
-    public void setScore(BigDecimal score)
-    {
-        this.questionScore = score;
-    }
-
     public String getQuestionTitle()
     {
         return questionTitle;
@@ -95,14 +84,14 @@ public class StudentExamQuestionVO implements Serializable
         this.attachmentUrl = attachmentUrl;
     }
 
-    public List<EduQuestionOption> getOptionList()
+    public String getStandardAnswer()
     {
-        return optionList;
+        return standardAnswer;
     }
 
-    public void setOptionList(List<EduQuestionOption> optionList)
+    public void setStandardAnswer(String standardAnswer)
     {
-        this.optionList = optionList;
+        this.standardAnswer = standardAnswer;
     }
 
     public String getStudentAnswer()
@@ -113,16 +102,6 @@ public class StudentExamQuestionVO implements Serializable
     public void setStudentAnswer(String studentAnswer)
     {
         this.studentAnswer = studentAnswer;
-    }
-
-    public String getStandardAnswer()
-    {
-        return standardAnswer;
-    }
-
-    public void setStandardAnswer(String standardAnswer)
-    {
-        this.standardAnswer = standardAnswer;
     }
 
     public String getAnalysisSnapshot()
@@ -145,6 +124,16 @@ public class StudentExamQuestionVO implements Serializable
         this.isCorrect = isCorrect;
     }
 
+    public BigDecimal getQuestionScore()
+    {
+        return questionScore;
+    }
+
+    public void setQuestionScore(BigDecimal questionScore)
+    {
+        this.questionScore = questionScore;
+    }
+
     public BigDecimal getActualScore()
     {
         return actualScore;
@@ -153,5 +142,35 @@ public class StudentExamQuestionVO implements Serializable
     public void setActualScore(BigDecimal actualScore)
     {
         this.actualScore = actualScore;
+    }
+
+    public String getTeacherComment()
+    {
+        return teacherComment;
+    }
+
+    public void setTeacherComment(String teacherComment)
+    {
+        this.teacherComment = teacherComment;
+    }
+
+    public String getAutoMarking()
+    {
+        return autoMarking;
+    }
+
+    public void setAutoMarking(String autoMarking)
+    {
+        this.autoMarking = autoMarking;
+    }
+
+    public List<EduQuestionOption> getOptionList()
+    {
+        return optionList;
+    }
+
+    public void setOptionList(List<EduQuestionOption> optionList)
+    {
+        this.optionList = optionList;
     }
 }

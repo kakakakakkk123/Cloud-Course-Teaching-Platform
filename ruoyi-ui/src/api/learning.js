@@ -41,13 +41,33 @@ export function startStudentExam(examId) {
   })
 }
 
-/**
  * 查询考试内容
  */
 export function getStudentExamContent(recordId) {
   return request({
     url: "/student/learning/exam-records/" + recordId + "/content",
     method: "get"
+  })
+}
+
+/**
+ * 查询答题页
+ */
+export function getStudentExamPaper(recordId) {
+  return request({
+    url: "/student/learning/exam-records/" + recordId + "/paper",
+    method: "get"
+  })
+}
+
+/**
+ * 暂存考试答案
+ */
+export function saveStudentExamAnswers(recordId, data) {
+  return request({
+    url: "/student/learning/exam-records/" + recordId + "/answers",
+    method: "post",
+    data
   })
 }
 
@@ -68,5 +88,15 @@ export function importExamWrongQuestions(recordId) {
   return request({
     url: "/student/learning/exam-records/" + recordId + "/wrong-questions/import",
     method: "post"
+  })
+}
+
+/**
+ * 查询考试结果
+ */
+export function getStudentExamResult(recordId) {
+  return request({
+    url: "/student/learning/exam-records/" + recordId + "/result",
+    method: "get"
   })
 }

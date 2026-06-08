@@ -1,0 +1,21 @@
+create table if not exists edu_exam_question (
+  id                    bigint(20)      not null auto_increment comment '主键ID',
+  exam_id               bigint(20)      not null comment '考试ID',
+  paper_id              bigint(20)      not null comment '试卷ID',
+  question_id           bigint(20)      not null comment '原试题ID',
+  question_type         char(1)         not null comment '题型',
+  question_order        int(4)          default 0 comment '题目顺序',
+  question_score        decimal(8,2)    default 0.00 comment '题目分值',
+  difficulty_level      char(1)         default '2' comment '难度等级',
+  question_title        longtext        comment '题干快照',
+  option_snapshot       longtext        comment '选项快照JSON',
+  standard_answer       longtext        comment '标准答案快照',
+  analysis_snapshot     longtext        comment '解析快照',
+  attachment_url        varchar(255)    default '' comment '附件地址',
+  auto_marking          char(1)         default '1' comment '是否自动判分（0否 1是）',
+  primary key (id),
+  unique key uk_exam_question (exam_id, question_id),
+  key idx_exam_question_exam (exam_id),
+  key idx_exam_question_paper (paper_id),
+  key idx_exam_question_order (exam_id, question_order)
+) engine=innodb auto_increment=10000 comment='考试题目快照表';

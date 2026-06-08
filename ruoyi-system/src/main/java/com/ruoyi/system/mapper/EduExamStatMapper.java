@@ -26,4 +26,6 @@ public interface EduExamStatMapper
      * @return 成绩记录集合
      */
     public List<EduExamRecord> selectExamStatRecordList(EduExamRecord record);
+
+    public EduExamRecord selectExamStatRecordById(Long recordId);
 }

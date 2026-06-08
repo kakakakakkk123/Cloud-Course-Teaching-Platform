@@ -1,29 +1,59 @@
-package com.ruoyi.system.domain.learning;
+package com.ruoyi.system.domain.exam;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.List;
-import com.ruoyi.system.domain.exam.EduQuestionOption;
+import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
- * 学生答题页题目视图
+ * 考试题目快照对象 edu_exam_question
  */
-public class StudentExamQuestionVO implements Serializable
+public class EduExamQuestion extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
+    private Long id;
+    private Long examId;
+    private Long paperId;
     private Long questionId;
     private String questionType;
     private Integer questionOrder;
     private BigDecimal questionScore;
+    private String difficultyLevel;
     private String questionTitle;
-    private String attachmentUrl;
-    private List<EduQuestionOption> optionList;
-    private String studentAnswer;
+    private String optionSnapshot;
     private String standardAnswer;
     private String analysisSnapshot;
-    private String isCorrect;
-    private BigDecimal actualScore;
+    private String attachmentUrl;
+    private String autoMarking;
+
+    public Long getId()
+    {
+        return id;
+    }
+
+    public void setId(Long id)
+    {
+        this.id = id;
+    }
+
+    public Long getExamId()
+    {
+        return examId;
+    }
+
+    public void setExamId(Long examId)
+    {
+        this.examId = examId;
+    }
+
+    public Long getPaperId()
+    {
+        return paperId;
+    }
+
+    public void setPaperId(Long paperId)
+    {
+        this.paperId = paperId;
+    }
 
     public Long getQuestionId()
     {
@@ -65,14 +95,14 @@ public class StudentExamQuestionVO implements Serializable
         this.questionScore = questionScore;
     }
 
-    public BigDecimal getScore()
+    public String getDifficultyLevel()
     {
-        return questionScore;
+        return difficultyLevel;
     }
 
-    public void setScore(BigDecimal score)
+    public void setDifficultyLevel(String difficultyLevel)
     {
-        this.questionScore = score;
+        this.difficultyLevel = difficultyLevel;
     }
 
     public String getQuestionTitle()
@@ -85,34 +115,14 @@ public class StudentExamQuestionVO implements Serializable
         this.questionTitle = questionTitle;
     }
 
-    public String getAttachmentUrl()
+    public String getOptionSnapshot()
     {
-        return attachmentUrl;
+        return optionSnapshot;
     }
 
-    public void setAttachmentUrl(String attachmentUrl)
+    public void setOptionSnapshot(String optionSnapshot)
     {
-        this.attachmentUrl = attachmentUrl;
-    }
-
-    public List<EduQuestionOption> getOptionList()
-    {
-        return optionList;
-    }
-
-    public void setOptionList(List<EduQuestionOption> optionList)
-    {
-        this.optionList = optionList;
-    }
-
-    public String getStudentAnswer()
-    {
-        return studentAnswer;
-    }
-
-    public void setStudentAnswer(String studentAnswer)
-    {
-        this.studentAnswer = studentAnswer;
+        this.optionSnapshot = optionSnapshot;
     }
 
     public String getStandardAnswer()
@@ -135,23 +145,23 @@ public class StudentExamQuestionVO implements Serializable
         this.analysisSnapshot = analysisSnapshot;
     }
 
-    public String getIsCorrect()
+    public String getAttachmentUrl()
     {
-        return isCorrect;
+        return attachmentUrl;
     }
 
-    public void setIsCorrect(String isCorrect)
+    public void setAttachmentUrl(String attachmentUrl)
     {
-        this.isCorrect = isCorrect;
+        this.attachmentUrl = attachmentUrl;
     }
 
-    public BigDecimal getActualScore()
+    public String getAutoMarking()
     {
-        return actualScore;
+        return autoMarking;
     }
 
-    public void setActualScore(BigDecimal actualScore)
+    public void setAutoMarking(String autoMarking)
     {
-        this.actualScore = actualScore;
+        this.autoMarking = autoMarking;
     }
 }

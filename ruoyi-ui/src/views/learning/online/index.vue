@@ -187,7 +187,7 @@ export default {
           const record = res.data || {}
           markContentLearned(item.contentId).finally(() => {
             if (record.recordId) {
-              this.$router.push(`/learning/exam/take/${record.recordId}`)
+              this.$router.push(`/learning/exam/answer/${record.recordId}`)
               return
             }
             this.$router.push({ path: "/learning/exam", query: { examId: item.examId } })

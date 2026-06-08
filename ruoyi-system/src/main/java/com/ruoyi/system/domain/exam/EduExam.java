@@ -38,6 +38,7 @@ public class EduExam extends BaseEntity
     private String delFlag;
     private String paperName;
     private String courseName;
+    private String syncCourseContent;
 
     public Long getExamId()
     {
@@ -258,6 +259,16 @@ public class EduExam extends BaseEntity
     public void setCourseName(String courseName)
     {
         this.courseName = courseName;
+    }
+
+    public String getSyncCourseContent()
+    {
+        return syncCourseContent;
+    }
+
+    public void setSyncCourseContent(String syncCourseContent)
+    {
+        this.syncCourseContent = syncCourseContent;
     }
 
     @Override

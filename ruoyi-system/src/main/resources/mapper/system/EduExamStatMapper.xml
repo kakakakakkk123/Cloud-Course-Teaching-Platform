@@ -27,10 +27,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectExamStatOverview" parameterType="Long" resultType="com.ruoyi.system.domain.exam.EduExamStatOverview">
         select count(1) as participant_count,
                sum(case when r.exam_status in ('2', '3') then 1 else 0 end) as submitted_count,
+               sum(case when r.checked_flag = '1' then 1 else 0 end) as reviewed_count,
                ifnull(round(avg(case when r.exam_status in ('2', '3') then r.total_score end), 2), 0) as average_score,
                ifnull(round(sum(case when r.pass_flag = '1' then 1 else 0 end) / nullif(sum(case when r.exam_status in ('2', '3') then 1 else 0 end), 0) * 100, 2), 0) as pass_rate,
                ifnull(max(r.total_score), 0) as highest_score,
-               sum(case when r.exam_status = '2' and r.checked_flag = '0' then 1 else 0 end) as pending_review_count
+               sum(case when r.exam_status = '2' and r.checked_flag = '0' then 1 else 0 end) as pending_review_count,
+               ifnull(round(sum(case when r.exam_status in ('2', '3') then 1 else 0 end) / nullif(count(1), 0) * 100, 2), 0) as completion_rate,
+               sum(case when r.exam_status in ('2', '3') and r.pass_flag = '0' then 1 else 0 end) as fail_count
         from edu_exam_record r
         where r.exam_id = #{examId}
     </select>
@@ -54,8 +57,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="resultStatus != null and resultStatus != ''">
                 and r.pass_flag = #{resultStatus}
             </if>
+            <if test="checkedFlag != null and checkedFlag != ''">
+                and r.checked_flag = #{checkedFlag}
+            </if>
         </where>
         order by r.record_id desc
+    </select>
+
+    <select id="selectExamStatRecordById" parameterType="Long" resultMap="EduExamRecordResult">
+        select r.record_id, r.exam_id, r.paper_id, r.course_id, r.student_id, r.attempt_no,
+               r.start_time, r.submit_time, r.duration_seconds, r.exam_status as record_status,
+               r.objective_score, r.subjective_score, r.total_score, r.pass_flag as result_status,
+               r.checked_flag, u.user_name as student_user_name, u.nick_name as student_name
+        from edu_exam_record r
+        left join sys_user u on r.student_id = u.user_id
+        where r.record_id = #{recordId}
     </select>
 
 </mapper>
