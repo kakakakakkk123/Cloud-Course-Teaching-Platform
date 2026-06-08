@@ -5,6 +5,7 @@
     type-label="错题"
     tag-type="danger"
     empty-text="暂无错题记录"
+    :allow-wrong-question-add="true"
   />
 </template>
 

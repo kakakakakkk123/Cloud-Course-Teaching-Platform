@@ -8,15 +8,91 @@
           <span v-if="courseCount">{{ courseCount }} 门课程</span>
         </div>
       </div>
-      <el-input
-        v-model.trim="keyword"
-        class="collection-search"
-        size="small"
-        clearable
-        prefix-icon="el-icon-search"
-        placeholder="搜索课程、标题或内容"
-      />
+      <div class="collection-actions">
+        <el-input
+          v-model.trim="keyword"
+          class="collection-search"
+          size="small"
+          clearable
+          prefix-icon="el-icon-search"
+          placeholder="搜索课程、标题或内容"
+        />
+        <el-button
+          v-if="allowWrongQuestionAdd"
+          type="success"
+          size="small"
+          icon="el-icon-plus"
+          @click="openWrongAdd"
+        >添加错题</el-button>
+      </div>
     </div>
+
+    <el-form
+      v-if="allowWrongQuestionAdd && wrongAddOpen"
+      ref="wrongAddForm"
+      :model="wrongAddForm"
+      :rules="wrongAddRules"
+      class="wrong-add"
+      label-width="88px"
+    >
+      <el-form-item label="错题文字" prop="questionStem">
+        <el-input
+          v-model.trim="wrongAddForm.questionStem"
+          type="textarea"
+          :rows="4"
+          maxlength="1000"
+          show-word-limit
+          placeholder="输入题干、题目描述或粘贴错题文字"
+        />
+      </el-form-item>
+      <el-form-item label="错题图片" prop="questionImage">
+        <image-upload
+          v-model="wrongAddForm.questionImage"
+          :limit="1"
+          :file-size="10"
+          directory="student/wrong"
+        />
+      </el-form-item>
+      <el-form-item label="我的答案">
+        <el-input
+          v-model.trim="wrongAddForm.myAnswer"
+          type="textarea"
+          :rows="2"
+          maxlength="500"
+          show-word-limit
+          placeholder="记录当时写错的答案"
+        />
+      </el-form-item>
+      <el-form-item label="正确答案">
+        <el-input
+          v-model.trim="wrongAddForm.correctAnswer"
+          type="textarea"
+          :rows="2"
+          maxlength="500"
+          show-word-limit
+          placeholder="记录正确答案"
+        />
+      </el-form-item>
+      <el-form-item label="解析">
+        <el-input
+          v-model.trim="wrongAddForm.analysis"
+          type="textarea"
+          :rows="3"
+          maxlength="1000"
+          show-word-limit
+          placeholder="记录错因、知识点或订正思路"
+        />
+      </el-form-item>
+      <div class="wrong-add__actions">
+        <el-button size="small" @click="wrongAddOpen = false">取消</el-button>
+        <el-button
+          type="primary"
+          size="small"
+          :loading="wrongAddSaving"
+          @click="addWrongQuestion"
+        >保存错题</el-button>
+      </div>
+    </el-form>
 
     <div v-if="filteredItems.length" class="collection-list">
       <button
@@ -35,6 +111,12 @@
           <i class="el-icon-reading"></i>
           <span>{{ item.courseName || "未关联课程" }}</span>
         </div>
+        <img
+          v-if="item.questionImage || item.imageUrl"
+          class="collection-item__image"
+          :src="resolveImageUrl(item.questionImage || item.imageUrl)"
+          alt="错题图片"
+        />
         <p>{{ item.summary || item.detail || item.note || item.content || "暂无摘要" }}</p>
         <div class="collection-item__tags">
           <span v-if="item.chapterTitle">{{ item.chapterTitle }}</span>
@@ -68,6 +150,14 @@
           <h4>题干</h4>
           <p>{{ activeItem.questionStem }}</p>
         </section>
+        <section v-if="activeItem.questionImage || activeItem.imageUrl">
+          <h4>错题图片</h4>
+          <img
+            class="detail-image"
+            :src="resolveImageUrl(activeItem.questionImage || activeItem.imageUrl)"
+            alt="错题图片"
+          />
+        </section>
         <section v-if="activeItem.myAnswer || activeItem.correctAnswer">
           <h4>答案</h4>
           <p v-if="activeItem.myAnswer">我的答案：{{ activeItem.myAnswer }}</p>
@@ -95,10 +185,13 @@
 </template>
 
 <script>
-import { getStudentProfile } from "@/api/system/user"
+import { getStudentProfile, updateStudentProfile } from "@/api/system/user"
+import ImageUpload from "@/components/ImageUpload"
+import { resolveResourceUrl } from "@/utils/resource"
 
 export default {
   name: "LearningCollectionList",
+  components: { ImageUpload },
   props: {
     field: {
       type: String,
@@ -119,15 +212,37 @@ export default {
     emptyText: {
       type: String,
       default: "暂无记录"
+    },
+    allowWrongQuestionAdd: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
       loading: false,
       keyword: "",
+      form: {},
       items: [],
       activeItem: null,
-      detailOpen: false
+      detailOpen: false,
+      wrongAddOpen: false,
+      wrongAddSaving: false,
+      wrongAddForm: {
+        questionStem: "",
+        questionImage: "",
+        myAnswer: "",
+        correctAnswer: "",
+        analysis: ""
+      },
+      wrongAddRules: {
+        questionStem: [
+          { validator: this.validateWrongQuestionContent, trigger: "blur" }
+        ],
+        questionImage: [
+          { validator: this.validateWrongQuestionContent, trigger: "change" }
+        ]
+      }
     }
   },
   computed: {
@@ -161,8 +276,8 @@ export default {
     load() {
       this.loading = true
       getStudentProfile().then(res => {
-        const profile = res.data || {}
-        this.items = this.parseItems(profile[this.field])
+        this.form = res.data || {}
+        this.items = this.parseItems(this.form[this.field])
       }).finally(() => {
         this.loading = false
       })
@@ -199,6 +314,33 @@ export default {
       }
       return []
     },
+    parseStoredList(raw) {
+      if (!raw || typeof raw !== "string") {
+        return []
+      }
+      const value = raw.trim()
+      if (!value) {
+        return []
+      }
+      try {
+        const parsed = JSON.parse(value)
+        if (Array.isArray(parsed)) {
+          return parsed
+        }
+        if (Array.isArray(parsed.items)) {
+          return parsed.items
+        }
+      } catch (e) {
+        return [{
+          id: `${this.field}-legacy-${Date.now()}`,
+          title: "历史记录",
+          detail: value,
+          summary: value,
+          tags: ["历史文本"]
+        }]
+      }
+      return []
+    },
     normalizeItems(list) {
       return list.map((item, index) => {
         const tags = Array.isArray(item.tags)
@@ -207,15 +349,87 @@ export default {
         return {
           ...item,
           id: item.id || `${this.field}-${index}`,
-          title: item.title || item.questionTitle || item.contentTitle || `第 ${index + 1} 条记录`,
-          summary: item.summary || item.reason || item.note || item.content || item.detail || "",
+          title: item.title || item.questionTitle || item.contentTitle || this.createTitle(item.questionStem) || `第 ${index + 1} 条记录`,
+          summary: item.summary || item.reason || item.note || item.content || item.detail || item.questionStem || "",
           tags
         }
       })
     },
+    createTitle(text) {
+      const value = String(text || "").trim()
+      if (!value) {
+        return ""
+      }
+      return value.length > 28 ? `${value.slice(0, 28)}...` : value
+    },
     openDetail(item) {
       this.activeItem = item
       this.detailOpen = true
+    },
+    openWrongAdd() {
+      this.wrongAddOpen = true
+      this.$nextTick(() => {
+        if (this.$refs.wrongAddForm) {
+          this.$refs.wrongAddForm.clearValidate()
+        }
+      })
+    },
+    validateWrongQuestionContent(rule, value, callback) {
+      if (this.wrongAddForm.questionStem || this.wrongAddForm.questionImage) {
+        callback()
+        return
+      }
+      callback(new Error("请填写错题文字或上传错题图片"))
+    },
+    resetWrongAddForm() {
+      this.wrongAddForm = {
+        questionStem: "",
+        questionImage: "",
+        myAnswer: "",
+        correctAnswer: "",
+        analysis: ""
+      }
+      if (this.$refs.wrongAddForm) {
+        this.$refs.wrongAddForm.clearValidate()
+      }
+    },
+    addWrongQuestion() {
+      this.$refs.wrongAddForm.validate(valid => {
+        if (!valid) {
+          return
+        }
+        const now = new Date()
+        const pad = value => String(value).padStart(2, "0")
+        const createdAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+        const storedItems = this.parseStoredList(this.form[this.field])
+        const title = this.createTitle(this.wrongAddForm.questionStem) || "图片错题"
+        const item = {
+          id: `wrong-${now.getTime()}`,
+          title,
+          questionStem: this.wrongAddForm.questionStem,
+          questionImage: this.wrongAddForm.questionImage,
+          myAnswer: this.wrongAddForm.myAnswer,
+          correctAnswer: this.wrongAddForm.correctAnswer,
+          analysis: this.wrongAddForm.analysis,
+          createdAt,
+          updatedAt: createdAt,
+          tags: [this.wrongAddForm.questionImage ? "图片错题" : "文字错题"]
+        }
+        storedItems.unshift(item)
+        this.form[this.field] = JSON.stringify(storedItems, null, 2)
+        this.wrongAddSaving = true
+        updateStudentProfile(this.form).then(() => {
+          this.items = this.parseItems(this.form[this.field])
+          this.wrongAddOpen = false
+          this.resetWrongAddForm()
+          this.$modal.msgSuccess("保存成功")
+        }).finally(() => {
+          this.wrongAddSaving = false
+        })
+      })
+    },
+    resolveImageUrl(url) {
+      return resolveResourceUrl(url)
     }
   }
 }
@@ -254,6 +468,26 @@ export default {
 
 .collection-search {
   width: 280px;
+}
+
+.collection-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wrong-add {
+  padding: 16px 16px 12px;
+  margin-bottom: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.wrong-add__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .collection-list {
@@ -315,6 +549,16 @@ export default {
   line-height: 1.7;
 }
 
+.collection-item__image {
+  width: 100%;
+  max-height: 160px;
+  margin-top: 12px;
+  object-fit: contain;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
 .collection-item__tags {
   flex-wrap: wrap;
 }
@@ -352,9 +596,24 @@ export default {
   white-space: pre-wrap;
 }
 
+.detail-image {
+  display: block;
+  max-width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
 @media (max-width: 768px) {
   .collection-header {
     flex-direction: column;
+  }
+
+  .collection-actions {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
   }
 
   .collection-search {
