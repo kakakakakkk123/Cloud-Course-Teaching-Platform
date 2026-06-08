@@ -15,9 +15,61 @@
             prefix-icon="el-icon-search"
             placeholder="搜索内容"
           />
+          <el-button
+            v-if="allowQuickAdd"
+            type="success"
+            size="mini"
+            icon="el-icon-plus"
+            @click="openQuickAdd"
+          >{{ quickAddButtonText }}</el-button>
           <el-button type="primary" size="mini" @click="submit">保存内容</el-button>
         </div>
       </div>
+
+      <el-form
+        v-if="allowQuickAdd && quickAddOpen"
+        ref="quickAddForm"
+        :model="quickAddForm"
+        :rules="quickAddRules"
+        class="quick-add"
+        label-width="72px"
+      >
+        <el-form-item label="任务" prop="title">
+          <el-input
+            v-model.trim="quickAddForm.title"
+            maxlength="80"
+            show-word-limit
+            placeholder="输入一条学习任务"
+          />
+        </el-form-item>
+        <el-form-item label="说明">
+          <el-input
+            v-model.trim="quickAddForm.content"
+            type="textarea"
+            :rows="3"
+            maxlength="300"
+            show-word-limit
+            placeholder="补充课程、章节、提交要求等"
+          />
+        </el-form-item>
+        <el-form-item label="日期">
+          <el-date-picker
+            v-model="quickAddForm.time"
+            type="date"
+            value-format="yyyy-MM-dd"
+            placeholder="选择计划完成日期"
+          />
+        </el-form-item>
+        <div class="quick-add__actions">
+          <el-button size="mini" @click="quickAddOpen = false">取消</el-button>
+          <el-button
+            type="primary"
+            size="mini"
+            :loading="quickAddSaving"
+            @click="addQuickItem"
+          >添加任务</el-button>
+        </div>
+      </el-form>
 
       <div v-if="listItems.length" class="memo-list">
         <button
@@ -108,6 +160,14 @@ export default {
     rows: {
       type: Number,
       default: 12
+    },
+    allowQuickAdd: {
+      type: Boolean,
+      default: false
+    },
+    quickAddButtonText: {
+      type: String,
+      default: "新增一条"
     }
   },
   data() {
@@ -118,7 +178,19 @@ export default {
       rawValue: "",
       listItems: [],
       activeItem: null,
-      detailOpen: false
+      detailOpen: false,
+      quickAddOpen: false,
+      quickAddSaving: false,
+      quickAddForm: {
+        title: "",
+        content: "",
+        time: ""
+      },
+      quickAddRules: {
+        title: [
+          { required: true, message: "请输入学习任务", trigger: "blur" }
+        ]
+      }
     }
   },
   computed: {
@@ -174,6 +246,33 @@ export default {
       }
       return []
     },
+    parseStoredList(raw) {
+      if (!raw || typeof raw !== "string") {
+        return []
+      }
+      const value = raw.trim()
+      if (!value) {
+        return []
+      }
+      try {
+        const parsed = JSON.parse(value)
+        if (Array.isArray(parsed)) {
+          return parsed
+        }
+        if (Array.isArray(parsed.items)) {
+          return parsed.items
+        }
+      } catch (e) {
+        return [{
+          id: `${this.field}-legacy-${Date.now()}`,
+          title: "历史记录",
+          content: value,
+          time: "",
+          tags: ["历史文本"]
+        }]
+      }
+      return []
+    },
     normalizeItems(list) {
       return list.map((item, index) => {
         if (typeof item === "string") {
@@ -195,6 +294,56 @@ export default {
     selectItem(item) {
       this.activeItem = item
       this.detailOpen = true
+    },
+    openQuickAdd() {
+      this.quickAddOpen = true
+      this.$nextTick(() => {
+        if (this.$refs.quickAddForm) {
+          this.$refs.quickAddForm.clearValidate()
+        }
+      })
+    },
+    resetQuickAddForm() {
+      this.quickAddForm = {
+        title: "",
+        content: "",
+        time: ""
+      }
+      if (this.$refs.quickAddForm) {
+        this.$refs.quickAddForm.clearValidate()
+      }
+    },
+    addQuickItem() {
+      this.$refs.quickAddForm.validate(valid => {
+        if (!valid) {
+          return
+        }
+        const now = new Date()
+        const pad = value => String(value).padStart(2, "0")
+        const createdAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+        const storedItems = this.parseStoredList(this.rawValue)
+        const item = {
+          id: `todo-${now.getTime()}`,
+          title: this.quickAddForm.title,
+          content: this.quickAddForm.content,
+          time: this.quickAddForm.time,
+          createdAt,
+          updatedAt: createdAt,
+          tags: ["自建待办"]
+        }
+        storedItems.unshift(item)
+        this.rawValue = JSON.stringify(storedItems, null, 2)
+        this.form[this.field] = this.rawValue
+        this.quickAddSaving = true
+        updateStudentProfile(this.form).then(() => {
+          this.listItems = this.parseItems(this.rawValue)
+          this.quickAddOpen = false
+          this.resetQuickAddForm()
+          this.$modal.msgSuccess("添加成功")
+        }).finally(() => {
+          this.quickAddSaving = false
+        })
+      })
     },
     submit() {
       this.form[this.field] = this.rawValue
@@ -241,6 +390,20 @@ export default {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.quick-add {
+  padding: 14px 14px 10px;
+  margin-bottom: 16px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.quick-add__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .memo-item {
