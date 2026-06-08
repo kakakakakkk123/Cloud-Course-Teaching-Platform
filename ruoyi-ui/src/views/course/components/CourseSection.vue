@@ -5,7 +5,9 @@
         <p class="portal-section__kicker">{{ kicker }}</p>
         <h2>{{ title }}</h2>
       </div>
-      <el-button v-if="showMore" type="text" @click="$router.push('/course-square')">查看更多</el-button>
+      <button v-if="showMore" type="button" class="portal-section__more" @click="$router.push('/course-square')">
+        查看更多
+      </button>
     </div>
     <div v-if="courses && courses.length" class="portal-section__grid">
       <course-card
@@ -67,6 +69,7 @@ export default {
   margin: 6px 0 0;
   color: #0f172a;
   font-size: 28px;
+  text-wrap: balance;
 }
 
 .portal-section__kicker {
@@ -81,5 +84,29 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 18px;
+}
+
+.portal-section__more {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(191, 219, 254, 0.92);
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.portal-section__more:hover,
+.portal-section__more:focus-visible {
+  background: #dbeafe;
+  border-color: rgba(96, 165, 250, 0.92);
+  outline: none;
+}
+
+.portal-section__more:hover {
+  transform: translateY(-1px);
 }
 </style>

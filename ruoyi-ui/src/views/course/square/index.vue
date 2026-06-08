@@ -1,11 +1,10 @@
 <template>
   <div v-loading="pageLoading" class="course-square-page">
-    <div class="portal-breadcrumb-bar">
-      <el-button plain icon="el-icon-arrow-left" @click="$router.push('/')">
-        返回首页
-      </el-button>
-      <span class="portal-breadcrumb-bar__text">课程广场</span>
-    </div>
+    <portal-topbar
+      active="course-square"
+      context-title="课程广场"
+      context-summary="搜索、筛选与浏览公开课程"
+    />
 
     <transition name="keyword-tip-fade">
       <div v-if="hasKeywordSearch" class="keyword-search-tip">
@@ -159,6 +158,7 @@
 
 <script>
 import { getPortalHome, listPortalCourses } from "@/api/portal"
+import PortalTopbar from "@/components/PortalTopbar"
 import CourseCard from "../components/CourseCard"
 import CourseSection from "../components/CourseSection"
 import coursePlaceholder from "@/assets/images/course-placeholder.svg"
@@ -166,7 +166,7 @@ import { resolveResourceUrl } from "@/utils/resource"
 
 export default {
   name: "CourseSquare",
-  components: { CourseCard, CourseSection },
+  components: { CourseCard, CourseSection, PortalTopbar },
   data() {
     return {
       pageLoading: false,
@@ -314,18 +314,6 @@ export default {
     radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 28%),
     radial-gradient(circle at top right, rgba(16, 185, 129, 0.14), transparent 24%),
     linear-gradient(180deg, #f8fbff 0%, #eef7ff 100%);
-}
-
-.portal-breadcrumb-bar {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 18px;
-}
-
-.portal-breadcrumb-bar__text {
-  color: #64748b;
-  font-size: 14px;
 }
 
 .keyword-search-tip {
