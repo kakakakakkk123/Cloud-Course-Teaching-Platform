@@ -31,6 +31,13 @@
           icon="el-icon-star-on"
           @click="openCourseFavorite"
         >收藏课程</el-button>
+        <el-button
+          v-if="allowLearningNoteAdd"
+          type="success"
+          size="small"
+          icon="el-icon-edit"
+          @click="openNoteAdd"
+        >添加笔记</el-button>
       </div>
     </div>
 
@@ -167,6 +174,51 @@
       </div>
     </el-dialog>
 
+    <el-form
+      v-if="allowLearningNoteAdd && noteAddOpen"
+      ref="noteAddForm"
+      :model="noteAddForm"
+      :rules="noteAddRules"
+      class="note-add"
+      label-width="88px"
+    >
+      <el-form-item label="标题" prop="title">
+        <el-input
+          v-model.trim="noteAddForm.title"
+          maxlength="80"
+          show-word-limit
+          placeholder="输入笔记标题"
+        />
+      </el-form-item>
+      <el-form-item label="课程">
+        <el-input
+          v-model.trim="noteAddForm.courseName"
+          maxlength="80"
+          show-word-limit
+          placeholder="可选，填写关联课程"
+        />
+      </el-form-item>
+      <el-form-item label="内容" prop="content">
+        <el-input
+          v-model.trim="noteAddForm.content"
+          type="textarea"
+          :rows="6"
+          maxlength="2000"
+          show-word-limit
+          placeholder="记录学习重点、疑问、总结或复习要点"
+        />
+      </el-form-item>
+      <div class="note-add__actions">
+        <el-button size="small" @click="noteAddOpen = false">取消</el-button>
+        <el-button
+          type="primary"
+          size="small"
+          :loading="noteAddSaving"
+          @click="addLearningNote"
+        >保存笔记</el-button>
+      </div>
+    </el-form>
+
     <div v-if="filteredItems.length" class="collection-list">
       <button
         v-for="item in filteredItems"
@@ -298,6 +350,10 @@ export default {
     allowCourseFavoriteAdd: {
       type: Boolean,
       default: false
+    },
+    allowLearningNoteAdd: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -333,6 +389,21 @@ export default {
         pageNum: 1,
         pageSize: 10,
         courseName: ""
+      },
+      noteAddOpen: false,
+      noteAddSaving: false,
+      noteAddForm: {
+        title: "",
+        courseName: "",
+        content: ""
+      },
+      noteAddRules: {
+        title: [
+          { required: true, message: "请输入笔记标题", trigger: "blur" }
+        ],
+        content: [
+          { required: true, message: "请输入笔记内容", trigger: "blur" }
+        ]
       }
     }
   },
@@ -577,6 +648,56 @@ export default {
     openCourse(courseId) {
       this.detailOpen = false
       this.$router.push(`/course/${courseId}`)
+    },
+    openNoteAdd() {
+      this.noteAddOpen = true
+      this.$nextTick(() => {
+        if (this.$refs.noteAddForm) {
+          this.$refs.noteAddForm.clearValidate()
+        }
+      })
+    },
+    resetNoteAddForm() {
+      this.noteAddForm = {
+        title: "",
+        courseName: "",
+        content: ""
+      }
+      if (this.$refs.noteAddForm) {
+        this.$refs.noteAddForm.clearValidate()
+      }
+    },
+    addLearningNote() {
+      this.$refs.noteAddForm.validate(valid => {
+        if (!valid) {
+          return
+        }
+        const now = new Date()
+        const pad = value => String(value).padStart(2, "0")
+        const createdAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+        const storedItems = this.parseStoredList(this.form[this.field])
+        const item = {
+          id: `note-${now.getTime()}`,
+          title: this.noteAddForm.title,
+          courseName: this.noteAddForm.courseName,
+          content: this.noteAddForm.content,
+          summary: this.noteAddForm.content,
+          createdAt,
+          updatedAt: createdAt,
+          tags: ["自建笔记"]
+        }
+        storedItems.unshift(item)
+        this.form[this.field] = JSON.stringify(storedItems, null, 2)
+        this.noteAddSaving = true
+        updateStudentProfile(this.form).then(() => {
+          this.items = this.parseItems(this.form[this.field])
+          this.noteAddOpen = false
+          this.resetNoteAddForm()
+          this.$modal.msgSuccess("保存成功")
+        }).finally(() => {
+          this.noteAddSaving = false
+        })
+      })
     }
   }
 }
@@ -632,6 +753,20 @@ export default {
 }
 
 .wrong-add__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.note-add {
+  padding: 16px 16px 12px;
+  margin-bottom: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.note-add__actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
