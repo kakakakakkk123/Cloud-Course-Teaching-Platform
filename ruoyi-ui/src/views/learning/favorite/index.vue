@@ -5,6 +5,7 @@
     type-label="收藏"
     tag-type="warning"
     empty-text="暂无收藏记录"
+    :allow-course-favorite-add="true"
   />
 </template>
 
