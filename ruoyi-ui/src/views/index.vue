@@ -56,6 +56,7 @@
               placeholder="搜索课程名称、教师、关键词"
               clearable
               prefix-icon="el-icon-search"
+              aria-label="搜索课程名称、教师、关键词"
               @keyup.enter.native="handleSearch"
             />
             <el-button class="primary-action" @click="handleSearch">搜索课程</el-button>
@@ -638,7 +639,7 @@ $portal-surface-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
 }
 
 .hero-floating-card span {
-  color: #64748b;
+  color: #475569;
   font-size: 12px;
 }
 
@@ -816,7 +817,7 @@ $portal-surface-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
 
 .home-visual-slide__stats {
   margin-top: 20px;
-  color: #64748b;
+  color: #475569;
   font-size: 13px;
 }
 
@@ -1050,7 +1051,7 @@ $portal-surface-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
 }
 
 .overview-card__arrow {
-  color: #94a3b8;
+  color: #64748b;
   transition: all 0.2s ease;
 }
 

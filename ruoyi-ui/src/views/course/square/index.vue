@@ -16,14 +16,22 @@
 
     <section class="portal-hero">
       <div class="portal-hero__content">
-        <p class="portal-hero__kicker">游客首页</p>
+        <p class="portal-hero__kicker">{{ heroKicker }}</p>
         <h1>在线课程广场</h1>
-        <p class="portal-hero__summary">
-          游客可浏览课程、搜索课程和查看课程详情；注册课程、点赞课程和在线学习需登录学生账号后进行。
-        </p>
+        <p class="portal-hero__summary">{{ heroSummary }}</p>
         <div class="portal-hero__actions">
-          <el-button type="primary" @click="$router.push('/login')">登录学习</el-button>
-          <el-button @click="$router.push('/register')">学生注册</el-button>
+          <template v-if="!isLogin">
+            <el-button type="primary" @click="$router.push('/login')">登录学习</el-button>
+            <el-button @click="$router.push('/register')">学生注册</el-button>
+          </template>
+          <template v-else-if="isStudent">
+            <el-button type="primary" @click="$router.push('/learning/my-course')">进入我的课程</el-button>
+            <el-button @click="$router.push('/learning/history')">学习记录</el-button>
+          </template>
+          <template v-else>
+            <el-button type="primary" @click="$router.push('/index')">进入工作台</el-button>
+            <el-button @click="$router.push('/teaching/course')">课程管理</el-button>
+          </template>
         </div>
       </div>
       <div class="portal-hero__panel">
@@ -63,57 +71,6 @@
       </el-carousel>
     </el-card>
 
-    <el-card class="toolbar-card" shadow="never">
-      <el-form :inline="true" :model="queryParams" class="toolbar-form">
-        <el-form-item>
-          <el-input
-            v-model.trim="queryParams.keyword"
-            clearable
-            placeholder="搜索课程名称、课程简介"
-            prefix-icon="el-icon-search"
-            @keyup.enter.native="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-select v-model="queryParams.orderBy" placeholder="排序方式" @change="handleQuery">
-            <el-option label="按发布时间" value="publishTime" />
-            <el-option label="按注册人数" value="enrollCount" />
-            <el-option label="按更新时间" value="lastContentTime" />
-            <el-option label="按点赞人数" value="likeCount" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-select v-model="queryParams.isAsc" placeholder="排序方向" @change="handleQuery">
-            <el-option label="降序" value="desc" />
-            <el-option label="升序" value="asc" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleQuery">查询</el-button>
-          <el-button @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-
-      <div class="category-list">
-        <el-tag
-          :effect="!queryParams.categoryId ? 'dark' : 'plain'"
-          class="category-tag"
-          @click="selectCategory('')"
-        >
-          全部课程
-        </el-tag>
-        <el-tag
-          v-for="item in homeData.categories"
-          :key="item.categoryId"
-          :effect="String(queryParams.categoryId) === String(item.categoryId) ? 'dark' : 'plain'"
-          class="category-tag"
-          @click="selectCategory(item.categoryId)"
-        >
-          {{ item.categoryName }}
-        </el-tag>
-      </div>
-    </el-card>
-
     <course-section
       title="推荐课程"
       kicker="推荐内容"
@@ -134,6 +91,57 @@
     />
 
     <section class="course-list-section">
+      <el-card class="toolbar-card" shadow="never">
+        <el-form :inline="true" :model="queryParams" class="toolbar-form">
+          <el-form-item class="toolbar-form__keyword">
+            <el-input
+              v-model.trim="queryParams.keyword"
+              clearable
+              placeholder="搜索课程名称、课程简介"
+              prefix-icon="el-icon-search"
+              @keyup.enter.native="handleQuery"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-select v-model="queryParams.orderBy" placeholder="排序方式" @change="handleQuery">
+              <el-option label="按发布时间" value="publishTime" />
+              <el-option label="按注册人数" value="enrollCount" />
+              <el-option label="按更新时间" value="lastContentTime" />
+              <el-option label="按点赞人数" value="likeCount" />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-select v-model="queryParams.isAsc" placeholder="排序方向" @change="handleQuery">
+              <el-option label="降序" value="desc" />
+              <el-option label="升序" value="asc" />
+            </el-select>
+          </el-form-item>
+          <el-form-item class="toolbar-form__actions">
+            <el-button type="primary" icon="el-icon-search" @click="handleQuery">查询</el-button>
+            <el-button icon="el-icon-refresh-left" @click="resetQuery">重置</el-button>
+          </el-form-item>
+        </el-form>
+
+        <div class="category-list">
+          <el-tag
+            :effect="!queryParams.categoryId ? 'dark' : 'plain'"
+            class="category-tag"
+            @click="selectCategory('')"
+          >
+            全部课程
+          </el-tag>
+          <el-tag
+            v-for="item in homeData.categories"
+            :key="item.categoryId"
+            :effect="String(queryParams.categoryId) === String(item.categoryId) ? 'dark' : 'plain'"
+            class="category-tag"
+            @click="selectCategory(item.categoryId)"
+          >
+            {{ item.categoryName }}
+          </el-tag>
+        </div>
+      </el-card>
+
       <div class="course-list-section__head">
         <div>
           <p class="portal-section__kicker">课程列表</p>
@@ -163,6 +171,8 @@ import CourseCard from "../components/CourseCard"
 import CourseSection from "../components/CourseSection"
 import coursePlaceholder from "@/assets/images/course-placeholder.svg"
 import { resolveResourceUrl } from "@/utils/resource"
+import { getToken } from "@/utils/auth"
+import { mapGetters } from "vuex"
 
 export default {
   name: "CourseSquare",
@@ -191,6 +201,25 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(["roles"]),
+    isLogin() {
+      return !!getToken()
+    },
+    isStudent() {
+      return (this.roles || []).includes("student")
+    },
+    heroKicker() {
+      return this.isLogin ? "已登录" : "游客浏览"
+    },
+    heroSummary() {
+      if (!this.isLogin) {
+        return "无需登录也可以浏览公开课程、搜索课程和查看详情。登录学生账号后，可以注册课程、点赞课程并进入在线学习。"
+      }
+      if (this.isStudent) {
+        return "欢迎回来。你可以继续筛选课程、注册感兴趣的内容，也可以直接进入我的课程接着学习。"
+      }
+      return "欢迎回来。你可以浏览公开课程，也可以进入后台维护课程内容与教学资源。"
+    },
     /** 首页统计数据 */
     courseStats() {
       return {
@@ -353,13 +382,13 @@ export default {
 
 .portal-hero__content,
 .portal-hero__panel {
-  border-radius: 24px;
+  border-radius: 16px;
   background: #fff;
-  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
 .portal-hero__content {
-  padding: 32px;
+  padding: 30px 32px;
 }
 
 .portal-hero__kicker,
@@ -399,7 +428,7 @@ export default {
 
 .portal-hero__stat {
   padding: 18px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
 }
 
@@ -417,11 +446,11 @@ export default {
 .banner-card,
 .toolbar-card {
   margin-bottom: 24px;
-  border-radius: 22px;
+  border-radius: 12px;
 }
 
 .banner-card {
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
 }
 
 .banner-card__head {
@@ -448,7 +477,7 @@ export default {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 12px;
   cursor: pointer;
 }
 
@@ -486,21 +515,45 @@ export default {
 .toolbar-form {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 12px;
+}
+
+.toolbar-form .el-form-item {
+  margin-right: 0;
+  margin-bottom: 0;
+}
+
+.toolbar-form__keyword {
+  flex: 1 1 340px;
+}
+
+.toolbar-form__actions {
+  white-space: nowrap;
 }
 
 .category-list {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
 }
 
 .category-tag {
   cursor: pointer;
+  user-select: none;
 }
 
 .course-list-section {
   margin-top: 34px;
+}
+
+.course-list-section .toolbar-card {
+  margin-bottom: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: none;
 }
 
 .course-list-section__head {
@@ -537,6 +590,32 @@ export default {
   .banner-card__head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .toolbar-form {
+    display: block;
+  }
+
+  .toolbar-form .el-form-item,
+  .toolbar-form .el-input,
+  .toolbar-form .el-select,
+  .toolbar-form .el-button {
+    width: 100%;
+  }
+
+  .toolbar-form .el-form-item + .el-form-item {
+    margin-top: 10px;
+  }
+
+  .toolbar-form__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    white-space: normal;
+  }
+
+  .toolbar-form__actions .el-button + .el-button {
+    margin-left: 0;
   }
 }
 </style>

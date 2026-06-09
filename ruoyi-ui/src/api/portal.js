@@ -33,9 +33,6 @@ export function listPortalCourses(params) {
 export function getPortalCourseDetail(courseId) {
   return request({
     url: '/portal/courses/' + courseId,
-    headers: {
-      isToken: false
-    },
     method: 'get'
   })
 }
@@ -46,6 +43,16 @@ export function getPortalCourseDetail(courseId) {
 export function listMyPortalCourses() {
   return request({
     url: '/portal/courses/my',
+    method: 'get'
+  })
+}
+
+/**
+ * 查询我的收藏课程
+ */
+export function listFavoritePortalCourses() {
+  return request({
+    url: '/portal/courses/favorites',
     method: 'get'
   })
 }
@@ -76,6 +83,26 @@ export function likePortalCourse(courseId) {
 export function cancelLikePortalCourse(courseId) {
   return request({
     url: '/portal/courses/' + courseId + '/like',
+    method: 'delete'
+  })
+}
+
+/**
+ * 收藏课程
+ */
+export function favoritePortalCourse(courseId) {
+  return request({
+    url: '/portal/courses/' + courseId + '/favorite',
+    method: 'post'
+  })
+}
+
+/**
+ * 取消收藏课程
+ */
+export function cancelFavoritePortalCourse(courseId) {
+  return request({
+    url: '/portal/courses/' + courseId + '/favorite',
     method: 'delete'
   })
 }

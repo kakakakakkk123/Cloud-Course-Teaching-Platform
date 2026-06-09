@@ -34,6 +34,15 @@
             >
               {{ liked ? "取消点赞" : "点赞课程" }}
             </el-button>
+            <el-button
+              v-if="isLogin"
+              plain
+              :loading="favoriteLoading"
+              :type="favorited ? 'success' : 'default'"
+              @click="handleToggleFavorite"
+            >
+              {{ favorited ? "取消收藏" : "收藏课程" }}
+            </el-button>
             <el-button @click="$router.push('/course-square')">查看更多课程</el-button>
           </div>
         </div>
@@ -107,7 +116,14 @@
 
 <script>
 import { getToken } from "@/utils/auth"
-import { getPortalCourseDetail, enrollPortalCourse, likePortalCourse, cancelLikePortalCourse } from "@/api/portal"
+import {
+  getPortalCourseDetail,
+  enrollPortalCourse,
+  likePortalCourse,
+  cancelLikePortalCourse,
+  favoritePortalCourse,
+  cancelFavoritePortalCourse
+} from "@/api/portal"
 import CourseContentResource from "@/components/CourseContentResource"
 import PortalTopbar from "@/components/PortalTopbar"
 import { resolveResourceUrl } from "@/utils/resource"
@@ -122,9 +138,11 @@ export default {
     return {
       loading: false,
       enrollLoading: false,
+      favoriteLoading: false,
       course: {},
       contentList: [],
       liked: false,
+      favorited: false,
       registered: false
     }
   },
@@ -179,6 +197,7 @@ export default {
         this.course = data.course || {}
         this.contentList = data.contentList || []
         this.liked = !!data.liked
+        this.favorited = !!data.favorited
         this.registered = !!data.registered
       }).finally(() => {
         this.loading = false
@@ -204,6 +223,19 @@ export default {
         this.liked = !this.liked
         this.course.likeCount = Math.max(0, (this.course.likeCount || 0) + (this.liked ? 1 : -1))
         this.$modal.msgSuccess(this.liked ? "课程点赞成功" : "已取消点赞")
+      })
+    },
+    /** 切换收藏状态 */
+    handleToggleFavorite() {
+      this.favoriteLoading = true
+      const request = this.favorited
+        ? cancelFavoritePortalCourse(this.course.courseId)
+        : favoritePortalCourse(this.course.courseId)
+      request.then(() => {
+        this.favorited = !this.favorited
+        this.$modal.msgSuccess(this.favorited ? "课程收藏成功" : "已取消收藏")
+      }).finally(() => {
+        this.favoriteLoading = false
       })
     },
     /** 课程内容类型文案 */

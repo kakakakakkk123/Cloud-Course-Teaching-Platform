@@ -27,6 +27,9 @@ public class EduPortalCourseDetailVO implements Serializable
     /** 是否已点赞 */
     private boolean liked;
 
+    /** 是否已收藏 */
+    private boolean favorited;
+
     public EduCourse getCourse()
     {
         return course;
@@ -65,5 +68,15 @@ public class EduPortalCourseDetailVO implements Serializable
     public void setLiked(boolean liked)
     {
         this.liked = liked;
+    }
+
+    public boolean isFavorited()
+    {
+        return favorited;
+    }
+
+    public void setFavorited(boolean favorited)
+    {
+        this.favorited = favorited;
     }
 }

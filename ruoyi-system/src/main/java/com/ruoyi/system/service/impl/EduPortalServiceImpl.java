@@ -9,10 +9,12 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.system.domain.course.EduCourse;
 import com.ruoyi.system.domain.course.EduCourseEnroll;
+import com.ruoyi.system.domain.course.EduCourseFavorite;
 import com.ruoyi.system.domain.course.EduCourseLike;
 import com.ruoyi.system.domain.course.vo.EduPortalCourseDetailVO;
 import com.ruoyi.system.domain.course.vo.EduPortalHomeVO;
 import com.ruoyi.system.mapper.EduCourseEnrollMapper;
+import com.ruoyi.system.mapper.EduCourseFavoriteMapper;
 import com.ruoyi.system.mapper.EduCourseLikeMapper;
 import com.ruoyi.system.mapper.EduCourseMapper;
 import com.ruoyi.system.service.IEduCourseBannerService;
@@ -50,6 +52,9 @@ public class EduPortalServiceImpl implements IEduPortalService
     @Autowired
     private EduCourseLikeMapper likeMapper;
 
+    @Autowired
+    private EduCourseFavoriteMapper favoriteMapper;
+
     /**
      * 查询门户首页数据
      */
@@ -84,6 +89,7 @@ public class EduPortalServiceImpl implements IEduPortalService
         {
             detailVO.setRegistered(enrollMapper.selectEduCourseEnroll(courseId, userId) != null);
             detailVO.setLiked(likeMapper.selectEduCourseLike(courseId, userId) != null);
+            detailVO.setFavorited(favoriteMapper.selectEduCourseFavorite(courseId, userId) != null);
         }
         return detailVO;
     }
@@ -95,6 +101,15 @@ public class EduPortalServiceImpl implements IEduPortalService
     public List<EduCourse> selectStudentEnrolledCourseList(Long studentId)
     {
         return enrollMapper.selectStudentEnrolledCourseList(studentId);
+    }
+
+    /**
+     * 查询学生已收藏课程
+     */
+    @Override
+    public List<EduCourse> selectStudentFavoriteCourseList(Long studentId)
+    {
+        return favoriteMapper.selectUserFavoriteCourseList(studentId);
     }
 
     /**
@@ -160,6 +175,39 @@ public class EduPortalServiceImpl implements IEduPortalService
     {
         likeMapper.deleteEduCourseLike(courseId, userId);
         courseMapper.refreshLikeCount(courseId);
+    }
+
+    /**
+     * 学生收藏课程
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void favoriteCourse(Long courseId, Long studentId)
+    {
+        ensureStudentRole();
+        EduCourse course = courseService.selectPublishedCourseById(courseId);
+        if (StringUtils.isNull(course))
+        {
+            throw new ServiceException("课程不存在或尚未发布");
+        }
+        if (favoriteMapper.selectEduCourseFavorite(courseId, studentId) != null)
+        {
+            throw new ServiceException("你已经收藏过这门课程");
+        }
+        EduCourseFavorite courseFavorite = new EduCourseFavorite();
+        courseFavorite.setCourseId(courseId);
+        courseFavorite.setUserId(studentId);
+        favoriteMapper.insertEduCourseFavorite(courseFavorite);
+    }
+
+    /**
+     * 学生取消收藏
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void cancelCourseFavorite(Long courseId, Long studentId)
+    {
+        favoriteMapper.deleteEduCourseFavorite(courseId, studentId);
     }
 
     /**
