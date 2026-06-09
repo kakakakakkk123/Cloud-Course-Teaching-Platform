@@ -76,6 +76,16 @@ public class EduPortalController extends BaseController
     }
 
     /**
+     * 查询学生已收藏课程
+     */
+    @PreAuthorize("@ss.hasAnyRoles('student,admin')")
+    @GetMapping("/courses/favorites")
+    public AjaxResult favoriteCourses()
+    {
+        return success(portalService.selectStudentFavoriteCourseList(getUserId()));
+    }
+
+    /**
      * 学生注册课程
      */
     @PreAuthorize("@ss.hasAnyRoles('student,admin')")
@@ -106,5 +116,27 @@ public class EduPortalController extends BaseController
     {
         portalService.cancelCourseLike(courseId, getUserId());
         return success("已取消点赞");
+    }
+
+    /**
+     * 收藏课程
+     */
+    @PreAuthorize("@ss.hasAnyRoles('student,admin')")
+    @PostMapping("/courses/{courseId}/favorite")
+    public AjaxResult favorite(@PathVariable Long courseId)
+    {
+        portalService.favoriteCourse(courseId, getUserId());
+        return success("课程收藏成功");
+    }
+
+    /**
+     * 取消收藏
+     */
+    @PreAuthorize("@ss.hasAnyRoles('student,admin')")
+    @DeleteMapping("/courses/{courseId}/favorite")
+    public AjaxResult cancelFavorite(@PathVariable Long courseId)
+    {
+        portalService.cancelCourseFavorite(courseId, getUserId());
+        return success("已取消收藏");
     }
 }
