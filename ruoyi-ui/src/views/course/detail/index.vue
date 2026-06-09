@@ -28,6 +28,16 @@
             >
               {{ liked ? "取消点赞" : "点赞课程" }}
             </el-button>
+            <el-button
+              v-if="isLogin"
+              plain
+              icon="el-icon-star-on"
+              :type="favorited ? 'warning' : 'default'"
+              :loading="favoriteLoading"
+              @click="handleFavoriteCourse"
+            >
+              {{ favorited ? "已收藏" : "收藏课程" }}
+            </el-button>
             <el-button @click="$router.push('/course-square')">返回课程广场</el-button>
           </div>
         </div>
@@ -102,6 +112,7 @@
 <script>
 import { getToken } from "@/utils/auth"
 import { getPortalCourseDetail, enrollPortalCourse, likePortalCourse, cancelLikePortalCourse } from "@/api/portal"
+import { getStudentProfile, updateStudentProfile } from "@/api/system/user"
 import CourseContentResource from "@/components/CourseContentResource"
 import { resolveResourceUrl } from "@/utils/resource"
 
@@ -114,10 +125,13 @@ export default {
     return {
       loading: false,
       enrollLoading: false,
+      favoriteLoading: false,
       course: {},
       contentList: [],
       liked: false,
-      registered: false
+      registered: false,
+      favorited: false,
+      studentProfile: {}
     }
   },
   computed: {
@@ -172,6 +186,7 @@ export default {
         this.contentList = data.contentList || []
         this.liked = !!data.liked
         this.registered = !!data.registered
+        this.loadFavoriteState()
       }).finally(() => {
         this.loading = false
       })
@@ -197,6 +212,108 @@ export default {
         this.course.likeCount = Math.max(0, (this.course.likeCount || 0) + (this.liked ? 1 : -1))
         this.$modal.msgSuccess(this.liked ? "课程点赞成功" : "已取消点赞")
       })
+    },
+    /** 加载当前课程收藏状态 */
+    loadFavoriteState() {
+      if (!this.isLogin) {
+        this.favorited = false
+        return
+      }
+      getStudentProfile().then(res => {
+        this.studentProfile = res.data || {}
+        this.favorited = this.isCourseFavorited(this.studentProfile.favorites)
+      })
+    },
+    /** 收藏当前课程 */
+    handleFavoriteCourse() {
+      if (this.favorited) {
+        this.$router.push("/learning/favorite")
+        return
+      }
+      if (!this.course.courseId) {
+        return
+      }
+      this.favoriteLoading = true
+      const profileRequest = this.studentProfile && this.studentProfile.userId
+        ? Promise.resolve(this.studentProfile)
+        : getStudentProfile().then(res => res.data || {})
+      profileRequest.then(profile => {
+        const storedItems = this.parseStoredFavorites(profile.favorites)
+        if (this.isCourseFavorited(profile.favorites || storedItems)) {
+          this.studentProfile = profile
+          this.favorited = true
+          this.$modal.msgSuccess("该课程已收藏")
+          return null
+        }
+        const collectedAt = this.formatDateTime(new Date())
+        storedItems.unshift({
+          id: `favorite-course-${this.course.courseId}`,
+          courseId: this.course.courseId,
+          title: this.course.courseName,
+          courseName: this.course.courseName,
+          courseSubtitle: this.course.courseSubtitle,
+          coverImage: this.course.coverImage,
+          categoryName: this.course.categoryName,
+          teacherName: this.course.teacherName,
+          summary: this.course.courseSubtitle || this.course.intro || "",
+          detail: this.course.intro || "",
+          collectedAt,
+          updatedAt: collectedAt,
+          tags: ["课程收藏"]
+        })
+        profile.favorites = JSON.stringify(storedItems, null, 2)
+        return updateStudentProfile(profile).then(() => {
+          this.studentProfile = profile
+          this.favorited = true
+          this.$modal.msgSuccess("课程收藏成功，可在我的收藏查看")
+        })
+      }).finally(() => {
+        this.favoriteLoading = false
+      })
+    },
+    /** 判断课程是否已收藏 */
+    isCourseFavorited(rawFavorites) {
+      const favorites = Array.isArray(rawFavorites) ? rawFavorites : this.parseStoredFavorites(rawFavorites)
+      return favorites.some(item => String(item.courseId) === String(this.course.courseId))
+    },
+    /** 解析学生档案收藏列表 */
+    parseStoredFavorites(raw) {
+      if (!raw) {
+        return []
+      }
+      if (Array.isArray(raw)) {
+        return raw
+      }
+      if (typeof raw !== "string") {
+        return []
+      }
+      const value = raw.trim()
+      if (!value) {
+        return []
+      }
+      try {
+        const parsed = JSON.parse(value)
+        if (Array.isArray(parsed)) {
+          return parsed
+        }
+        if (Array.isArray(parsed.items)) {
+          return parsed.items
+        }
+      } catch (e) {
+        return [{
+          id: `favorite-legacy-${Date.now()}`,
+          title: "历史收藏",
+          detail: value,
+          summary: value,
+          tags: ["历史文本"]
+        }]
+      }
+      return []
+    },
+    /** 格式化收藏时间 */
+    formatDateTime(date) {
+      const pad = value => String(value).padStart(2, "0")
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
     },
     /** 课程内容类型文案 */
     typeText(type) {
