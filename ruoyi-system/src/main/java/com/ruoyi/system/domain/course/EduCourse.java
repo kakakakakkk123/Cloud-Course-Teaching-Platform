@@ -106,6 +106,9 @@ public class EduCourse extends BaseEntity
     /** 是否已点赞 */
     private Boolean liked;
 
+    /** 是否已收藏 */
+    private Boolean favorited;
+
     /** 学习进度 */
     private BigDecimal progressPercent;
 
@@ -418,6 +421,16 @@ public class EduCourse extends BaseEntity
     public void setLiked(Boolean liked)
     {
         this.liked = liked;
+    }
+
+    public Boolean getFavorited()
+    {
+        return favorited;
+    }
+
+    public void setFavorited(Boolean favorited)
+    {
+        this.favorited = favorited;
     }
 
     public BigDecimal getProgressPercent()

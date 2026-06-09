@@ -37,6 +37,14 @@ public interface IEduPortalService
     public List<EduCourse> selectStudentEnrolledCourseList(Long studentId);
 
     /**
+     * 查询学生已收藏课程
+     *
+     * @param studentId 学生ID
+     * @return 课程集合
+     */
+    public List<EduCourse> selectStudentFavoriteCourseList(Long studentId);
+
+    /**
      * 学生注册课程
      *
      * @param courseId 课程ID
@@ -59,4 +67,20 @@ public interface IEduPortalService
      * @param userId 用户ID
      */
     public void cancelCourseLike(Long courseId, Long userId);
+
+    /**
+     * 学生收藏课程
+     *
+     * @param courseId 课程ID
+     * @param studentId 学生ID
+     */
+    public void favoriteCourse(Long courseId, Long studentId);
+
+    /**
+     * 学生取消收藏
+     *
+     * @param courseId 课程ID
+     * @param studentId 学生ID
+     */
+    public void cancelCourseFavorite(Long courseId, Long studentId);
 }

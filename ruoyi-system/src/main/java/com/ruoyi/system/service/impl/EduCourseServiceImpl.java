@@ -10,6 +10,7 @@ import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.system.domain.course.EduCourse;
 import com.ruoyi.system.mapper.EduCourseContentMapper;
 import com.ruoyi.system.mapper.EduCourseEnrollMapper;
+import com.ruoyi.system.mapper.EduCourseFavoriteMapper;
 import com.ruoyi.system.mapper.EduCourseLikeMapper;
 import com.ruoyi.system.mapper.EduCourseMapper;
 import com.ruoyi.system.service.IEduCourseService;
@@ -44,6 +45,9 @@ public class EduCourseServiceImpl implements IEduCourseService
 
     @Autowired
     private EduCourseLikeMapper likeMapper;
+
+    @Autowired
+    private EduCourseFavoriteMapper favoriteMapper;
 
     /**
      * 查询课程
@@ -129,6 +133,7 @@ public class EduCourseServiceImpl implements IEduCourseService
         contentMapper.deleteEduCourseContentByCourseIds(courseIds);
         enrollMapper.deleteEduCourseEnrollByCourseIds(courseIds);
         likeMapper.deleteEduCourseLikeByCourseIds(courseIds);
+        favoriteMapper.deleteEduCourseFavoriteByCourseIds(courseIds);
         courseMapper.clearBannerCourseRef(courseIds);
         return courseMapper.deleteEduCourseByIds(courseIds);
     }
