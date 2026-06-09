@@ -28,20 +28,38 @@
         </nav>
 
         <div class="portal-topbar__actions">
-          <el-button
-            v-if="isStudent"
-            class="primary-action primary-action--nav"
-            @click="goMyCourses"
+          <el-dropdown
+            v-if="isLogin"
+            class="portal-user-menu"
+            trigger="click"
+            @command="handleUserCommand"
           >
-            进入学习
-          </el-button>
-          <el-button
-            v-else
-            class="primary-action primary-action--nav"
-            @click="enterBackend"
-          >
-            进入后台
-          </el-button>
+            <button class="portal-user-menu__trigger" type="button">
+              <img class="portal-user-menu__avatar" :src="displayAvatar" :alt="displayUserName">
+              <span class="portal-user-menu__name">{{ displayUserName }}</span>
+              <i class="el-icon-arrow-down"></i>
+            </button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
+          <template v-else>
+            <el-button
+              v-if="isStudent"
+              class="primary-action primary-action--nav"
+              @click="goMyCourses"
+            >
+              进入学习
+            </el-button>
+            <el-button
+              v-else
+              class="primary-action primary-action--nav"
+              @click="enterBackend"
+            >
+              进入后台
+            </el-button>
+          </template>
         </div>
       </div>
     </header>
@@ -275,6 +293,7 @@ import { getPortalHome, listMyPortalCourses } from "@/api/portal"
 import CourseSection from "@/views/course/components/CourseSection"
 import heroIllustration from "@/assets/images/education-hero.svg"
 import coursePlaceholder from "@/assets/images/course-placeholder.svg"
+import defaultAvatar from "@/assets/images/profile.jpg"
 import { getToken } from "@/utils/auth"
 import { resolveResourceUrl } from "@/utils/resource"
 
@@ -285,6 +304,7 @@ export default {
     return {
       heroIllustration,
       coursePlaceholder,
+      defaultAvatar,
       loading: false,
       searchKeyword: "",
       changeTips: [],
@@ -300,7 +320,16 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(["roles"]),
+    ...mapGetters(["roles", "token", "avatar", "nickName", "name"]),
+    isLogin() {
+      return !!this.token || !!getToken()
+    },
+    displayUserName() {
+      return this.nickName || this.name || "个人账号"
+    },
+    displayAvatar() {
+      return this.avatar || this.defaultAvatar
+    },
     /** 当前是否为学生 */
     isStudent() {
       return this.roles.includes("student")
@@ -351,6 +380,7 @@ export default {
     async initHomeData() {
       this.loading = true
       try {
+        await this.ensureUserInfo()
         await this.getHomeData()
         if (this.isStudent) {
           await this.getMyCourses()
@@ -361,6 +391,14 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    ensureUserInfo() {
+      if (!this.isLogin || this.roles.length) {
+        return Promise.resolve()
+      }
+      return this.$store.dispatch("GetInfo").catch(() => {
+        return this.$store.dispatch("FedLogOut")
+      })
     },
     /** 加载门户首页聚合数据 */
     getHomeData() {
@@ -476,6 +514,26 @@ export default {
         return
       }
       this.$router.push("/user/profile")
+    },
+    handleUserCommand(command) {
+      if (command === "profile") {
+        this.goProfile()
+        return
+      }
+      if (command === "logout") {
+        this.logout()
+      }
+    },
+    logout() {
+      this.$confirm("确定注销并退出系统吗？", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      }).then(() => {
+        this.$store.dispatch("LogOut").then(() => {
+          this.$router.replace("/").catch(() => {})
+        })
+      }).catch(() => {})
     },
     /** 根据角色跳转学习路径卡片 */
     handlePathCardClick() {
@@ -660,6 +718,50 @@ $portal-surface-shadow: 0 18px 38px rgba(37, 99, 235, 0.08);
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.portal-user-menu {
+  flex-shrink: 0;
+}
+
+.portal-user-menu__trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 188px;
+  height: 44px;
+  padding: 4px 12px 4px 6px;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #0f172a;
+  cursor: pointer;
+  font: inherit;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.08);
+  transition: all 0.2s ease;
+}
+
+.portal-user-menu__trigger:hover {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: #fff;
+  transform: translateY(-2px);
+}
+
+.portal-user-menu__avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.portal-user-menu__name {
+  overflow: hidden;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dashboard-hero {
@@ -1479,6 +1581,15 @@ $portal-surface-shadow: 0 18px 38px rgba(37, 99, 235, 0.08);
   .portal-topbar__actions {
     justify-content: flex-start;
     width: 100%;
+  }
+
+  .portal-user-menu,
+  .portal-user-menu__trigger {
+    width: 100%;
+  }
+
+  .portal-user-menu__trigger {
+    max-width: none;
   }
 
   .dashboard-hero {

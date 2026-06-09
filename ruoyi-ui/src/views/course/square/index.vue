@@ -15,8 +15,8 @@
       </div>
     </transition>
 
-    <section class="portal-hero">
-      <div class="portal-hero__content">
+    <section class="portal-hero" :class="{ 'portal-hero--stats-only': isLogin }">
+      <div v-if="!isLogin" class="portal-hero__content">
         <p class="portal-hero__kicker">游客首页</p>
         <h1>在线课程广场</h1>
         <p class="portal-hero__summary">
@@ -64,57 +64,6 @@
       </el-carousel>
     </el-card>
 
-    <el-card class="toolbar-card" shadow="never">
-      <el-form :inline="true" :model="queryParams" class="toolbar-form">
-        <el-form-item>
-          <el-input
-            v-model.trim="queryParams.keyword"
-            clearable
-            placeholder="搜索课程名称、课程简介"
-            prefix-icon="el-icon-search"
-            @keyup.enter.native="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-select v-model="queryParams.orderBy" placeholder="排序方式" @change="handleQuery">
-            <el-option label="按发布时间" value="publishTime" />
-            <el-option label="按注册人数" value="enrollCount" />
-            <el-option label="按更新时间" value="lastContentTime" />
-            <el-option label="按点赞人数" value="likeCount" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-select v-model="queryParams.isAsc" placeholder="排序方向" @change="handleQuery">
-            <el-option label="降序" value="desc" />
-            <el-option label="升序" value="asc" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleQuery">查询</el-button>
-          <el-button @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-
-      <div class="category-list">
-        <el-tag
-          :effect="!queryParams.categoryId ? 'dark' : 'plain'"
-          class="category-tag"
-          @click="selectCategory('')"
-        >
-          全部课程
-        </el-tag>
-        <el-tag
-          v-for="item in homeData.categories"
-          :key="item.categoryId"
-          :effect="String(queryParams.categoryId) === String(item.categoryId) ? 'dark' : 'plain'"
-          class="category-tag"
-          @click="selectCategory(item.categoryId)"
-        >
-          {{ item.categoryName }}
-        </el-tag>
-      </div>
-    </el-card>
-
     <course-section
       title="推荐课程"
       kicker="推荐内容"
@@ -142,6 +91,56 @@
         </div>
         <span class="course-list-section__count">共 {{ total }} 门课程</span>
       </div>
+      <el-card class="toolbar-card" shadow="never">
+        <el-form :inline="true" :model="queryParams" class="toolbar-form">
+          <el-form-item>
+            <el-input
+              v-model.trim="queryParams.keyword"
+              clearable
+              placeholder="搜索课程名称、课程简介"
+              prefix-icon="el-icon-search"
+              @keyup.enter.native="handleQuery"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-select v-model="queryParams.orderBy" placeholder="排序方式" @change="handleQuery">
+              <el-option label="按发布时间" value="publishTime" />
+              <el-option label="按注册人数" value="enrollCount" />
+              <el-option label="按更新时间" value="lastContentTime" />
+              <el-option label="按点赞人数" value="likeCount" />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-select v-model="queryParams.isAsc" placeholder="排序方向" @change="handleQuery">
+              <el-option label="降序" value="desc" />
+              <el-option label="升序" value="asc" />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleQuery">查询</el-button>
+            <el-button @click="resetQuery">重置</el-button>
+          </el-form-item>
+        </el-form>
+
+        <div class="category-list">
+          <el-tag
+            :effect="!queryParams.categoryId ? 'dark' : 'plain'"
+            class="category-tag"
+            @click="selectCategory('')"
+          >
+            全部课程
+          </el-tag>
+          <el-tag
+            v-for="item in homeData.categories"
+            :key="item.categoryId"
+            :effect="String(queryParams.categoryId) === String(item.categoryId) ? 'dark' : 'plain'"
+            class="category-tag"
+            @click="selectCategory(item.categoryId)"
+          >
+            {{ item.categoryName }}
+          </el-tag>
+        </div>
+      </el-card>
       <div v-if="courseList.length" class="course-list-grid">
         <course-card v-for="item in courseList" :key="item.courseId" :course="item" />
       </div>
@@ -162,6 +161,7 @@ import { getPortalHome, listPortalCourses } from "@/api/portal"
 import CourseCard from "../components/CourseCard"
 import CourseSection from "../components/CourseSection"
 import coursePlaceholder from "@/assets/images/course-placeholder.svg"
+import { getToken } from "@/utils/auth"
 import { resolveResourceUrl } from "@/utils/resource"
 
 export default {
@@ -191,6 +191,9 @@ export default {
     }
   },
   computed: {
+    isLogin() {
+      return !!getToken()
+    },
     /** 首页统计数据 */
     courseStats() {
       return {
@@ -363,6 +366,10 @@ export default {
   margin-bottom: 24px;
 }
 
+.portal-hero--stats-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .portal-hero__content,
 .portal-hero__panel {
   border-radius: 24px;
@@ -407,6 +414,10 @@ export default {
   align-content: center;
   gap: 14px;
   padding: 28px;
+}
+
+.portal-hero--stats-only .portal-hero__panel {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .portal-hero__stat {
@@ -537,6 +548,10 @@ export default {
 
 @media (max-width: 960px) {
   .portal-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-hero--stats-only .portal-hero__panel {
     grid-template-columns: 1fr;
   }
 
