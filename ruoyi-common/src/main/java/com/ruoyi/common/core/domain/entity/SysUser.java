@@ -100,6 +100,8 @@ public class SysUser extends BaseEntity
     /** 角色ID */
     private Long roleId;
 
+    private Long[] userIds;
+
     /** 用户身份 */
     private String identityName;
 
@@ -329,6 +331,16 @@ public class SysUser extends BaseEntity
     public void setRoleId(Long roleId)
     {
         this.roleId = roleId;
+    }
+
+    public Long[] getUserIds()
+    {
+        return userIds;
+    }
+
+    public void setUserIds(Long[] userIds)
+    {
+        this.userIds = userIds;
     }
 
     public String getIdentityName()
