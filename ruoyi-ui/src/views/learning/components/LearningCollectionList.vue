@@ -267,48 +267,128 @@
           <span v-if="activeItem.collectedAt">{{ activeItem.collectedAt }}</span>
         </div>
 
-        <section v-if="activeItem.contentTitle">
-          <h4>课程内容</h4>
-          <p>{{ activeItem.contentTitle }}</p>
-        </section>
-        <section v-if="activeItem.questionStem">
-          <h4>题干</h4>
-          <p>{{ activeItem.questionStem }}</p>
-        </section>
-        <section v-if="activeItem.questionImage || activeItem.imageUrl">
-          <h4>错题图片</h4>
-          <img
-            class="detail-image"
-            :src="resolveImageUrl(activeItem.questionImage || activeItem.imageUrl)"
-            alt="错题图片"
-          />
-        </section>
-        <section v-if="activeItem.myAnswer || activeItem.correctAnswer">
-          <h4>答案</h4>
-          <p v-if="activeItem.myAnswer">我的答案：{{ activeItem.myAnswer }}</p>
-          <p v-if="activeItem.correctAnswer">正确答案：{{ activeItem.correctAnswer }}</p>
-        </section>
-        <section v-if="activeItem.analysis">
-          <h4>解析</h4>
-          <p>{{ activeItem.analysis }}</p>
-        </section>
-        <section v-if="activeItem.note">
-          <h4>笔记</h4>
-          <p>{{ activeItem.note }}</p>
-        </section>
-        <section v-if="activeItem.detail || activeItem.content">
-          <h4>详情</h4>
-          <p>{{ activeItem.detail || activeItem.content }}</p>
-        </section>
-        <section v-if="activeItem.resourceUrl">
-          <h4>资源地址</h4>
-          <el-link :href="activeItem.resourceUrl" target="_blank" type="primary">{{ activeItem.resourceUrl }}</el-link>
-        </section>
-        <section v-if="activeItem.courseId">
-          <h4>课程操作</h4>
-          <el-button type="primary" size="small" @click="openCourse(activeItem.courseId)">查看课程</el-button>
-        </section>
+        <el-form
+          v-if="wrongEditMode"
+          ref="wrongEditForm"
+          :model="wrongEditForm"
+          :rules="wrongEditRules"
+          class="wrong-edit"
+          label-width="88px"
+        >
+          <el-form-item label="错题文字" prop="questionStem">
+            <el-input
+              v-model.trim="wrongEditForm.questionStem"
+              type="textarea"
+              :rows="4"
+              maxlength="1000"
+              show-word-limit
+              placeholder="输入题干、题目描述或粘贴错题文字"
+            />
+          </el-form-item>
+          <el-form-item label="错题图片" prop="questionImage">
+            <image-upload
+              v-model="wrongEditForm.questionImage"
+              :limit="1"
+              :file-size="10"
+              directory="student/wrong"
+            />
+          </el-form-item>
+          <el-form-item label="我的答案">
+            <el-input
+              v-model.trim="wrongEditForm.myAnswer"
+              type="textarea"
+              :rows="2"
+              maxlength="500"
+              show-word-limit
+              placeholder="记录当时写错的答案"
+            />
+          </el-form-item>
+          <el-form-item label="正确答案">
+            <el-input
+              v-model.trim="wrongEditForm.correctAnswer"
+              type="textarea"
+              :rows="2"
+              maxlength="500"
+              show-word-limit
+              placeholder="记录正确答案"
+            />
+          </el-form-item>
+          <el-form-item label="解析">
+            <el-input
+              v-model.trim="wrongEditForm.analysis"
+              type="textarea"
+              :rows="3"
+              maxlength="1000"
+              show-word-limit
+              placeholder="记录错因、知识点或订正思路"
+            />
+          </el-form-item>
+        </el-form>
+
+        <template v-else>
+          <section v-if="activeItem.contentTitle">
+            <h4>课程内容</h4>
+            <p>{{ activeItem.contentTitle }}</p>
+          </section>
+          <section v-if="activeItem.questionStem">
+            <h4>题干</h4>
+            <p>{{ activeItem.questionStem }}</p>
+          </section>
+          <section v-if="activeItem.questionImage || activeItem.imageUrl">
+            <h4>错题图片</h4>
+            <img
+              class="detail-image"
+              :src="resolveImageUrl(activeItem.questionImage || activeItem.imageUrl)"
+              alt="错题图片"
+            />
+          </section>
+          <section v-if="activeItem.myAnswer || activeItem.correctAnswer">
+            <h4>答案</h4>
+            <p v-if="activeItem.myAnswer">我的答案：{{ activeItem.myAnswer }}</p>
+            <p v-if="activeItem.correctAnswer">正确答案：{{ activeItem.correctAnswer }}</p>
+          </section>
+          <section v-if="activeItem.analysis">
+            <h4>解析</h4>
+            <p>{{ activeItem.analysis }}</p>
+          </section>
+          <section v-if="activeItem.note">
+            <h4>笔记</h4>
+            <p>{{ activeItem.note }}</p>
+          </section>
+          <section v-if="activeItem.detail || activeItem.content">
+            <h4>详情</h4>
+            <p>{{ activeItem.detail || activeItem.content }}</p>
+          </section>
+          <section v-if="activeItem.resourceUrl">
+            <h4>资源地址</h4>
+            <el-link :href="activeItem.resourceUrl" target="_blank" type="primary">{{ activeItem.resourceUrl }}</el-link>
+          </section>
+          <section v-if="activeItem.courseId">
+            <h4>课程操作</h4>
+            <el-button type="primary" size="small" @click="openCourse(activeItem.courseId)">查看课程</el-button>
+          </section>
+        </template>
       </div>
+      <span v-if="activeItem && canManageWrongQuestions" slot="footer" class="wrong-detail-actions">
+        <template v-if="wrongEditMode">
+          <el-button size="small" @click="cancelWrongEdit">取消</el-button>
+          <el-button
+            type="primary"
+            size="small"
+            :loading="wrongEditSaving"
+            @click="saveWrongQuestion"
+          >保存</el-button>
+        </template>
+        <template v-else>
+          <el-button
+            type="danger"
+            size="small"
+            :loading="wrongDeleteSaving"
+            @click="deleteWrongQuestion"
+          >删除</el-button>
+          <el-button type="primary" size="small" @click="openWrongEdit">编辑</el-button>
+        </template>
+      </span>
     </el-dialog>
   </div>
 </template>
@@ -381,6 +461,24 @@ export default {
           { validator: this.validateWrongQuestionContent, trigger: "change" }
         ]
       },
+      wrongEditMode: false,
+      wrongEditSaving: false,
+      wrongDeleteSaving: false,
+      wrongEditForm: {
+        questionStem: "",
+        questionImage: "",
+        myAnswer: "",
+        correctAnswer: "",
+        analysis: ""
+      },
+      wrongEditRules: {
+        questionStem: [
+          { validator: this.validateWrongEditContent, trigger: "blur" }
+        ],
+        questionImage: [
+          { validator: this.validateWrongEditContent, trigger: "change" }
+        ]
+      },
       favoriteDialogOpen: false,
       courseLoading: false,
       courseOptions: [],
@@ -430,10 +528,21 @@ export default {
     },
     courseCount() {
       return new Set(this.items.map(item => item.courseName).filter(Boolean)).size
+    },
+    canManageWrongQuestions() {
+      return this.allowWrongQuestionAdd && this.field === "wrongQuestions"
     }
   },
   created() {
     this.load()
+  },
+  watch: {
+    detailOpen(value) {
+      if (!value) {
+        this.wrongEditMode = false
+        this.resetWrongEditForm()
+      }
+    }
   },
   methods: {
     load() {
@@ -478,6 +587,12 @@ export default {
       return []
     },
     parseStoredList(raw) {
+      if (Array.isArray(raw)) {
+        return raw
+      }
+      if (raw && typeof raw === "object" && Array.isArray(raw.items)) {
+        return raw.items
+      }
       if (!raw || typeof raw !== "string") {
         return []
       }
@@ -525,8 +640,20 @@ export default {
       }
       return value.length > 28 ? `${value.slice(0, 28)}...` : value
     },
+    createTimestamp() {
+      const now = new Date()
+      const pad = value => String(value).padStart(2, "0")
+      return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+    },
+    normalizeTagList(tags) {
+      return Array.isArray(tags)
+        ? tags
+        : String(tags || "").split(",").map(tag => tag.trim()).filter(Boolean)
+    },
     openDetail(item) {
       this.activeItem = item
+      this.wrongEditMode = false
+      this.resetWrongEditForm()
       this.detailOpen = true
     },
     openWrongAdd() {
@@ -544,6 +671,13 @@ export default {
       }
       callback(new Error("请填写错题文字或上传错题图片"))
     },
+    validateWrongEditContent(rule, value, callback) {
+      if (this.wrongEditForm.questionStem || this.wrongEditForm.questionImage) {
+        callback()
+        return
+      }
+      callback(new Error("请填写错题文字或上传错题图片"))
+    },
     resetWrongAddForm() {
       this.wrongAddForm = {
         questionStem: "",
@@ -556,18 +690,28 @@ export default {
         this.$refs.wrongAddForm.clearValidate()
       }
     },
+    resetWrongEditForm() {
+      this.wrongEditForm = {
+        questionStem: "",
+        questionImage: "",
+        myAnswer: "",
+        correctAnswer: "",
+        analysis: ""
+      }
+      if (this.$refs.wrongEditForm) {
+        this.$refs.wrongEditForm.clearValidate()
+      }
+    },
     addWrongQuestion() {
       this.$refs.wrongAddForm.validate(valid => {
         if (!valid) {
           return
         }
-        const now = new Date()
-        const pad = value => String(value).padStart(2, "0")
-        const createdAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+        const createdAt = this.createTimestamp()
         const storedItems = this.parseStoredList(this.form[this.field])
         const title = this.createTitle(this.wrongAddForm.questionStem) || "图片错题"
         const item = {
-          id: `wrong-${now.getTime()}`,
+          id: `wrong-${Date.now()}`,
           title,
           questionStem: this.wrongAddForm.questionStem,
           questionImage: this.wrongAddForm.questionImage,
@@ -590,6 +734,113 @@ export default {
           this.wrongAddSaving = false
         })
       })
+    },
+    openWrongEdit() {
+      if (!this.activeItem) {
+        return
+      }
+      this.wrongEditForm = {
+        questionStem: this.activeItem.questionStem || "",
+        questionImage: this.activeItem.questionImage || this.activeItem.imageUrl || "",
+        myAnswer: this.activeItem.myAnswer || "",
+        correctAnswer: this.activeItem.correctAnswer || "",
+        analysis: this.activeItem.analysis || ""
+      }
+      this.wrongEditMode = true
+      this.$nextTick(() => {
+        if (this.$refs.wrongEditForm) {
+          this.$refs.wrongEditForm.clearValidate()
+        }
+      })
+    },
+    cancelWrongEdit() {
+      this.wrongEditMode = false
+      this.resetWrongEditForm()
+    },
+    findStoredItemIndex(storedItems, item) {
+      const id = String((item && item.id) || "")
+      let index = storedItems.findIndex(storedItem => String(storedItem.id || "") === id)
+      if (index === -1) {
+        const normalizedItems = this.normalizeItems(storedItems)
+        index = normalizedItems.findIndex(storedItem => String(storedItem.id || "") === id)
+      }
+      if (index === -1) {
+        index = this.items.findIndex(displayItem => displayItem === item || String(displayItem.id || "") === id)
+        if (index >= storedItems.length) {
+          index = -1
+        }
+      }
+      return index
+    },
+    saveWrongQuestion() {
+      if (!this.$refs.wrongEditForm || !this.activeItem) {
+        return
+      }
+      this.$refs.wrongEditForm.validate(valid => {
+        if (!valid) {
+          return
+        }
+        const storedItems = this.parseStoredList(this.form[this.field])
+        const index = this.findStoredItemIndex(storedItems, this.activeItem)
+        if (index === -1) {
+          this.$modal.msgError("未找到要编辑的错题")
+          return
+        }
+        const current = storedItems[index] || {}
+        const questionImage = this.wrongEditForm.questionImage || ""
+        const title = this.createTitle(this.wrongEditForm.questionStem) || current.title || this.activeItem.title || "图片错题"
+        const existingTags = this.normalizeTagList(current.tags || this.activeItem.tags)
+          .filter(tag => !["图片错题", "文字错题"].includes(tag))
+        const updatedItem = {
+          ...current,
+          title,
+          questionStem: this.wrongEditForm.questionStem,
+          questionImage,
+          imageUrl: questionImage,
+          myAnswer: this.wrongEditForm.myAnswer,
+          correctAnswer: this.wrongEditForm.correctAnswer,
+          analysis: this.wrongEditForm.analysis,
+          summary: this.wrongEditForm.questionStem || this.wrongEditForm.analysis || current.summary || "",
+          updatedAt: this.createTimestamp(),
+          tags: [questionImage ? "图片错题" : "文字错题", ...existingTags]
+        }
+        storedItems.splice(index, 1, updatedItem)
+        this.form[this.field] = JSON.stringify(storedItems, null, 2)
+        this.wrongEditSaving = true
+        updateStudentProfile(this.form).then(() => {
+          this.items = this.parseItems(this.form[this.field])
+          this.activeItem = this.items.find(item => String(item.id) === String(updatedItem.id)) || this.items[index]
+          this.wrongEditMode = false
+          this.resetWrongEditForm()
+          this.$modal.msgSuccess("保存成功")
+        }).finally(() => {
+          this.wrongEditSaving = false
+        })
+      })
+    },
+    deleteWrongQuestion() {
+      if (!this.activeItem) {
+        return
+      }
+      this.$modal.confirm("确认删除这道错题吗？").then(() => {
+        const storedItems = this.parseStoredList(this.form[this.field])
+        const index = this.findStoredItemIndex(storedItems, this.activeItem)
+        if (index === -1) {
+          this.$modal.msgError("未找到要删除的错题")
+          return Promise.reject(new Error("wrong question not found"))
+        }
+        storedItems.splice(index, 1)
+        this.form[this.field] = JSON.stringify(storedItems, null, 2)
+        this.wrongDeleteSaving = true
+        return updateStudentProfile(this.form).then(() => {
+          this.items = this.parseItems(this.form[this.field])
+          this.detailOpen = false
+          this.activeItem = null
+          this.$modal.msgSuccess("删除成功")
+        }).finally(() => {
+          this.wrongDeleteSaving = false
+        })
+      }).catch(() => {})
     },
     resolveImageUrl(url) {
       return resolveResourceUrl(url)
@@ -756,6 +1007,17 @@ export default {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.wrong-edit {
+  padding-top: 4px;
+}
+
+.wrong-detail-actions {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
 }
 
 .note-add {

@@ -42,11 +42,31 @@ export function startStudentExam(examId) {
 }
 
 /**
+ * 查询考试内容
+ */
+export function getStudentExamContent(recordId) {
+  return request({
+    url: "/student/learning/exam-records/" + recordId + "/content",
+    method: "get"
+  })
+}
+
+/**
  * 提交考试
  */
 export function submitStudentExam(recordId) {
   return request({
     url: "/student/learning/exam-records/" + recordId + "/submit",
+    method: "post"
+  })
+}
+
+/**
+ * 导入考试错题到我的错题
+ */
+export function importExamWrongQuestions(recordId) {
+  return request({
+    url: "/student/learning/exam-records/" + recordId + "/wrong-questions/import",
     method: "post"
   })
 }

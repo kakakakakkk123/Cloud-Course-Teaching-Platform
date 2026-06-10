@@ -61,7 +61,7 @@
             <el-tag :type="getStatusTag(scope.row)">{{ getStatusText(scope.row) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" align="center" fixed="right">
+        <el-table-column label="操作" width="310" align="center" fixed="right">
           <template slot-scope="scope">
             <el-button
               v-if="canStart(scope.row)"
@@ -70,11 +70,24 @@
               @click="handleStart(scope.row)"
             >开始考试</el-button>
             <el-button
+              v-if="canContinue(scope.row)"
+              type="primary"
+              size="mini"
+              @click="openExamContent(scope.row.recordId)"
+            >继续考试</el-button>
+            <el-button
               v-if="scope.row.recordStatus === '1'"
               type="success"
               size="mini"
               @click="handleSubmit(scope.row)"
             >提交考试</el-button>
+            <el-button
+              v-if="canImportWrongQuestions(scope.row)"
+              type="warning"
+              size="mini"
+              :loading="wrongImportingRecordId === scope.row.recordId"
+              @click="handleImportWrongQuestions(scope.row)"
+            >导入错题</el-button>
             <el-button size="mini" @click="handleView(scope.row)">查看</el-button>
           </template>
         </el-table-column>
@@ -90,6 +103,12 @@
         <el-descriptions-item label="考试说明">{{ detail.examNotice || "暂无说明" }}</el-descriptions-item>
       </el-descriptions>
       <div slot="footer">
+        <el-button
+          v-if="canImportWrongQuestions(detail)"
+          type="warning"
+          :loading="wrongImportingRecordId === detail.recordId"
+          @click="handleImportWrongQuestions(detail)"
+        >一键导入错题</el-button>
         <el-button @click="detailOpen = false">关闭</el-button>
       </div>
     </el-dialog>
@@ -97,7 +116,7 @@
 </template>
 
 <script>
-import { listMyExams, startStudentExam, submitStudentExam } from "@/api/learning"
+import { listMyExams, startStudentExam, submitStudentExam, importExamWrongQuestions } from "@/api/learning"
 
 export default {
   name: "MyExam",
@@ -106,6 +125,7 @@ export default {
       loading: false,
       detailOpen: false,
       detail: {},
+      wrongImportingRecordId: undefined,
       query: {
         status: ""
       },
@@ -143,10 +163,18 @@ export default {
       })
     },
     handleStart(row) {
-      startStudentExam(row.examId).then(() => {
+      startStudentExam(row.examId).then(res => {
+        const record = res.data || {}
         this.$modal.msgSuccess("考试已开始")
+        if (record.recordId) {
+          this.openExamContent(record.recordId)
+          return
+        }
         this.getList()
       })
+    },
+    openExamContent(recordId) {
+      this.$router.push(`/learning/exam/take/${recordId}`)
     },
     handleSubmit(row) {
       this.$modal.confirm("确认提交当前考试记录吗？").then(() => {
@@ -160,6 +188,18 @@ export default {
       this.detail = row
       this.detailOpen = true
     },
+    handleImportWrongQuestions(row) {
+      if (!row || !row.recordId) {
+        this.$modal.msgWarning("请先完成考试后再导入错题")
+        return
+      }
+      this.wrongImportingRecordId = row.recordId
+      importExamWrongQuestions(row.recordId).then(res => {
+        this.$modal.msgSuccess(res.msg || "导入成功")
+      }).finally(() => {
+        this.wrongImportingRecordId = undefined
+      })
+    },
     canStart(row) {
       if (row.recordStatus === "1" || ["2", "3"].includes(String(row.recordStatus))) {
         return false
@@ -172,8 +212,14 @@ export default {
       const end = row.endTime ? new Date(row.endTime).getTime() : 0
       return (!start || now >= start) && (!end || now <= end)
     },
+    canContinue(row) {
+      return row && row.recordId && String(row.recordStatus) === "1"
+    },
     canShowScore(row) {
       return ["2", "3"].includes(String(row.recordStatus)) && String(row.showScoreAfterSubmit) === "1"
+    },
+    canImportWrongQuestions(row) {
+      return row && row.recordId && ["2", "3"].includes(String(row.recordStatus))
     },
     getStatusText(row) {
       if (row.recordStatus === "1") {

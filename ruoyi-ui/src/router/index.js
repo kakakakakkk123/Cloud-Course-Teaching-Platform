@@ -163,6 +163,20 @@ export const dynamicRoutes = [
     ]
   },
   {
+    path: '/learning/exam/take',
+    component: Layout,
+    hidden: true,
+    roles: ['student', 'admin'],
+    children: [
+      {
+        path: ':recordId(\\d+)',
+        component: () => import('@/views/learning/exam/take'),
+        name: 'StudentExamTake',
+        meta: { title: '考试内容', activeMenu: '/learning/exam' }
+      }
+    ]
+  },
+  {
     path: '/teaching/exam',
     component: Layout,
     hidden: true,

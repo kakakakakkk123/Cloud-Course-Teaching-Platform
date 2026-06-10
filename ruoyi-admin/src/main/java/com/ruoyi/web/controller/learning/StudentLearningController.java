@@ -66,6 +66,16 @@ public class StudentLearningController extends BaseController
     }
 
     /**
+     * 查询考试作答内容
+     */
+    @PreAuthorize("@ss.hasAnyRoles('student,admin')")
+    @GetMapping("/exam-records/{recordId}/content")
+    public AjaxResult examContent(@PathVariable Long recordId)
+    {
+        return success(studentLearningService.selectExamContent(recordId, getUserId()));
+    }
+
+    /**
      * 提交考试
      */
     @PreAuthorize("@ss.hasAnyRoles('student,admin')")
@@ -74,5 +84,16 @@ public class StudentLearningController extends BaseController
     {
         studentLearningService.submitExam(recordId, getUserId());
         return success("考试已提交");
+    }
+
+    /**
+     * 导入考试错题到我的错题
+     */
+    @PreAuthorize("@ss.hasAnyRoles('student,admin')")
+    @PostMapping("/exam-records/{recordId}/wrong-questions/import")
+    public AjaxResult importExamWrongQuestions(@PathVariable Long recordId)
+    {
+        int count = studentLearningService.importExamWrongQuestions(recordId, getUserId());
+        return AjaxResult.success("成功导入 " + count + " 道错题", count);
     }
 }
