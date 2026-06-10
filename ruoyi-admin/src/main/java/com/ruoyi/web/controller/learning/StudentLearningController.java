@@ -2,6 +2,7 @@ package com.ruoyi.web.controller.learning;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +14,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.system.domain.learning.CourseDiscussion;
 import com.ruoyi.system.domain.learning.StudentExamAnswerBody;
+import com.ruoyi.system.domain.learning.StudentLearningNoteBody;
 import com.ruoyi.system.service.IEduStudentLearningService;
 
 /**
@@ -30,6 +32,28 @@ public class StudentLearningController extends BaseController
     public AjaxResult overview()
     {
         return success(studentLearningService.selectLearningOverview(getUserId()));
+    }
+
+    @PreAuthorize("@ss.hasAnyRoles('student,admin')")
+    @GetMapping("/notes")
+    public AjaxResult notes()
+    {
+        return success(studentLearningService.selectLearningNoteList(getUserId()));
+    }
+
+    @PreAuthorize("@ss.hasAnyRoles('student,admin')")
+    @PostMapping("/contents/{contentId}/note")
+    public AjaxResult saveContentNote(@PathVariable Long contentId, @RequestBody(required = false) StudentLearningNoteBody body)
+    {
+        return success(studentLearningService.saveContentLearningNote(contentId, getUserId(), body));
+    }
+
+    @PreAuthorize("@ss.hasAnyRoles('student,admin')")
+    @DeleteMapping("/contents/{contentId}/note")
+    public AjaxResult deleteContentNote(@PathVariable Long contentId)
+    {
+        studentLearningService.deleteContentLearningNote(contentId, getUserId());
+        return success();
     }
 
     @PreAuthorize("@ss.hasAnyRoles('student,admin')")

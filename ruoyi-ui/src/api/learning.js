@@ -11,6 +11,37 @@ export function getLearningOverview() {
 }
 
 /**
+ * 查询我的学习笔记
+ */
+export function listLearningNotes() {
+  return request({
+    url: "/student/learning/notes",
+    method: "get"
+  })
+}
+
+/**
+ * 保存课程内容笔记
+ */
+export function saveContentLearningNote(contentId, data) {
+  return request({
+    url: "/student/learning/contents/" + contentId + "/note",
+    method: "post",
+    data
+  })
+}
+
+/**
+ * 删除课程内容笔记
+ */
+export function deleteContentLearningNote(contentId) {
+  return request({
+    url: "/student/learning/contents/" + contentId + "/note",
+    method: "delete"
+  })
+}
+
+/**
  * 查询我的考试
  */
 export function listMyExams(params) {

@@ -8,6 +8,7 @@ import com.ruoyi.system.domain.learning.StudentExamAnswerBody;
 import com.ruoyi.system.domain.learning.StudentExamPaperVO;
 import com.ruoyi.system.domain.learning.StudentExamResultVO;
 import com.ruoyi.system.domain.learning.StudentExamVO;
+import com.ruoyi.system.domain.learning.StudentLearningNoteBody;
 import com.ruoyi.system.domain.learning.StudentLearningOverview;
 
 /**
@@ -18,6 +19,12 @@ import com.ruoyi.system.domain.learning.StudentLearningOverview;
 public interface IEduStudentLearningService
 {
     public StudentLearningOverview selectLearningOverview(Long studentId);
+
+    public List<Map<String, Object>> selectLearningNoteList(Long studentId);
+
+    public Map<String, Object> saveContentLearningNote(Long contentId, Long studentId, StudentLearningNoteBody body);
+
+    public void deleteContentLearningNote(Long contentId, Long studentId);
 
     public List<StudentExamVO> selectStudentExamList(Long studentId, String status);
 
