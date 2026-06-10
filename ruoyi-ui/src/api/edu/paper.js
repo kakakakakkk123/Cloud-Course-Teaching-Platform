@@ -62,3 +62,29 @@ export function delPaper(paperIds) {
     method: "delete"
   })
 }
+
+/**
+ * 查询试卷题目列表
+ * @param {number} paperId 试卷编号
+ * @returns {Promise}
+ */
+export function listPaperQuestions(paperId) {
+  return request({
+    url: "/edu/exam/paper/" + paperId + "/questions",
+    method: "get"
+  })
+}
+
+/**
+ * 保存试卷题目（组卷）
+ * @param {number} paperId 试卷编号
+ * @param {Array} questions 题目关联列表
+ * @returns {Promise}
+ */
+export function savePaperQuestions(paperId, questions) {
+  return request({
+    url: "/edu/exam/paper/" + paperId + "/questions",
+    method: "put",
+    data: questions
+  })
+}

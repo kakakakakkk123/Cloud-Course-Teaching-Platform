@@ -4,11 +4,14 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.system.domain.course.EduCourseContent;
 import com.ruoyi.system.domain.exam.EduExam;
+import com.ruoyi.system.domain.exam.EduPaper;
 import com.ruoyi.system.mapper.EduCourseContentMapper;
 import com.ruoyi.system.mapper.EduExamMapper;
+import com.ruoyi.system.mapper.EduPaperMapper;
 import com.ruoyi.system.service.IEduCourseService;
 import com.ruoyi.system.service.IEduExamService;
 
@@ -27,6 +30,9 @@ public class EduExamServiceImpl implements IEduExamService
     @Autowired
     private IEduCourseService courseService;
 
+    @Autowired
+    private EduPaperMapper paperMapper;
+
     @Override
     public EduExam selectEduExamById(Long examId)
     {
@@ -44,6 +50,7 @@ public class EduExamServiceImpl implements IEduExamService
     public int insertEduExam(EduExam exam)
     {
         fillExamDefaults(exam);
+        assertPaperNotEmpty(exam.getPaperId());
         int rows = examMapper.insertEduExam(exam);
         syncCourseExamContent(exam, true);
         return rows;
@@ -54,6 +61,7 @@ public class EduExamServiceImpl implements IEduExamService
     public int updateEduExam(EduExam exam)
     {
         fillExamDefaults(exam);
+        assertPaperNotEmpty(exam.getPaperId());
         int rows = examMapper.updateEduExam(exam);
         EduExam latest = examMapper.selectEduExamById(exam.getExamId());
         if (latest != null)
@@ -125,6 +133,26 @@ public class EduExamServiceImpl implements IEduExamService
     private int defaultDurationSeconds(Integer minutes)
     {
         return minutes == null || minutes <= 0 ? 0 : minutes * 60;
+    }
+
+    /**
+     * 校验试卷是否已组卷（至少包含一道题目），防止空试卷发布考试
+     */
+    private void assertPaperNotEmpty(Long paperId)
+    {
+        if (paperId == null)
+        {
+            throw new ServiceException("考试必须绑定试卷");
+        }
+        EduPaper paper = paperMapper.selectEduPaperById(paperId);
+        if (paper == null)
+        {
+            throw new ServiceException("试卷不存在或已删除");
+        }
+        if (paper.getQuestionCount() == null || paper.getQuestionCount() <= 0)
+        {
+            throw new ServiceException("试卷「" + paper.getPaperName() + "」尚未组卷，请先添加题目后再发布考试");
+        }
     }
 
     private int defaultSortOrder(Long courseId)

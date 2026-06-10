@@ -130,9 +130,10 @@
             <span>{{ parseTime(scope.row.updateTime || scope.row.createTime) || "-" }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" width="250" class-name="small-padding fixed-width">
+        <el-table-column label="操作" align="center" width="300" class-name="small-padding fixed-width">
           <template slot-scope="scope">
             <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">修改</el-button>
+            <el-button size="mini" type="text" icon="el-icon-s-operation" @click="handleCompose(scope.row)">组卷</el-button>
             <el-button size="mini" type="text" icon="el-icon-s-order" @click="handleExamPublish(scope.row)">发布考试</el-button>
             <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
           </template>
@@ -246,15 +247,9 @@
           />
         </el-form-item>
 
-        <el-form-item label="组卷提示">
+        <el-form-item label="组卷说明">
           <div class="compose-tips-box">
-            当前页面先完成试卷基础信息维护。下一步会继续接入：
-            <br>
-            1. 从题库中选择试题
-            <br>
-            2. 设置题目顺序与分值
-            <br>
-            3. 自动汇总总分和题型统计
+            试卷基础信息保存后，在列表操作列点击"<strong>组卷</strong>"按钮即可从题库选题、设置分值和排序，系统将自动汇总总分与题型统计。
           </div>
         </el-form-item>
       </el-form>
@@ -263,6 +258,14 @@
         <el-button type="primary" @click="submitForm">确 定</el-button>
       </div>
     </el-dialog>
+
+    <compose-dialog
+      :visible.sync="composeOpen"
+      :paper-id="composePaperId"
+      :paper-name="composePaperName"
+      :bank-id="bankId"
+      @saved="onComposeSaved"
+    />
   </div>
 </template>
 
@@ -275,9 +278,11 @@ import {
   delPaper
 } from "@/api/edu/paper"
 import { listCourse } from "@/api/edu/course"
+import ComposeDialog from "./components/ComposeDialog"
 
 export default {
   name: "TeachingPaperManage",
+  components: { ComposeDialog },
   dicts: ["edu_paper_status"],
   data() {
     return {
@@ -300,6 +305,9 @@ export default {
         courseId: undefined,
         status: undefined
       },
+      composeOpen: false,
+      composePaperId: 0,
+      composePaperName: "",
       form: {},
       rules: {
         paperName: [
@@ -472,6 +480,16 @@ export default {
     /** 进入考试发布 */
     handleExamPublish(row) {
       this.goExamManage(row)
+    },
+    /** 打开组卷对话框 */
+    handleCompose(row) {
+      this.composePaperId = row.paperId
+      this.composePaperName = row.paperName
+      this.composeOpen = true
+    },
+    /** 组卷保存后刷新列表（更新统计） */
+    onComposeSaved() {
+      this.getList()
     },
     /** 取消弹窗 */
     cancel() {

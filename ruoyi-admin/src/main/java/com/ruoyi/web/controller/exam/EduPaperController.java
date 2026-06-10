@@ -19,6 +19,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.domain.exam.EduPaper;
+import com.ruoyi.system.domain.exam.EduPaperQuestion;
 import com.ruoyi.system.service.IEduPaperService;
 
 /**
@@ -93,5 +94,28 @@ public class EduPaperController extends BaseController
     public AjaxResult remove(@PathVariable Long[] paperIds)
     {
         return toAjax(paperService.deleteEduPaperByIds(paperIds));
+    }
+
+    /**
+     * 查询试卷题目列表
+     */
+    @PreAuthorize("@ss.hasPermi('edu:paper:query')")
+    @GetMapping("/{paperId}/questions")
+    public AjaxResult getQuestions(@PathVariable Long paperId)
+    {
+        List<EduPaperQuestion> list = paperService.selectPaperQuestions(paperId);
+        return success(list);
+    }
+
+    /**
+     * 保存试卷题目（组卷）
+     */
+    @PreAuthorize("@ss.hasPermi('edu:paper:edit')")
+    @Log(title = "试卷组卷", businessType = BusinessType.UPDATE)
+    @PutMapping("/{paperId}/questions")
+    public AjaxResult saveQuestions(@PathVariable Long paperId, @RequestBody List<EduPaperQuestion> questions)
+    {
+        paperService.savePaperQuestions(paperId, questions);
+        return success();
     }
 }
