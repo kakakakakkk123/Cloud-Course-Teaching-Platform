@@ -106,7 +106,7 @@
         <el-table-column label="试卷名称" prop="paperName" min-width="220" show-overflow-tooltip />
         <el-table-column label="所属课程" min-width="180" show-overflow-tooltip>
           <template slot-scope="scope">
-            <span>{{ scope.row.courseName || "未关联课程" }}</span>
+            <span>{{ scope.row.courseNames || scope.row.courseName || "未关联课程" }}</span>
           </template>
         </el-table-column>
         <el-table-column label="来源题库" min-width="160" show-overflow-tooltip>
@@ -162,12 +162,14 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="所属课程" prop="courseId">
+            <el-form-item label="所属课程" prop="courseIds">
               <el-select
-                v-model="form.courseId"
+                v-model="form.courseIds"
+                multiple
+                collapse-tags
                 clearable
                 filterable
-                placeholder="请选择所属课程"
+                placeholder="可选择多个课程，不选则为通用试卷"
                 style="width: 100%"
               >
                 <el-option
@@ -405,7 +407,7 @@ export default {
       this.form = {
         paperId: undefined,
         bankId: this.bankId,
-        courseId: undefined,
+        courseIds: [],
         paperName: "",
         paperDesc: "",
         questionCount: 0,
@@ -447,6 +449,7 @@ export default {
       getPaper(paperId).then(response => {
         const data = response.data || {}
         this.form = Object.assign({}, this.form, data, {
+          courseIds: data.courseIds || [],
           composeMode: data.composeMode || "1"
         })
         this.open = true
