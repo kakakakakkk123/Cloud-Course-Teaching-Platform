@@ -78,6 +78,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         String studentNo = StringUtils.trim(registerBody.getStudentNo());
         String nickName = StringUtils.trim(registerBody.getNickName());
         String grade = StringUtils.trim(registerBody.getGrade());
+        String sex = StringUtils.trim(registerBody.getSex());
         String phonenumber = StringUtils.trim(registerBody.getPhonenumber());
         String email = StringUtils.trim(registerBody.getEmail());
         Long academyId = registerBody.getAcademyId();
@@ -158,6 +159,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         user.setDeptId(classId);
         user.setStudentNo(studentNo);
         user.setNickName(nickName);
+        user.setSex(normalizeSex(sex));
         user.setPhonenumber(phonenumber);
         user.setEmail(email);
 
@@ -201,6 +203,11 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         profile.setCreateBy(username);
         accountMapper.insertStudentProfile(profile);
         return StringUtils.EMPTY;
+    }
+
+    private String normalizeSex(String sex)
+    {
+        return StringUtils.equalsAny(sex, "0", "1", "2") ? sex : "2";
     }
 
     @Override

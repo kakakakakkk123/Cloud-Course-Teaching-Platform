@@ -141,6 +141,7 @@ class StudentAccountServiceImplTest
         SysUser savedUser = userCaptor.getValue();
         assertEquals("20240003", savedUser.getUserName());
         assertEquals("20240003", savedUser.getStudentNo());
+        assertEquals("1", savedUser.getSex());
         assertEquals(3L, savedUser.getDeptId());
         assertArrayEquals(new Long[] { 4L }, savedUser.getRoleIds());
         assertEquals(UserConstants.NORMAL, savedUser.getStatus());
@@ -505,6 +506,7 @@ class StudentAccountServiceImplTest
         body.setStudentNo("20240003");
         body.setPassword("student123");
         body.setNickName("Student");
+        body.setSex("1");
         body.setPhonenumber("13800000000");
         body.setEmail("student@example.com");
         body.setGrade("2024");

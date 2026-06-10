@@ -84,6 +84,17 @@
               </el-input>
             </el-form-item>
 
+            <el-form-item prop="sex">
+              <el-select v-model="registerForm.sex" placeholder="请选择性别" style="width: 100%">
+                <el-option
+                  v-for="item in sexOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+
             <el-form-item prop="phonenumber">
               <el-input v-model.trim="registerForm.phonenumber" placeholder="手机号">
                 <svg-icon slot="prefix" icon-class="phone" class="el-input__icon input-icon" />
@@ -255,6 +266,7 @@ export default {
         username: "",
         studentNo: "",
         nickName: "",
+        sex: "",
         academyId: undefined,
         majorId: undefined,
         classId: undefined,
@@ -277,6 +289,11 @@ export default {
       majorOptionsMap: {},
       classOptionsMap: {},
       gradeOptions: Array.from({ length: 8 }, (_, index) => `${currentYear + 1 - index}级`),
+      sexOptions: [
+        { label: "男", value: "0" },
+        { label: "女", value: "1" },
+        { label: "未知", value: "2" }
+      ],
       highlights: [
         { value: "学院 / 专业", label: "精确归属" },
         { value: "一步完成", label: "快速注册" },
@@ -303,6 +320,9 @@ export default {
         nickName: [
           { required: true, trigger: "blur", message: "请输入昵称" },
           { min: 2, max: 30, trigger: "blur", message: "昵称长度不能超过 30 个字符" }
+        ],
+        sex: [
+          { required: true, trigger: "change", message: "请选择性别" }
         ],
         academyId: [
           { required: true, trigger: "change", message: "请选择学院" }

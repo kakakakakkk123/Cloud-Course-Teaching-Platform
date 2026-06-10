@@ -22,6 +22,8 @@ public class RegisterBody extends LoginBody
      */
     private String grade;
 
+    private String sex;
+
     /**
      * 学院ID
      */
@@ -74,6 +76,16 @@ public class RegisterBody extends LoginBody
     public void setGrade(String grade)
     {
         this.grade = grade;
+    }
+
+    public String getSex()
+    {
+        return sex;
+    }
+
+    public void setSex(String sex)
+    {
+        this.sex = sex;
     }
 
     public String getEmail()
