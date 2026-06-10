@@ -2,6 +2,7 @@ package com.ruoyi.system.domain.exam;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
