@@ -114,6 +114,9 @@
           <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete()">删除试题</el-button>
         </el-col>
         <el-col :span="1.5">
+          <el-button type="info" plain icon="el-icon-upload2" size="mini" @click="importOpen = true">导入试题</el-button>
+        </el-col>
+        <el-col :span="1.5">
           <el-button type="warning" plain icon="el-icon-s-order" size="mini" @click="goPaperManage">试卷管理</el-button>
         </el-col>
         <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" />
@@ -301,6 +304,13 @@
         <el-button type="primary" @click="submitForm">确 定</el-button>
       </div>
     </el-dialog>
+
+    <import-dialog
+      :visible.sync="importOpen"
+      :bank-id="bankId"
+      :bank-name="currentBankName"
+      @imported="onImportSuccess"
+    />
   </div>
 </template>
 
@@ -312,14 +322,17 @@ import {
   updateQuestion,
   delQuestion
 } from "@/api/edu/question"
+import ImportDialog from "./components/ImportDialog"
 
 export default {
   name: "TeachingQuestion",
+  components: { ImportDialog },
   dicts: ["edu_question_type", "edu_course_difficulty", "sys_normal_disable"],
   data() {
     return {
       loading: false,
       showSearch: true,
+      importOpen: false,
       interfacePending: false,
       ids: [],
       single: true,
@@ -485,7 +498,7 @@ export default {
         bankId: this.bankId,
         questionType: "1",
         difficultyLevel: "2",
-        score: 5,
+        score: this.getDefaultScore("1"),
         questionTitle: "",
         answerText: "",
         analysis: "",
@@ -498,23 +511,44 @@ export default {
     },
     /** 构造默认选项 */
     createOptionList(questionType) {
-      if (String(questionType) === "3") {
+      const t = String(questionType)
+      if (t === "3") {
+        // 判断题：正确/错误，默认"正确"
         return [
           { optionLabel: "A", optionContent: "正确", checked: true },
           { optionLabel: "B", optionContent: "错误", checked: false }
         ]
       }
-      return ["A", "B", "C", "D"].map(label => ({
-        optionLabel: label,
-        optionContent: "",
-        checked: false
-      }))
+      if (t === "1") {
+        // 单选题：A/B/C/D，默认 A 正确
+        return ["A", "B", "C", "D"].map((label, i) => ({
+          optionLabel: label,
+          optionContent: "",
+          checked: i === 0
+        }))
+      }
+      if (t === "2") {
+        // 多选题：A/B/C/D，无默认正确选项
+        return ["A", "B", "C", "D"].map(label => ({
+          optionLabel: label,
+          optionContent: "",
+          checked: false
+        }))
+      }
+      // 填空、简答：无选项
+      return []
     },
-    /** 题型变化时重建选项 */
+    /** 题型变化时重建选项并设定默认分值 */
     handleQuestionTypeChange(value) {
       this.form.optionList = this.createOptionList(value)
       this.form.autoMarking = value === "5" ? "0" : "1"
       this.form.answerText = ""
+      this.form.score = this.getDefaultScore(value)
+    },
+    /** 题型对应默认分值 */
+    getDefaultScore(type) {
+      const scoreMap = { "1": 2, "2": 3, "3": 2, "4": 3, "5": 10 }
+      return scoreMap[type] != null ? scoreMap[type] : 5
     },
     /** 返回题库管理 */
     goBackBankManage() {
@@ -567,6 +601,10 @@ export default {
         this.$modal.msgSuccess("删除成功")
         this.getList()
       }).catch(() => {})
+    },
+    /** 批量导入成功回调 */
+    onImportSuccess() {
+      this.getList()
     },
     /** 取消弹窗 */
     cancel() {

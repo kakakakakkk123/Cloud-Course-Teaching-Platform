@@ -3,6 +3,7 @@ package com.ruoyi.system.domain.exam;
 import java.math.BigDecimal;
 import java.util.List;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.core.domain.BaseEntity;
@@ -83,6 +84,7 @@ public class EduQuestion extends BaseEntity
         this.questionId = questionId;
     }
 
+    @NotNull(message = "所属题库不能为空")
     public Long getBankId()
     {
         return bankId;
