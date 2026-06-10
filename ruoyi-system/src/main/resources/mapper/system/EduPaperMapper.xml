@@ -114,7 +114,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <insert id="batchInsertPaperCourse">
-        insert into edu_paper_course (paper_id, course_id, create_time)
+        insert ignore into edu_paper_course (paper_id, course_id, create_time)
         values
         <foreach collection="courseIds" item="courseId" separator=",">
             (#{paperId}, #{courseId}, sysdate())
