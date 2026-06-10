@@ -74,4 +74,9 @@ public interface EduQuestionMapper
      * @return 结果
      */
     public int batchInsertOption(List<EduQuestionOption> optionList);
+
+    /**
+     * 统计题库下启用试题总数
+     */
+    public int countByBankId(Long bankId);
 }

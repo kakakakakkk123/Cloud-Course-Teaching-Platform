@@ -196,13 +196,13 @@ export default {
     },
     computedObjective() {
       return this.paperQuestions
-        .filter(q => ["1", "2", "3"].includes(q.questionType))
+        .filter(q => ["1", "2", "3", "4"].includes(q.questionType))
         .reduce((sum, q) => sum + (Number(q.questionScore) || 0), 0)
         .toFixed(1)
     },
     computedSubjective() {
       return this.paperQuestions
-        .filter(q => ["4", "5"].includes(q.questionType))
+        .filter(q => ["5"].includes(q.questionType))
         .reduce((sum, q) => sum + (Number(q.questionScore) || 0), 0)
         .toFixed(1)
     }
