@@ -303,6 +303,11 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
         EduExam exam = getPublishedExam(record.getExamId());
         List<EduExamQuestion> questionList = examRuntimeMapper.selectExamQuestionList(exam.getExamId());
         List<EduExamAnswer> answerList = examRuntimeMapper.selectExamAnswerListByRecordId(recordId);
+        if (isExamExpired(record, exam))
+        {
+            finishExamRecord(record.getRecordId(), exam, questionList, answerList);
+            throw new ServiceException("考试时间已截止，系统已自动结束本次作答");
+        }
 
         StudentExamPaperVO vo = new StudentExamPaperVO();
         vo.setRecordId(record.getRecordId());
@@ -379,6 +384,56 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
         EduExam exam = getPublishedExam(record.getExamId());
         List<EduExamQuestion> questionList = examRuntimeMapper.selectExamQuestionList(exam.getExamId());
         List<EduExamAnswer> answerList = examRuntimeMapper.selectExamAnswerListByRecordId(recordId);
+        if (StringUtils.isEmpty(questionList) || StringUtils.isEmpty(answerList))
+        {
+            throw new ServiceException("当前考试缺少题目明细，无法提交");
+        }
+
+        Map<Long, EduExamQuestion> questionMap = new HashMap<>();
+        for (EduExamQuestion question : questionList)
+        {
+            questionMap.put(question.getQuestionId(), question);
+        }
+
+        BigDecimal objectiveScore = ZERO_SCORE;
+        boolean hasManualQuestion = false;
+        for (EduExamAnswer answer : answerList)
+        {
+            EduExamQuestion question = questionMap.get(answer.getQuestionId());
+            if (question == null)
+            {
+                continue;
+            }
+            if (!"1".equals(question.getAutoMarking()) || "5".equals(question.getQuestionType()))
+            {
+                hasManualQuestion = true;
+                continue;
+            }
+
+            boolean correct = judgeAnswer(question, answer.getStudentAnswer());
+            BigDecimal actualScore = correct ? defaultScore(question.getQuestionScore()) : ZERO_SCORE;
+            answer.setIsCorrect(correct ? "1" : "0");
+            answer.setActualScore(actualScore);
+            examRuntimeMapper.updateStudentAnswer(answer);
+            objectiveScore = objectiveScore.add(actualScore);
+        }
+
+        EduExamRecord finishRecord = new EduExamRecord();
+        finishRecord.setRecordId(recordId);
+        finishRecord.setObjectiveScore(objectiveScore);
+        finishRecord.setSubjectiveScore(ZERO_SCORE);
+        finishRecord.setTotalScore(objectiveScore);
+        finishRecord.setResultStatus(comparePassFlag(objectiveScore, exam.getPassScore()));
+        finishRecord.setCheckedFlag(hasManualQuestion ? "0" : "1");
+        finishRecord.setRecordStatus(hasManualQuestion ? "2" : "3");
+        if (studentLearningMapper.finishExamRecord(finishRecord) <= 0)
+        {
+            throw new ServiceException("考试记录不存在或已提交");
+        }
+    }
+
+    private void finishExamRecord(Long recordId, EduExam exam, List<EduExamQuestion> questionList, List<EduExamAnswer> answerList)
+    {
         if (StringUtils.isEmpty(questionList) || StringUtils.isEmpty(answerList))
         {
             throw new ServiceException("当前考试缺少题目明细，无法提交");
@@ -694,6 +749,12 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
         long usedSeconds = Math.max(0, (System.currentTimeMillis() - record.getStartTime().getTime()) / 1000);
         long remaining = totalSeconds - usedSeconds;
         return remaining > 0 ? (int) remaining : 0;
+    }
+
+    private boolean isExamExpired(EduExamRecord record, EduExam exam)
+    {
+        int totalSeconds = defaultInt(exam.getDurationMinutes()) * 60;
+        return totalSeconds > 0 && calculateRemainingSeconds(record, exam) <= 0;
     }
 
     private boolean judgeAnswer(EduExamQuestion question, String studentAnswer)
