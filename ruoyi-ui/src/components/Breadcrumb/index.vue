@@ -37,21 +37,37 @@ export default {
   },
   methods: {
     getBreadcrumb() {
-      // only show routes with meta.title
       let matched = []
-      const router = this.$route
-      const pathNum = this.findPathNum(router.path)
-      // multi-level menu
+      const route = this.$route
+      const pathNum = this.findPathNum(route.path)
+
       if (pathNum > 2) {
+        // 多级路径：先从后台菜单树搜索父级层次
         const reg = /\/\w+/gi
-        const pathList = router.path.match(reg).map((item, index) => {
+        const pathList = route.path.match(reg).map((item, index) => {
           if (index !== 0) item = item.slice(1)
           return item
         })
-        this.getMatched(pathList, this.$store.getters.defaultRoutes, matched)
+        // 去掉末段参数（如 123），只搜菜单路径
+        const parentSegments = pathList.slice(0, -1)
+        this.getMatched(parentSegments, this.$store.getters.defaultRoutes, matched)
+
+        // 如果 route 有 activeMenu，尝试注入对应的父菜单（如"题库管理"）
+        if (route.meta && route.meta.activeMenu) {
+          const parentMenu = this.findRouteByPath(route.meta.activeMenu, this.$store.getters.defaultRoutes)
+          if (parentMenu && !matched.some(m => m.path === parentMenu.path)) {
+            matched.push(parentMenu)
+          }
+        }
+
+        // 当前页面自身作为末级
+        if (route.meta && route.meta.title) {
+          matched.push({ path: route.path, meta: { title: route.meta.title } })
+        }
       } else {
-        matched = router.matched.filter(item => item.meta && item.meta.title)
+        matched = route.matched.filter(item => item.meta && item.meta.title)
       }
+
       if (!this.isHomeRoute(matched[0])) {
         matched = [this.homeBreadcrumb()].concat(matched)
       }
@@ -67,7 +83,7 @@ export default {
       return num
     },
     getMatched(pathList, routeList, matched) {
-      let data = routeList.find(item => item.path == pathList[0] || (item.name += '').toLowerCase() == pathList[0])
+      let data = routeList.find(item => item.path == pathList[0] || String(item.name || '').toLowerCase() == pathList[0])
       if (data) {
         matched.push(data)
         if (data.children && pathList.length) {
@@ -75,6 +91,20 @@ export default {
           this.getMatched(pathList, data.children, matched)
         }
       }
+    },
+    findRouteByPath(targetPath, routeList) {
+      if (!targetPath || !routeList) return null
+      for (const route of routeList) {
+        // 匹配绝对路径或相对路径拼接
+        if (route.path === targetPath || (route.path && targetPath.endsWith('/' + route.path))) {
+          return route
+        }
+        if (route.children) {
+          const found = this.findRouteByPath(targetPath, route.children)
+          if (found) return found
+        }
+      }
+      return null
     },
     isDashboard(route) {
       const name = route && route.name

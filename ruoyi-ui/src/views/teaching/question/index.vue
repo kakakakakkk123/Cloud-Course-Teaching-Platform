@@ -6,9 +6,9 @@
           <el-button plain icon="el-icon-arrow-left" @click="goBackBankManage">返回题库管理</el-button>
         </div>
         <div class="question-manage-card__meta">
-          <div class="question-manage-card__title">试题管理</div>
+          <div class="question-manage-card__title">{{ currentBankName }} - 试题管理</div>
           <div class="question-manage-card__desc">
-            当前题库：{{ currentBankName }}
+            题库编号 {{ bankId || "-" }} · 共 {{ total }} 道试题
           </div>
         </div>
       </div>
