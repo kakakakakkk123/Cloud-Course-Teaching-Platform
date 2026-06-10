@@ -49,4 +49,24 @@ public interface EduExamMapper
      * @return 结果
      */
     public int deleteEduExamByIds(Long[] examIds);
+
+    /**
+     * 查询考试关联的课程ID列表
+     */
+    public List<Long> selectCourseIdsByExamId(Long examId);
+
+    /**
+     * 查询考试关联的课程名称（逗号分隔）
+     */
+    public String selectCourseNamesByExamId(Long examId);
+
+    /**
+     * 批量插入考试课程关联
+     */
+    public int batchInsertExamCourse(@org.apache.ibatis.annotations.Param("examId") Long examId, @org.apache.ibatis.annotations.Param("courseIds") List<Long> courseIds);
+
+    /**
+     * 删除考试所有课程关联
+     */
+    public int deleteExamCourseByExamId(Long examId);
 }

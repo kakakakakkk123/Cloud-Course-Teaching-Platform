@@ -177,11 +177,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             ),
             p.objective_score = (
                 select coalesce(sum(pq.question_score), 0) from edu_paper_question pq
-                where pq.paper_id = #{paperId} and pq.question_type in ('1', '2', '3')
+                where pq.paper_id = #{paperId} and pq.question_type in ('1', '2', '3', '4')
             ),
             p.subjective_score = (
                 select coalesce(sum(pq.question_score), 0) from edu_paper_question pq
-                where pq.paper_id = #{paperId} and pq.question_type in ('4', '5')
+                where pq.paper_id = #{paperId} and pq.question_type = '5'
             ),
             p.update_time = sysdate()
         where p.paper_id = #{paperId}

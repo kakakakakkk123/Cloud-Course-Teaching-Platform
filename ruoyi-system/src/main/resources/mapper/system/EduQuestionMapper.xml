@@ -126,6 +126,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from edu_question_option where question_id = #{questionId}
     </delete>
 
+    <select id="countByBankId" parameterType="Long" resultType="int">
+        select count(1) from edu_question
+        where bank_id = #{bankId}
+          and del_flag = '0'
+          and status = '0'
+    </select>
+
     <insert id="batchInsertOption" parameterType="java.util.List">
         insert into edu_question_option (
             question_id, option_label, option_content, is_correct, sort_order

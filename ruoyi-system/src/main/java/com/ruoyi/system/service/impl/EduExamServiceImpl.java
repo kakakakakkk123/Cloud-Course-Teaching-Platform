@@ -36,13 +36,25 @@ public class EduExamServiceImpl implements IEduExamService
     @Override
     public EduExam selectEduExamById(Long examId)
     {
-        return examMapper.selectEduExamById(examId);
+        EduExam exam = examMapper.selectEduExamById(examId);
+        if (exam != null)
+        {
+            exam.setCourseIds(examMapper.selectCourseIdsByExamId(examId));
+            exam.setCourseNames(examMapper.selectCourseNamesByExamId(examId));
+        }
+        return exam;
     }
 
     @Override
     public List<EduExam> selectEduExamList(EduExam exam)
     {
-        return examMapper.selectEduExamList(exam);
+        List<EduExam> list = examMapper.selectEduExamList(exam);
+        for (EduExam e : list)
+        {
+            e.setCourseIds(examMapper.selectCourseIdsByExamId(e.getExamId()));
+            e.setCourseNames(examMapper.selectCourseNamesByExamId(e.getExamId()));
+        }
+        return list;
     }
 
     @Override
@@ -51,7 +63,9 @@ public class EduExamServiceImpl implements IEduExamService
     {
         fillExamDefaults(exam);
         assertPaperNotEmpty(exam.getPaperId());
+        applyCourseIdFromCourseIds(exam);
         int rows = examMapper.insertEduExam(exam);
+        syncExamCourses(exam);
         syncCourseExamContent(exam, true);
         return rows;
     }
@@ -62,7 +76,9 @@ public class EduExamServiceImpl implements IEduExamService
     {
         fillExamDefaults(exam);
         assertPaperNotEmpty(exam.getPaperId());
+        applyCourseIdFromCourseIds(exam);
         int rows = examMapper.updateEduExam(exam);
+        syncExamCourses(exam);
         EduExam latest = examMapper.selectEduExamById(exam.getExamId());
         if (latest != null)
         {
@@ -77,17 +93,73 @@ public class EduExamServiceImpl implements IEduExamService
     @Override
     public int deleteEduExamByIds(Long[] examIds)
     {
+        for (Long examId : examIds)
+        {
+            examMapper.deleteExamCourseByExamId(examId);
+        }
         return examMapper.deleteEduExamByIds(examIds);
+    }
+
+    /**
+     * 从前端传入的 courseIds 中取出第一个作为旧版 course_id，保证兼容
+     */
+    private void applyCourseIdFromCourseIds(EduExam exam)
+    {
+        List<Long> courseIds = exam.getCourseIds();
+        if (courseIds != null && !courseIds.isEmpty())
+        {
+            exam.setCourseId(courseIds.get(0));
+        }
+        else if (exam.getCourseId() == null)
+        {
+            exam.setCourseId(null);
+        }
+    }
+
+    /**
+     * 同步考试多课程关联表
+     */
+    private void syncExamCourses(EduExam exam)
+    {
+        if (exam.getExamId() == null)
+        {
+            return;
+        }
+        examMapper.deleteExamCourseByExamId(exam.getExamId());
+        List<Long> courseIds = exam.getCourseIds();
+        if (courseIds != null && !courseIds.isEmpty())
+        {
+            examMapper.batchInsertExamCourse(exam.getExamId(), courseIds);
+        }
     }
 
     private void syncCourseExamContent(EduExam exam, boolean isInsert)
     {
-        if (exam == null || exam.getCourseId() == null || exam.getExamId() == null || !"1".equals(exam.getSyncCourseContent()))
+        if (exam == null || exam.getExamId() == null || !"1".equals(exam.getSyncCourseContent()))
         {
             return;
         }
+        // 收集需要同步的课程：新版多课程 + 旧版单课程兜底
+        java.util.Set<Long> courseIds = new java.util.LinkedHashSet<>();
+        if (exam.getCourseIds() != null)
+        {
+            courseIds.addAll(exam.getCourseIds());
+        }
+        if (exam.getCourseId() != null)
+        {
+            courseIds.add(exam.getCourseId());
+        }
+        for (Long courseId : courseIds)
+        {
+            syncSingleCourseExamContent(exam, courseId);
+        }
+    }
 
-        EduCourseContent existing = courseContentMapper.selectExamContentByCourseIdAndExamId(exam.getCourseId(), exam.getExamId());
+    private void syncSingleCourseExamContent(EduExam exam, Long courseId)
+    {
+        if (courseId == null) return;
+
+        EduCourseContent existing = courseContentMapper.selectExamContentByCourseIdAndExamId(courseId, exam.getExamId());
         if (!"1".equals(exam.getStatus()))
         {
             if (existing != null)
@@ -103,7 +175,7 @@ public class EduExamServiceImpl implements IEduExamService
         if (existing == null)
         {
             EduCourseContent content = new EduCourseContent();
-            content.setCourseId(exam.getCourseId());
+            content.setCourseId(courseId);
             content.setContentTitle(exam.getExamName());
             content.setContentType("5");
             content.setSourceType("1");
@@ -112,7 +184,7 @@ public class EduExamServiceImpl implements IEduExamService
             content.setDurationSeconds(defaultDurationSeconds(exam.getDurationMinutes()));
             content.setExamId(exam.getExamId());
             content.setIsPreview("0");
-            content.setSortOrder(defaultSortOrder(exam.getCourseId()));
+            content.setSortOrder(defaultSortOrder(courseId));
             content.setPublishStatus("1");
             content.setCreateBy(exam.getCreateBy());
             courseContentMapper.insertEduCourseContent(content);

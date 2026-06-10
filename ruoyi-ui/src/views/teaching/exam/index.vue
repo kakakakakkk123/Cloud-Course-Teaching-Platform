@@ -87,7 +87,12 @@
 
       <el-table v-loading="loading" :data="examList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="考试名称" prop="examName" min-width="220" show-overflow-tooltip />
+        <el-table-column label="考试名称" prop="examName" min-width="180" show-overflow-tooltip />
+        <el-table-column label="关联课程" min-width="160" show-overflow-tooltip>
+          <template slot-scope="scope">
+            <span>{{ scope.row.courseNames || scope.row.courseName || "未关联课程" }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="开始时间" width="160" align="center">
           <template slot-scope="scope">
             <span>{{ parseTime(scope.row.startTime) || "-" }}</span>
@@ -151,6 +156,29 @@
         </el-row>
 
         <el-row :gutter="18">
+          <el-col :span="24">
+            <el-form-item label="关联课程" prop="courseIds">
+              <el-select
+                v-model="form.courseIds"
+                multiple
+                collapse-tags
+                clearable
+                filterable
+                placeholder="可选择多个课程，不选则为通用考试"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="item in courseOptions"
+                  :key="item.courseId"
+                  :label="item.courseName"
+                  :value="item.courseId"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="18">
           <el-col :span="12">
             <el-form-item label="开始时间" prop="startTime">
               <el-date-picker
@@ -187,7 +215,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="最多作答" prop="maxAttemptCount">
+            <el-form-item label="最多作答次数" prop="maxAttemptCount">
               <el-input-number v-model="form.maxAttemptCount" :min="1" :max="20" controls-position="right" style="width: 100%" />
             </el-form-item>
           </el-col>
@@ -266,6 +294,7 @@ import {
   updateExam,
   delExam
 } from "@/api/edu/exam"
+import { listCourse } from "@/api/edu/course"
 
 export default {
   name: "TeachingExamManage",
@@ -277,6 +306,7 @@ export default {
       interfacePending: false,
       ids: [],
       single: true,
+      courseOptions: [],
       multiple: true,
       total: 0,
       examList: [],
@@ -346,6 +376,7 @@ export default {
   created() {
     this.queryParams.paperId = this.paperId
     this.getList()
+    this.getCourseOptions()
   },
   methods: {
     dictOptions(type, fallback) {
@@ -378,6 +409,19 @@ export default {
         this.loading = false
       })
     },
+    /** 查询课程下拉选项 */
+    getCourseOptions() {
+      listCourse({
+        pageNum: 1,
+        pageSize: 1000,
+        publishStatus: undefined,
+        allowRegister: undefined
+      }).then(response => {
+        this.courseOptions = response.rows || []
+      }).catch(() => {
+        this.courseOptions = []
+      })
+    },
     /** 获取状态文案 */
     getStatusText(value) {
       return this.getOptionLabel(this.statusOptions, value, "未知")
@@ -408,7 +452,8 @@ export default {
       this.form = {
         examId: undefined,
         paperId: this.paperId,
-        courseId: this.currentCourseId,
+        courseId: undefined,
+        courseIds: [],
         examName: "",
         startTime: "",
         endTime: "",
@@ -448,7 +493,8 @@ export default {
       getExam(examId).then(response => {
         const data = response.data || {}
         this.form = Object.assign({}, this.form, data, {
-          courseId: data.courseId || this.currentCourseId,
+          courseId: data.courseId || undefined,
+          courseIds: data.courseIds || [],
           totalScore: data.totalScore || this.currentPaperTotalScore,
           syncCourseContent: data.syncCourseContent || "1"
         })

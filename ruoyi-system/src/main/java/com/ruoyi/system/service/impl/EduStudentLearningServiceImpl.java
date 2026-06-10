@@ -721,16 +721,32 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
         }
     }
 
-    private void ensureStudentEnrolled(Long courseId, Long studentId)
+    private void ensureStudentEnrolled(EduExam exam, Long studentId)
     {
-        if (courseId == null)
+        // 收集考试关联的所有课程
+        java.util.Set<Long> courseIds = new java.util.LinkedHashSet<>();
+        if (exam.getCourseId() != null)
+        {
+            courseIds.add(exam.getCourseId());
+        }
+        List<Long> multiCourseIds = examMapper.selectCourseIdsByExamId(exam.getExamId());
+        if (multiCourseIds != null)
+        {
+            courseIds.addAll(multiCourseIds);
+        }
+        // 通用考试（未绑定任何课程）不限制
+        if (courseIds.isEmpty())
         {
             return;
         }
-        if (courseEnrollMapper.selectEduCourseEnroll(courseId, studentId) == null)
+        for (Long courseId : courseIds)
         {
-            throw new ServiceException("请先注册该课程再参加考试");
+            if (courseEnrollMapper.selectEduCourseEnroll(courseId, studentId) != null)
+            {
+                return;
+            }
         }
+        throw new ServiceException("请先注册考试关联的课程再参加考试");
     }
 
     private int defaultInt(Integer value)

@@ -40,6 +40,11 @@ public class EduExam extends BaseEntity
     private String courseName;
     private String syncCourseContent;
 
+    /** 关联课程ID列表（新版多课程绑定） */
+    private List<Long> courseIds;
+    /** 多课程名称，逗号分隔，用于列表展示 */
+    private String courseNames;
+
     public Long getExamId()
     {
         return examId;
@@ -269,6 +274,26 @@ public class EduExam extends BaseEntity
     public void setSyncCourseContent(String syncCourseContent)
     {
         this.syncCourseContent = syncCourseContent;
+    }
+
+    public List<Long> getCourseIds()
+    {
+        return courseIds;
+    }
+
+    public void setCourseIds(List<Long> courseIds)
+    {
+        this.courseIds = courseIds;
+    }
+
+    public String getCourseNames()
+    {
+        return courseNames;
+    }
+
+    public void setCourseNames(String courseNames)
+    {
+        this.courseNames = courseNames;
     }
 
     @Override
