@@ -79,9 +79,14 @@ public class SysPasswordService
         return retryCount != null && retryCount >= currentMaxRetryCount();
     }
 
+    public void checkLoginLocked(String username)
+    {
+        checkLocked(username, IpUtils.getIpAddr(), getDeviceId());
+    }
+
     private void checkLocked(String username, String ip, String deviceId)
     {
-        if (isLocked(getCacheKey(username))
+        if ((StringUtils.isNotEmpty(username) && isLocked(getCacheKey(username)))
                 || isLocked(getIpCacheKey(ip))
                 || isLocked(getDeviceCacheKey(deviceId)))
         {
@@ -89,12 +94,26 @@ public class SysPasswordService
         }
     }
 
-    private void increaseRetryCount(String key)
+    private boolean increaseRetryCount(String key)
     {
         Integer retryCount = redisCache.getCacheObject(key);
         retryCount = retryCount == null ? 1 : retryCount + 1;
         redisCache.setCacheObject(key, retryCount, currentLockTime(), TimeUnit.MINUTES);
-        if (retryCount >= currentMaxRetryCount())
+        return retryCount >= currentMaxRetryCount();
+    }
+
+    public void recordLoginFailure(String username)
+    {
+        String ip = IpUtils.getIpAddr();
+        String deviceId = getDeviceId();
+        boolean locked = false;
+        if (StringUtils.isNotEmpty(username))
+        {
+            locked = increaseRetryCount(getCacheKey(username));
+        }
+        locked = increaseRetryCount(getIpCacheKey(ip)) || locked;
+        locked = increaseRetryCount(getDeviceCacheKey(deviceId)) || locked;
+        if (locked)
         {
             throw new UserPasswordRetryLimitExceedException(currentMaxRetryCount(), currentLockTime());
         }
@@ -112,9 +131,7 @@ public class SysPasswordService
 
         if (!matches(user, password))
         {
-            increaseRetryCount(getCacheKey(username));
-            increaseRetryCount(getIpCacheKey(ip));
-            increaseRetryCount(getDeviceCacheKey(deviceId));
+            recordLoginFailure(username);
             throw new UserPasswordNotMatchException();
         }
         else

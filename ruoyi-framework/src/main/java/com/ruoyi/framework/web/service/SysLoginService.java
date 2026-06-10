@@ -18,6 +18,7 @@ import com.ruoyi.common.exception.user.CaptchaException;
 import com.ruoyi.common.exception.user.CaptchaExpireException;
 import com.ruoyi.common.exception.user.UserNotExistsException;
 import com.ruoyi.common.exception.user.UserPasswordNotMatchException;
+import com.ruoyi.common.exception.user.UserPasswordRetryLimitExceedException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.MessageUtils;
 import com.ruoyi.common.utils.ServletUtils;
@@ -55,6 +56,9 @@ public class SysLoginService
     @Autowired
     private ISysConfigService configService;
 
+    @Autowired
+    private SysPasswordService passwordService;
+
     /**
      * 登录验证
      * 
@@ -67,6 +71,8 @@ public class SysLoginService
     public String login(String username, String password, String code, String uuid)
     {
         // 验证码校验
+        // 先拦截已锁定的账号/IP/设备，避免验证码刷新导致锁定提示被覆盖。
+        passwordService.checkLoginLocked(username);
         validateCaptcha(username, code, uuid);
         // 登录前置校验
         loginPreCheck(username, password);
@@ -81,7 +87,13 @@ public class SysLoginService
         }
         catch (Exception e)
         {
-            if (e instanceof BadCredentialsException)
+            UserPasswordRetryLimitExceedException retryLimitException = findRetryLimitException(e);
+            if (retryLimitException != null)
+            {
+                AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, retryLimitException.getMessage()));
+                throw retryLimitException;
+            }
+            else if (e instanceof BadCredentialsException)
             {
                 AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.password.not.match")));
                 throw new UserPasswordNotMatchException();
@@ -103,6 +115,20 @@ public class SysLoginService
         return tokenService.createToken(loginUser);
     }
 
+    private UserPasswordRetryLimitExceedException findRetryLimitException(Throwable throwable)
+    {
+        Throwable current = throwable;
+        while (current != null)
+        {
+            if (current instanceof UserPasswordRetryLimitExceedException)
+            {
+                return (UserPasswordRetryLimitExceedException) current;
+            }
+            current = current.getCause();
+        }
+        return null;
+    }
+
     /**
      * 校验验证码
      * 
@@ -121,12 +147,14 @@ public class SysLoginService
             if (captcha == null)
             {
                 AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.jcaptcha.expire")));
+                passwordService.recordLoginFailure(username);
                 throw new CaptchaExpireException();
             }
             redisCache.deleteObject(verifyKey);
             if (!code.equalsIgnoreCase(captcha))
             {
                 AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.jcaptcha.error")));
+                passwordService.recordLoginFailure(username);
                 throw new CaptchaException();
             }
         }
