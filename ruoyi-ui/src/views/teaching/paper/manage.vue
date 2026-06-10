@@ -419,9 +419,9 @@ export default {
         paperName: "",
         paperDesc: "",
         questionCount: 0,
-        totalScore: 100,
-        objectiveScore: 60,
-        subjectiveScore: 40,
+        totalScore: 0,
+        objectiveScore: 0,
+        subjectiveScore: 0,
         status: "0",
         composeMode: "1"
       }

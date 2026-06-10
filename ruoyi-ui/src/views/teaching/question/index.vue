@@ -496,9 +496,9 @@ export default {
       this.form = {
         questionId: undefined,
         bankId: this.bankId,
-        questionType: "1",
+        questionType: "",
         difficultyLevel: "2",
-        score: this.getDefaultScore("1"),
+        score: 0,
         questionTitle: "",
         answerText: "",
         analysis: "",
