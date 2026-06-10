@@ -72,7 +72,7 @@ public class SysDeptServiceImpl implements ISysDeptService
         {
             return new ArrayList<TreeSelect>();
         }
-        List<SysDept> filtered = retainDeptLevels(teachingRoot.getChildren(), 0, 1);
+        List<SysDept> filtered = retainDeptLevels(teachingRoot.getChildren(), 0, 2);
         return filtered.stream().map(TreeSelect::new).collect(Collectors.toList());
     }
 

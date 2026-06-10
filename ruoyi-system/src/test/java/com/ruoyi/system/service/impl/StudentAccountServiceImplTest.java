@@ -120,6 +120,7 @@ class StudentAccountServiceImplTest
         whenConfigValues(Map.of());
         when(deptService.selectDeptById(1L)).thenReturn(normalDept(1L, 0L));
         when(deptService.selectDeptById(2L)).thenReturn(normalDept(2L, 1L));
+        when(deptService.selectDeptById(3L)).thenReturn(normalDept(3L, 2L));
         when(userService.checkUserNameUnique(any(SysUser.class))).thenReturn(true);
         when(userService.checkStudentNoUnique(any(SysUser.class))).thenReturn(true);
         when(userService.checkPhoneUnique(any(SysUser.class))).thenReturn(true);
@@ -140,7 +141,7 @@ class StudentAccountServiceImplTest
         SysUser savedUser = userCaptor.getValue();
         assertEquals("20240003", savedUser.getUserName());
         assertEquals("20240003", savedUser.getStudentNo());
-        assertEquals(2L, savedUser.getDeptId());
+        assertEquals(3L, savedUser.getDeptId());
         assertArrayEquals(new Long[] { 4L }, savedUser.getRoleIds());
         assertEquals(UserConstants.NORMAL, savedUser.getStatus());
         assertTrue(SecurityUtils.matchesPassword("student123", savedUser.getPassword()));
@@ -163,11 +164,26 @@ class StudentAccountServiceImplTest
     }
 
     @Test
+    void registerRejectsMismatchedMajorAndClass()
+    {
+        whenConfigValues(Map.of());
+        when(deptService.selectDeptById(1L)).thenReturn(normalDept(1L, 0L));
+        when(deptService.selectDeptById(2L)).thenReturn(normalDept(2L, 1L));
+        when(deptService.selectDeptById(3L)).thenReturn(normalDept(3L, 99L));
+
+        String result = service.register(validRegisterBody());
+
+        assertNotEquals("", result);
+        verify(userService, never()).insertUser(any(SysUser.class));
+    }
+
+    @Test
     void registerRejectsDuplicateStudentNo()
     {
         whenConfigValues(Map.of());
         when(deptService.selectDeptById(1L)).thenReturn(normalDept(1L, 0L));
         when(deptService.selectDeptById(2L)).thenReturn(normalDept(2L, 1L));
+        when(deptService.selectDeptById(3L)).thenReturn(normalDept(3L, 2L));
         when(userService.checkUserNameUnique(any(SysUser.class))).thenReturn(true);
         when(userService.checkStudentNoUnique(any(SysUser.class))).thenReturn(false);
 
@@ -183,6 +199,7 @@ class StudentAccountServiceImplTest
         whenConfigValues(Map.of());
         when(deptService.selectDeptById(1L)).thenReturn(normalDept(1L, 0L));
         when(deptService.selectDeptById(2L)).thenReturn(normalDept(2L, 1L));
+        when(deptService.selectDeptById(3L)).thenReturn(normalDept(3L, 2L));
         when(userService.checkUserNameUnique(any(SysUser.class))).thenReturn(true);
         when(userService.checkStudentNoUnique(any(SysUser.class))).thenReturn(true);
         when(userService.checkPhoneUnique(any(SysUser.class))).thenReturn(true);
@@ -493,6 +510,7 @@ class StudentAccountServiceImplTest
         body.setGrade("2024");
         body.setAcademyId(1L);
         body.setMajorId(2L);
+        body.setClassId(3L);
         return body;
     }
 

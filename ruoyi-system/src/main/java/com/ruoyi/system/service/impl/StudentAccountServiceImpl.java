@@ -82,6 +82,7 @@ public class StudentAccountServiceImpl implements IStudentAccountService
         String email = StringUtils.trim(registerBody.getEmail());
         Long academyId = registerBody.getAcademyId();
         Long majorId = registerBody.getMajorId();
+        Long classId = registerBody.getClassId();
 
         if (!studentRegisterEnabled())
         {
@@ -122,6 +123,11 @@ public class StudentAccountServiceImpl implements IStudentAccountService
             return "请选择专业。";
         }
 
+        if (classId == null)
+        {
+            return "请选择班级。";
+        }
+
         SysDept academy = deptService.selectDeptById(academyId);
         if (StringUtils.isNull(academy) || !UserConstants.DEPT_NORMAL.equals(academy.getStatus()))
         {
@@ -137,9 +143,19 @@ public class StudentAccountServiceImpl implements IStudentAccountService
             return "所选专业与学院不匹配。";
         }
 
+        SysDept classDept = deptService.selectDeptById(classId);
+        if (StringUtils.isNull(classDept) || !UserConstants.DEPT_NORMAL.equals(classDept.getStatus()))
+        {
+            return "所选班级不存在或已停用。";
+        }
+        if (!majorId.equals(classDept.getParentId()))
+        {
+            return "所选班级与专业不匹配。";
+        }
+
         SysUser user = new SysUser();
         user.setUserName(username);
-        user.setDeptId(majorId);
+        user.setDeptId(classId);
         user.setStudentNo(studentNo);
         user.setNickName(nickName);
         user.setPhonenumber(phonenumber);

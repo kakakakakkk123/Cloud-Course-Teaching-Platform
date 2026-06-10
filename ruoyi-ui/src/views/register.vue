@@ -131,6 +131,7 @@
                 style="width: 100%"
                 filterable
                 :disabled="!registerForm.academyId"
+                @change="handleMajorChange"
               >
                 <el-option
                   v-for="item in majorOptions"
@@ -142,12 +143,29 @@
             </el-form-item>
 
             <el-form-item prop="grade">
-              <el-select v-model="registerForm.grade" placeholder="请选择年级" style="width: 100%">
+              <el-select v-model="registerForm.grade" placeholder="请选择年级" style="width: 100%" :disabled="!registerForm.majorId" @change="handleGradeChange">
                 <el-option
                   v-for="item in gradeOptions"
                   :key="item"
                   :label="item"
                   :value="item"
+                />
+              </el-select>
+            </el-form-item>
+
+            <el-form-item prop="classId">
+              <el-select
+                v-model="registerForm.classId"
+                placeholder="请选择班级"
+                style="width: 100%"
+                filterable
+                :disabled="!registerForm.majorId || !registerForm.grade"
+              >
+                <el-option
+                  v-for="item in classOptions"
+                  :key="item.id"
+                  :label="item.label"
+                  :value="item.id"
                 />
               </el-select>
             </el-form-item>
@@ -239,6 +257,7 @@ export default {
         nickName: "",
         academyId: undefined,
         majorId: undefined,
+        classId: undefined,
         grade: "",
         phonenumber: "",
         email: "",
@@ -256,6 +275,7 @@ export default {
       emailCodeTimer: null,
       academyOptions: [],
       majorOptionsMap: {},
+      classOptionsMap: {},
       gradeOptions: Array.from({ length: 8 }, (_, index) => `${currentYear + 1 - index}级`),
       highlights: [
         { value: "学院 / 专业", label: "精确归属" },
@@ -289,6 +309,9 @@ export default {
         ],
         majorId: [
           { required: true, trigger: "change", message: "请选择专业" }
+        ],
+        classId: [
+          { required: true, trigger: "change", message: "请选择班级" }
         ],
         grade: [
           { required: true, trigger: "change", message: "请选择年级" },
@@ -324,6 +347,14 @@ export default {
     majorOptions() {
       return this.majorOptionsMap[this.registerForm.academyId] || []
     },
+    classOptions() {
+      const grade = this.extractGrade(this.registerForm.grade)
+      const options = this.classOptionsMap[this.registerForm.majorId] || []
+      if (!grade) {
+        return []
+      }
+      return options.filter(item => this.extractGrade(item.label) === grade)
+    },
     emailCodeButtonText() {
       return this.emailCodeCountdown > 0 ? `${this.emailCodeCountdown}s` : "Get Code"
     }
@@ -351,6 +382,10 @@ export default {
         }
       }).catch(() => {})
     },
+    extractGrade(value) {
+      const matched = String(value || "").match(/\d{4}/)
+      return matched ? matched[0] : ""
+    },
     loadRegisterDeptOptions() {
       getRegisterDeptOptions().then(res => {
         const academyOptions = (res.data || []).map(item => ({
@@ -362,8 +397,18 @@ export default {
         this.majorOptionsMap = academyOptions.reduce((acc, item) => {
           acc[item.id] = item.children.map(child => ({
             id: child.id,
-            label: child.label
+            label: child.label,
+            children: child.children || []
           }))
+          return acc
+        }, {})
+        this.classOptionsMap = academyOptions.reduce((acc, academy) => {
+          academy.children.forEach(major => {
+            acc[major.id] = (major.children || []).map(child => ({
+              id: child.id,
+              label: child.label
+            }))
+          })
           return acc
         }, {})
       }).catch(() => {
@@ -402,6 +447,15 @@ export default {
     },
     handleAcademyChange() {
       this.registerForm.majorId = undefined
+      this.registerForm.grade = ""
+      this.registerForm.classId = undefined
+    },
+    handleMajorChange() {
+      this.registerForm.grade = ""
+      this.registerForm.classId = undefined
+    },
+    handleGradeChange() {
+      this.registerForm.classId = undefined
     },
     handleStudentNoBlur() {
       if (!this.registerForm.username && this.registerForm.studentNo) {

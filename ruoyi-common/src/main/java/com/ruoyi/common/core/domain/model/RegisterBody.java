@@ -32,6 +32,8 @@ public class RegisterBody extends LoginBody
      */
     private Long majorId;
 
+    private Long classId;
+
     /**
      * 邮箱
      */
@@ -97,6 +99,16 @@ public class RegisterBody extends LoginBody
     public void setMajorId(Long majorId)
     {
         this.majorId = majorId;
+    }
+
+    public Long getClassId()
+    {
+        return classId;
+    }
+
+    public void setClassId(Long classId)
+    {
+        this.classId = classId;
     }
 
     public void setEmail(String email)
