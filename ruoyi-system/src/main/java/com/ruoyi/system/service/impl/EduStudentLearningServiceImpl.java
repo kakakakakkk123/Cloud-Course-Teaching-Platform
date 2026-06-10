@@ -459,37 +459,27 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
     {
         List<EduQuestion> result = new ArrayList<>();
         List<EduPaperQuestion> paperQuestionList = paperQuestionMapper.selectPaperQuestionList(paper.getPaperId());
-        if (StringUtils.isNotEmpty(paperQuestionList))
+        if (StringUtils.isEmpty(paperQuestionList))
         {
-            for (EduPaperQuestion relation : paperQuestionList)
+            throw new ServiceException("试卷「" + paper.getPaperName() + "」尚未组卷，无法生成考试题目快照");
+        }
+        for (EduPaperQuestion relation : paperQuestionList)
+        {
+            EduQuestion question = questionMapper.selectEduQuestionById(relation.getQuestionId());
+            if (question == null || !"1".equals(question.getStatus()))
             {
-                EduQuestion question = questionMapper.selectEduQuestionById(relation.getQuestionId());
-                if (question == null || !"1".equals(question.getStatus()))
-                {
-                    continue;
-                }
-                question.setOptionList(questionMapper.selectOptionListByQuestionId(question.getQuestionId()));
-                if (relation.getQuestionScore() != null)
-                {
-                    question.setScore(relation.getQuestionScore());
-                }
-                result.add(question);
+                continue;
             }
-            return result;
-        }
-
-        EduQuestion query = new EduQuestion();
-        query.setBankId(paper.getBankId());
-        query.setStatus("1");
-        List<EduQuestion> bankQuestionList = questionMapper.selectEduQuestionList(query);
-        if (StringUtils.isEmpty(bankQuestionList))
-        {
-            return Collections.emptyList();
-        }
-        for (EduQuestion question : bankQuestionList)
-        {
             question.setOptionList(questionMapper.selectOptionListByQuestionId(question.getQuestionId()));
+            if (relation.getQuestionScore() != null)
+            {
+                question.setScore(relation.getQuestionScore());
+            }
             result.add(question);
+        }
+        if (result.isEmpty())
+        {
+            throw new ServiceException("试卷「" + paper.getPaperName() + "」中所有题目已被删除或停用，无法开始考试");
         }
         return result;
     }
