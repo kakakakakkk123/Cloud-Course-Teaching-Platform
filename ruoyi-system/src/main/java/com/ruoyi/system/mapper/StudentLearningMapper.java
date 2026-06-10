@@ -32,5 +32,7 @@ public interface StudentLearningMapper
 
     public int finishExamReview(EduExamRecord record);
 
+    public int finishExamReview(EduExamRecord record);
+
     public List<StudentExamWrongQuestionVO> selectExamWrongQuestionList(@Param("recordId") Long recordId, @Param("studentId") Long studentId);
 }

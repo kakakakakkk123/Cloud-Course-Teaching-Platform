@@ -74,19 +74,7 @@ export const constantRoutes = [
     path: '/portal-entry',
     component: () => import('@/views/portal-entry'),
     hidden: true,
-    meta: { title: '鍓嶅彴鍏ュ彛' }
-  },
-  {
-    path: '/learning/exam/answer/:recordId(\\d+)',
-    component: () => import('@/views/learning/exam/answer'),
-    hidden: true,
-    meta: { title: '考试作答' }
-  },
-  {
-    path: '/learning/exam/result/:recordId(\\d+)',
-    component: () => import('@/views/learning/exam/result'),
-    hidden: true,
-    meta: { title: '考试结果' }
+    meta: { title: '前台入口' }
   },
   {
     path: '/404',

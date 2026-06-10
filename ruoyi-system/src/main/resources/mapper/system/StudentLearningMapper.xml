@@ -238,6 +238,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and exam_status = '1'
     </update>
 
+    <update id="finishExamReview" parameterType="com.ruoyi.system.domain.exam.EduExamRecord">
+        update edu_exam_record
+        set exam_status = #{recordStatus},
+            objective_score = #{objectiveScore},
+            subjective_score = #{subjectiveScore},
+            total_score = #{totalScore},
+            pass_flag = #{resultStatus},
+            checked_flag = #{checkedFlag},
+            update_by = #{updateBy},
+            update_time = sysdate()
+        where record_id = #{recordId}
+    </update>
+
     <select id="selectExamWrongQuestionList" resultMap="StudentExamWrongQuestionResult">
         select a.answer_id, a.record_id, a.exam_id, e.exam_name, r.paper_id, p.paper_name,
                r.course_id, c.course_name, a.question_id, a.question_type, a.question_order,
