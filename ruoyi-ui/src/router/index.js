@@ -120,7 +120,7 @@ export const dynamicRoutes = [
     path: '/account',
     component: Layout,
     hidden: true,
-    roles: ['admin'],
+    roles: ['teacher', 'admin'],
     children: [
       {
         path: 'all',
