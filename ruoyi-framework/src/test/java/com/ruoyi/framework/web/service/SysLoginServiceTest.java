@@ -7,7 +7,10 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,6 +20,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -24,9 +29,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import com.ruoyi.common.constant.CacheConstants;
+import com.ruoyi.common.core.redis.RedisCache;
+import com.ruoyi.common.exception.user.CaptchaException;
 import com.ruoyi.common.exception.user.BlackListException;
 import com.ruoyi.common.exception.user.UserNotExistsException;
 import com.ruoyi.common.exception.user.UserPasswordNotMatchException;
+import com.ruoyi.common.exception.user.UserPasswordRetryLimitExceedException;
 import com.ruoyi.common.utils.spring.SpringUtils;
 import com.ruoyi.system.service.ISysConfigService;
 
@@ -42,6 +51,15 @@ class SysLoginServiceTest
 
     @Mock
     private ISysConfigService configService;
+
+    @Mock
+    private AuthenticationManager authenticationManager;
+
+    @Mock
+    private RedisCache redisCache;
+
+    @Mock
+    private SysPasswordService passwordService;
 
     @InjectMocks
     private SysLoginService service;
@@ -112,6 +130,46 @@ class SysLoginServiceTest
         when(configService.selectConfigByKey(BLACK_IP_KEY)).thenReturn("10.0.0.*");
 
         assertThrows(BlackListException.class, () -> service.loginPreCheck("student01", "student123"));
+    }
+
+    @Test
+    void loginKeepsRetryLimitExceptionFromAuthenticationChain()
+    {
+        bindRequest("10.0.0.5", "Mozilla/5.0");
+        when(configService.selectCaptchaEnabled()).thenReturn(false);
+        when(configService.selectConfigByKey(BLACK_IP_KEY)).thenReturn("");
+        when(configService.selectConfigByKey(BLOCKED_UA_KEY)).thenReturn("");
+        when(authenticationManager.authenticate(any()))
+                .thenThrow(new InternalAuthenticationServiceException("wrapped",
+                        new UserPasswordRetryLimitExceedException(5, 10)));
+
+        assertThrows(UserPasswordRetryLimitExceedException.class,
+                () -> service.login("student01", "student123", "", ""));
+    }
+
+    @Test
+    void loginRejectsLockedAccountBeforeCaptcha()
+    {
+        doThrow(new UserPasswordRetryLimitExceedException(5, 10))
+                .when(passwordService).checkLoginLocked("student01");
+
+        assertThrows(UserPasswordRetryLimitExceedException.class,
+                () -> service.login("student01", "student123", "", ""));
+
+        verify(configService, never()).selectCaptchaEnabled();
+    }
+
+    @Test
+    void captchaErrorRecordsLoginFailure()
+    {
+        String uuid = "captcha-uuid";
+        when(configService.selectCaptchaEnabled()).thenReturn(true);
+        when(redisCache.getCacheObject(CacheConstants.CAPTCHA_CODE_KEY + uuid)).thenReturn("abcd");
+
+        assertThrows(CaptchaException.class, () -> service.validateCaptcha("student01", "wxyz", uuid));
+
+        verify(redisCache).deleteObject(CacheConstants.CAPTCHA_CODE_KEY + uuid);
+        verify(passwordService).recordLoginFailure("student01");
     }
 
     private void bindRequest(String remoteAddr, String userAgent)
