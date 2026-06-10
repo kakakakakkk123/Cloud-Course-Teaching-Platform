@@ -19,12 +19,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="delFlag" column="del_flag"/>
         <result property="courseName" column="course_name"/>
         <result property="bankName" column="bank_name"/>
+        <result property="composeMode" column="compose_mode"/>
     </resultMap>
 
     <sql id="selectEduPaperVo">
         select p.paper_id, p.paper_name, p.creator_id, p.course_id, p.bank_id, p.paper_desc,
                p.total_score, p.question_count, p.objective_score, p.subjective_score,
-               p.status, p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time, p.remark,
+               p.status, p.del_flag, p.compose_mode, p.create_by, p.create_time, p.update_by, p.update_time, p.remark,
                c.course_name, b.bank_name
         from edu_paper p
         left join edu_course c on p.course_id = c.course_id
@@ -64,10 +65,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <insert id="insertEduPaper" parameterType="com.ruoyi.system.domain.exam.EduPaper" useGeneratedKeys="true" keyProperty="paperId">
         insert into edu_paper (
             paper_name, creator_id, course_id, bank_id, paper_desc, total_score, question_count,
-            objective_score, subjective_score, status, del_flag, create_by, create_time, remark
+            objective_score, subjective_score, compose_mode, status, del_flag, create_by, create_time, remark
         ) values (
             #{paperName}, #{creatorId}, #{courseId}, #{bankId}, #{paperDesc}, #{totalScore}, #{questionCount},
-            #{objectiveScore}, #{subjectiveScore}, #{status}, '0', #{createBy}, sysdate(), #{remark}
+            #{objectiveScore}, #{subjectiveScore}, #{composeMode}, #{status}, '0', #{createBy}, sysdate(), #{remark}
         )
     </insert>
 
@@ -82,6 +83,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             question_count = #{questionCount},
             objective_score = #{objectiveScore},
             subjective_score = #{subjectiveScore},
+            compose_mode = #{composeMode},
             status = #{status},
             <if test="remark != null">remark = #{remark},</if>
             <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
@@ -126,6 +128,63 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="updatePaperCourseId">
         update edu_paper set course_id = #{courseId}, update_time = sysdate()
         where paper_id = #{paperId}
+    </update>
+
+    <!-- ==================== 试卷题目关联 ==================== -->
+
+    <resultMap id="EduPaperQuestionResult" type="com.ruoyi.system.domain.exam.EduPaperQuestion">
+        <id property="id" column="id"/>
+        <result property="paperId" column="paper_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="questionOrder" column="question_order"/>
+        <result property="questionScore" column="question_score"/>
+        <result property="questionType" column="question_type"/>
+        <result property="difficultyLevel" column="difficulty_level"/>
+        <result property="questionTitle" column="question_title"/>
+        <result property="originalScore" column="original_score"/>
+    </resultMap>
+
+    <select id="selectPaperQuestionsByPaperId" parameterType="Long" resultMap="EduPaperQuestionResult">
+        select pq.id, pq.paper_id, pq.question_id, pq.question_order, pq.question_score,
+               pq.question_type, pq.difficulty_level,
+               q.question_title, q.score as original_score
+        from edu_paper_question pq
+        join edu_question q on pq.question_id = q.question_id and q.del_flag = '0'
+        where pq.paper_id = #{paperId}
+        order by pq.question_order asc
+    </select>
+
+    <insert id="batchInsertPaperQuestion">
+        insert into edu_paper_question (paper_id, question_id, question_order, question_score, question_type, difficulty_level)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.paperId}, #{item.questionId}, #{item.questionOrder}, #{item.questionScore}, #{item.questionType}, #{item.difficultyLevel})
+        </foreach>
+    </insert>
+
+    <delete id="deletePaperQuestionByPaperId" parameterType="Long">
+        delete from edu_paper_question where paper_id = #{paperId}
+    </delete>
+
+    <!-- 根据 edu_paper_question 自动汇总更新试卷统计 -->
+    <update id="updatePaperStats" parameterType="Long">
+        update edu_paper p
+        set p.question_count = (
+                select count(1) from edu_paper_question pq where pq.paper_id = #{paperId}
+            ),
+            p.total_score = (
+                select coalesce(sum(pq.question_score), 0) from edu_paper_question pq where pq.paper_id = #{paperId}
+            ),
+            p.objective_score = (
+                select coalesce(sum(pq.question_score), 0) from edu_paper_question pq
+                where pq.paper_id = #{paperId} and pq.question_type in ('1', '2', '3')
+            ),
+            p.subjective_score = (
+                select coalesce(sum(pq.question_score), 0) from edu_paper_question pq
+                where pq.paper_id = #{paperId} and pq.question_type in ('4', '5')
+            ),
+            p.update_time = sysdate()
+        where p.paper_id = #{paperId}
     </update>
 
 </mapper>

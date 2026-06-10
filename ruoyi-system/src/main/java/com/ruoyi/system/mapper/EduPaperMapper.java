@@ -3,6 +3,7 @@ package com.ruoyi.system.mapper;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 import com.ruoyi.system.domain.exam.EduPaper;
+import com.ruoyi.system.domain.exam.EduPaperQuestion;
 
 /**
  * 试卷数据层
@@ -92,4 +93,38 @@ public interface EduPaperMapper
      * @return 结果
      */
     public int updatePaperCourseId(@Param("paperId") Long paperId, @Param("courseId") Long courseId);
+
+    // ==================== 试卷题目关联 ====================
+
+    /**
+     * 查询试卷下的题目列表（含题目详情）
+     *
+     * @param paperId 试卷ID
+     * @return 题目关联列表
+     */
+    public List<EduPaperQuestion> selectPaperQuestionsByPaperId(Long paperId);
+
+    /**
+     * 批量插入试卷题目关联
+     *
+     * @param list 题目关联列表
+     * @return 结果
+     */
+    public int batchInsertPaperQuestion(@Param("list") List<EduPaperQuestion> list);
+
+    /**
+     * 删除试卷的所有题目关联
+     *
+     * @param paperId 试卷ID
+     * @return 结果
+     */
+    public int deletePaperQuestionByPaperId(Long paperId);
+
+    /**
+     * 更新试卷统计信息（题目数、总分、主客观分）
+     *
+     * @param paperId 试卷ID
+     * @return 结果
+     */
+    public int updatePaperStats(Long paperId);
 }
