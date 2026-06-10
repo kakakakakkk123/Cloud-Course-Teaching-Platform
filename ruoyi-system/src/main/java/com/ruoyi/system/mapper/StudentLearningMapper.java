@@ -3,7 +3,9 @@ package com.ruoyi.system.mapper;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 import com.ruoyi.system.domain.exam.EduExamRecord;
+import com.ruoyi.system.domain.learning.StudentExamQuestionVO;
 import com.ruoyi.system.domain.learning.StudentExamVO;
+import com.ruoyi.system.domain.learning.StudentExamWrongQuestionVO;
 import com.ruoyi.system.domain.learning.StudentLearningOverview;
 
 /**
@@ -26,4 +28,10 @@ public interface StudentLearningMapper
     public int insertExamRecord(EduExamRecord record);
 
     public int submitExamRecord(@Param("recordId") Long recordId, @Param("studentId") Long studentId);
+
+    public List<StudentExamWrongQuestionVO> selectExamWrongQuestionList(@Param("recordId") Long recordId, @Param("studentId") Long studentId);
+
+    public StudentExamVO selectStudentExamByRecordId(@Param("recordId") Long recordId, @Param("studentId") Long studentId);
+
+    public List<StudentExamQuestionVO> selectExamQuestionList(@Param("recordId") Long recordId, @Param("studentId") Long studentId);
 }

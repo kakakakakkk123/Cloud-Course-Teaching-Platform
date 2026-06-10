@@ -183,12 +183,14 @@ export default {
           this.$modal.msgWarning("该考试入口暂未关联考试。")
           return
         }
-        startStudentExam(item.examId).then(() => {
+        startStudentExam(item.examId).then(res => {
+          const record = res.data || {}
           markContentLearned(item.contentId).finally(() => {
-            this.$router.push({
-              path: "/learning/exam",
-              query: { examId: item.examId }
-            })
+            if (record.recordId) {
+              this.$router.push(`/learning/exam/take/${record.recordId}`)
+              return
+            }
+            this.$router.push({ path: "/learning/exam", query: { examId: item.examId } })
           })
         })
         return

@@ -1,6 +1,7 @@
 package com.ruoyi.system.service;
 
 import java.util.List;
+import java.util.Map;
 import com.ruoyi.system.domain.exam.EduExamRecord;
 import com.ruoyi.system.domain.learning.StudentExamVO;
 import com.ruoyi.system.domain.learning.StudentLearningOverview;
@@ -20,5 +21,9 @@ public interface IEduStudentLearningService
 
     public EduExamRecord startExam(Long examId, Long studentId);
 
+    public Map<String, Object> selectExamContent(Long recordId, Long studentId);
+
     public void submitExam(Long recordId, Long studentId);
+
+    public int importExamWrongQuestions(Long recordId, Long studentId);
 }
