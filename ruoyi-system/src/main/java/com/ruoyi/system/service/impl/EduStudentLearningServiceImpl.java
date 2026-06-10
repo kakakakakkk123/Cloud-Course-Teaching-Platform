@@ -141,7 +141,7 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
     {
         EduExam exam = getPublishedExam(examId);
         validateExamTime(exam);
-        ensureStudentEnrolled(exam.getCourseId(), studentId);
+        ensureStudentEnrolledForExam(exam, studentId);
         ensureExamQuestionSnapshot(exam);
 
         EduExamRecord runningRecord = studentLearningMapper.selectRunningExamRecord(examId, studentId);
@@ -731,6 +731,35 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
         {
             throw new ServiceException("请先注册该课程再参加考试");
         }
+    }
+
+    /**
+     * 考试多课程注册检查：学生在任意一个关联课程中注册即可
+     */
+    private void ensureStudentEnrolledForExam(EduExam exam, Long studentId)
+    {
+        java.util.Set<Long> courseIds = new java.util.LinkedHashSet<>();
+        if (exam.getCourseId() != null)
+        {
+            courseIds.add(exam.getCourseId());
+        }
+        List<Long> multiCourseIds = examMapper.selectCourseIdsByExamId(exam.getExamId());
+        if (multiCourseIds != null)
+        {
+            courseIds.addAll(multiCourseIds);
+        }
+        if (courseIds.isEmpty())
+        {
+            return;
+        }
+        for (Long courseId : courseIds)
+        {
+            if (courseEnrollMapper.selectEduCourseEnroll(courseId, studentId) != null)
+            {
+                return;
+            }
+        }
+        throw new ServiceException("请先注册考试关联的课程再参加考试");
     }
 
     private int defaultInt(Integer value)

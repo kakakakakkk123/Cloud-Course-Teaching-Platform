@@ -123,4 +123,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </update>
 
+    <!-- 考试多课程关联 -->
+
+    <select id="selectCourseIdsByExamId" parameterType="Long" resultType="Long">
+        select course_id from edu_exam_course where exam_id = #{examId}
+    </select>
+
+    <select id="selectCourseNamesByExamId" parameterType="Long" resultType="String">
+        select group_concat(c.course_name separator '、')
+        from edu_exam_course ec
+        join edu_course c on ec.course_id = c.course_id
+        where ec.exam_id = #{examId}
+    </select>
+
+    <insert id="batchInsertExamCourse">
+        insert ignore into edu_exam_course (exam_id, course_id, create_time)
+        values
+        <foreach collection="courseIds" item="courseId" separator=",">
+            (#{examId}, #{courseId}, sysdate())
+        </foreach>
+    </insert>
+
+    <delete id="deleteExamCourseByExamId" parameterType="Long">
+        delete from edu_exam_course where exam_id = #{examId}
+    </delete>
+
 </mapper>

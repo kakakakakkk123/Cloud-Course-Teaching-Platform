@@ -137,6 +137,17 @@ public class EduPaperServiceImpl implements IEduPaperService
                 pq.setQuestionScore(question.getScore() != null ? question.getScore() : BigDecimal.ZERO);
             }
         }
+
+        // 校验试卷题目数不超过题库启用试题总数
+        if (bankId != null)
+        {
+            int bankTotal = questionMapper.countByBankId(bankId);
+            if (questions.size() > bankTotal)
+            {
+                throw new ServiceException("试卷题目数（" + questions.size() + "）超过题库启用试题总数（" + bankTotal + "），请调整后重试");
+            }
+        }
+
         paperMapper.deletePaperQuestionByPaperId(paperId);
         if (!questions.isEmpty())
         {

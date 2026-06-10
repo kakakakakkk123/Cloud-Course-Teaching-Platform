@@ -49,4 +49,9 @@ public interface EduExamMapper
      * @return 结果
      */
     public int deleteEduExamByIds(Long[] examIds);
+
+    public List<Long> selectCourseIdsByExamId(Long examId);
+    public String selectCourseNamesByExamId(Long examId);
+    public int batchInsertExamCourse(@org.apache.ibatis.annotations.Param("examId") Long examId, @org.apache.ibatis.annotations.Param("courseIds") List<Long> courseIds);
+    public int deleteExamCourseByExamId(Long examId);
 }
