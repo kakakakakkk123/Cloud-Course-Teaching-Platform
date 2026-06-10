@@ -31,6 +31,7 @@ import com.ruoyi.system.domain.exam.EduPaper;
 import com.ruoyi.system.domain.exam.EduPaperQuestion;
 import com.ruoyi.system.domain.exam.EduQuestion;
 import com.ruoyi.system.domain.exam.EduQuestionOption;
+import com.ruoyi.system.domain.learning.CourseDiscussion;
 import com.ruoyi.system.domain.learning.StudentExamAnswerBody;
 import com.ruoyi.system.domain.learning.StudentExamAnswerItem;
 import com.ruoyi.system.domain.learning.StudentExamPaperVO;
@@ -41,6 +42,7 @@ import com.ruoyi.system.domain.learning.StudentExamWrongQuestionVO;
 import com.ruoyi.system.domain.learning.StudentLearningOverview;
 import com.ruoyi.system.mapper.EduCourseContentMapper;
 import com.ruoyi.system.mapper.EduCourseEnrollMapper;
+import com.ruoyi.system.mapper.EduCourseMapper;
 import com.ruoyi.system.mapper.EduExamMapper;
 import com.ruoyi.system.mapper.EduExamRuntimeMapper;
 import com.ruoyi.system.mapper.EduPaperMapper;
@@ -66,6 +68,9 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
 
     @Autowired
     private EduCourseEnrollMapper courseEnrollMapper;
+
+    @Autowired
+    private EduCourseMapper courseMapper;
 
     @Autowired
     private EduExamMapper examMapper;
@@ -666,6 +671,43 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
         return value == null ? ZERO_SCORE : value.setScale(2, RoundingMode.HALF_UP);
     }
 
+    @Override
+    public List<CourseDiscussion> selectCourseDiscussionList(Long courseId, Long studentId)
+    {
+        validateCourseDiscussionAccess(courseId, studentId);
+        return studentLearningMapper.selectCourseDiscussionList(courseId);
+    }
+
+    @Override
+    public List<CourseDiscussion> selectMyCourseDiscussionList(Long studentId)
+    {
+        return studentLearningMapper.selectMyCourseDiscussionList(studentId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public CourseDiscussion addCourseDiscussion(Long courseId, Long studentId, String content)
+    {
+        validateCourseDiscussionAccess(courseId, studentId);
+        String discussionContent = StringUtils.trim(content);
+        if (StringUtils.isEmpty(discussionContent))
+        {
+            throw new ServiceException("讨论内容不能为空");
+        }
+        if (discussionContent.length() > 1000)
+        {
+            throw new ServiceException("讨论内容不能超过1000个字符");
+        }
+        CourseDiscussion discussion = new CourseDiscussion();
+        discussion.setCourseId(courseId);
+        discussion.setStudentId(studentId);
+        discussion.setContent(discussionContent);
+        discussion.setStatus("0");
+        discussion.setCreateBy(String.valueOf(studentId));
+        studentLearningMapper.insertCourseDiscussion(discussion);
+        return discussion;
+    }
+
     private void validateExamTime(EduExam exam)
     {
         Date now = new Date();
@@ -694,6 +736,19 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
     private int defaultInt(Integer value)
     {
         return value == null ? 0 : value;
+    }
+
+    private void validateCourseDiscussionAccess(Long courseId, Long studentId)
+    {
+        if (courseId == null)
+        {
+            throw new ServiceException("课程不存在");
+        }
+        if (courseMapper.selectPublishedCourseById(courseId) == null)
+        {
+            throw new ServiceException("课程不存在或尚未发布");
+        }
+        ensureStudentEnrolled(courseId, studentId);
     }
 
     private List<Map<String, Object>> parseWrongQuestionItems(String raw)

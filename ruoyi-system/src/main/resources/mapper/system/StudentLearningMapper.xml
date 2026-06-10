@@ -86,6 +86,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="attachmentUrl" column="attachment_url"/>
     </resultMap>
 
+    <resultMap id="CourseDiscussionResult" type="com.ruoyi.system.domain.learning.CourseDiscussion">
+        <id property="discussionId" column="discussion_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="courseName" column="course_name"/>
+        <result property="studentId" column="student_id"/>
+        <result property="studentName" column="student_name"/>
+        <result property="studentAvatar" column="student_avatar"/>
+        <result property="content" column="content"/>
+        <result property="status" column="status"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
     <select id="selectLearningOverview" parameterType="Long" resultMap="StudentLearningOverviewResult">
         select count(1) as enrolled_course_count,
                sum(case when ifnull(e.progress_percent, 0) > 0 and ifnull(e.progress_percent, 0) &lt; 100 then 1 else 0 end) as studying_course_count,
@@ -283,17 +299,36 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by pq.question_order asc, pq.id asc
     </select>
 
-    <update id="finishExamReview" parameterType="com.ruoyi.system.domain.exam.EduExamRecord">
-        update edu_exam_record
-        set exam_status = #{recordStatus},
-            objective_score = #{objectiveScore},
-            subjective_score = #{subjectiveScore},
-            total_score = #{totalScore},
-            pass_flag = #{resultStatus},
-            checked_flag = #{checkedFlag},
-            update_by = #{updateBy},
-            update_time = sysdate()
-        where record_id = #{recordId}
-    </update>
+    <select id="selectCourseDiscussionList" resultMap="CourseDiscussionResult">
+        select d.discussion_id, d.course_id, c.course_name, d.student_id,
+               ifnull(u.nick_name, u.user_name) as student_name, u.avatar as student_avatar,
+               d.content, d.status, d.create_by, d.create_time, d.update_by, d.update_time, d.remark
+        from edu_course_discussion d
+        left join edu_course c on d.course_id = c.course_id
+        left join sys_user u on d.student_id = u.user_id
+        where d.course_id = #{courseId}
+          and d.status = '0'
+        order by d.create_time desc, d.discussion_id desc
+    </select>
+
+    <select id="selectMyCourseDiscussionList" resultMap="CourseDiscussionResult">
+        select d.discussion_id, d.course_id, c.course_name, d.student_id,
+               ifnull(u.nick_name, u.user_name) as student_name, u.avatar as student_avatar,
+               d.content, d.status, d.create_by, d.create_time, d.update_by, d.update_time, d.remark
+        from edu_course_discussion d
+        left join edu_course c on d.course_id = c.course_id
+        left join sys_user u on d.student_id = u.user_id
+        where d.student_id = #{studentId}
+          and d.status = '0'
+        order by d.create_time desc, d.discussion_id desc
+    </select>
+
+    <insert id="insertCourseDiscussion" parameterType="com.ruoyi.system.domain.learning.CourseDiscussion" useGeneratedKeys="true" keyProperty="discussionId">
+        insert into edu_course_discussion (
+            course_id, student_id, content, status, create_by, create_time
+        ) values (
+            #{courseId}, #{studentId}, #{content}, #{status}, #{createBy}, sysdate()
+        )
+    </insert>
 
 </mapper>

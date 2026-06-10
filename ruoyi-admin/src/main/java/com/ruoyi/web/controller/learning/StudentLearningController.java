@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.system.domain.learning.CourseDiscussion;
 import com.ruoyi.system.domain.learning.StudentExamAnswerBody;
 import com.ruoyi.system.service.IEduStudentLearningService;
 
@@ -81,6 +82,27 @@ public class StudentLearningController extends BaseController
     {
         studentLearningService.submitExam(recordId, getUserId());
         return success("考试已提交");
+    }
+
+    @PreAuthorize("@ss.hasAnyRoles('student,admin')")
+    @GetMapping("/courses/{courseId}/discussions")
+    public AjaxResult courseDiscussions(@PathVariable Long courseId)
+    {
+        return success(studentLearningService.selectCourseDiscussionList(courseId, getUserId()));
+    }
+
+    @PreAuthorize("@ss.hasAnyRoles('student,admin')")
+    @PostMapping("/courses/{courseId}/discussions")
+    public AjaxResult addCourseDiscussion(@PathVariable Long courseId, @RequestBody CourseDiscussion discussion)
+    {
+        return success(studentLearningService.addCourseDiscussion(courseId, getUserId(), discussion == null ? null : discussion.getContent()));
+    }
+
+    @PreAuthorize("@ss.hasAnyRoles('student,admin')")
+    @GetMapping("/discussions")
+    public AjaxResult myDiscussions()
+    {
+        return success(studentLearningService.selectMyCourseDiscussionList(getUserId()));
     }
 
     @PreAuthorize("@ss.hasAnyRoles('student,admin')")

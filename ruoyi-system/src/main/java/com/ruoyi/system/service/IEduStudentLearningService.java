@@ -3,6 +3,7 @@ package com.ruoyi.system.service;
 import java.util.List;
 import java.util.Map;
 import com.ruoyi.system.domain.exam.EduExamRecord;
+import com.ruoyi.system.domain.learning.CourseDiscussion;
 import com.ruoyi.system.domain.learning.StudentExamAnswerBody;
 import com.ruoyi.system.domain.learning.StudentExamPaperVO;
 import com.ruoyi.system.domain.learning.StudentExamResultVO;
@@ -35,4 +36,10 @@ public interface IEduStudentLearningService
     public int importExamWrongQuestions(Long recordId, Long studentId);
 
     public StudentExamResultVO selectStudentExamResult(Long recordId, Long studentId);
+
+    public List<CourseDiscussion> selectCourseDiscussionList(Long courseId, Long studentId);
+
+    public List<CourseDiscussion> selectMyCourseDiscussionList(Long studentId);
+
+    public CourseDiscussion addCourseDiscussion(Long courseId, Long studentId, String content);
 }

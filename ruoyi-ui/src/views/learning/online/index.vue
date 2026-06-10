@@ -87,6 +87,65 @@
               description="当前课程还没有发布学习内容，请稍后再来查看。"
               :image-size="96"
             />
+
+            <section class="discussion-panel">
+              <div class="discussion-panel__head">
+                <div>
+                  <h2>课程讨论</h2>
+                  <p>发表你对这门课程的看法，也可以查看其他同学的交流内容。</p>
+                </div>
+                <el-button
+                  type="text"
+                  icon="el-icon-refresh"
+                  :loading="discussionLoading"
+                  @click="loadCourseDiscussions"
+                >刷新</el-button>
+              </div>
+
+              <div class="discussion-editor">
+                <el-input
+                  v-model.trim="discussionForm.content"
+                  type="textarea"
+                  :rows="4"
+                  maxlength="1000"
+                  show-word-limit
+                  placeholder="写下你的课程感受、问题、收获或建议..."
+                />
+                <div class="discussion-editor__actions">
+                  <el-button
+                    type="primary"
+                    round
+                    :loading="discussionSubmitting"
+                    @click="submitDiscussion"
+                  >发表讨论</el-button>
+                </div>
+              </div>
+
+              <div v-if="discussionList.length" class="discussion-list">
+                <article
+                  v-for="item in discussionList"
+                  :key="item.discussionId"
+                  class="discussion-item"
+                >
+                  <div class="discussion-item__avatar">
+                    {{ getDiscussionAvatarText(item) }}
+                  </div>
+                  <div class="discussion-item__body">
+                    <div class="discussion-item__meta">
+                      <strong>{{ item.studentName || "同学" }}</strong>
+                      <span>{{ parseTime(item.createTime) || "-" }}</span>
+                    </div>
+                    <p>{{ item.content }}</p>
+                  </div>
+                </article>
+              </div>
+
+              <el-empty
+                v-else
+                description="还没有课程讨论，来发表第一条看法吧。"
+                :image-size="90"
+              />
+            </section>
           </div>
 
           <aside class="online-learning-side">
@@ -117,7 +176,7 @@
 
 <script>
 import { getPortalCourseDetail } from "@/api/portal"
-import { markContentLearned, startStudentExam } from "@/api/learning"
+import { addCourseDiscussion, listCourseDiscussions, markContentLearned, startStudentExam } from "@/api/learning"
 import CourseContentResource from "@/components/CourseContentResource"
 
 export default {
@@ -128,8 +187,14 @@ export default {
   data() {
     return {
       loading: false,
+      discussionLoading: false,
+      discussionSubmitting: false,
       course: {},
-      contentList: []
+      contentList: [],
+      discussionList: [],
+      discussionForm: {
+        content: ""
+      }
     }
   },
   computed: {
@@ -158,6 +223,7 @@ export default {
         if (!value) {
           this.course = {}
           this.contentList = []
+          this.discussionList = []
           return
         }
         this.getDetail(value)
@@ -172,11 +238,43 @@ export default {
         const data = res.data || {}
         this.course = data.course || {}
         this.contentList = data.contentList || []
+        this.loadCourseDiscussions()
       }).finally(() => {
         this.loading = false
       })
     },
     /** 打开课程内容 */
+    loadCourseDiscussions() {
+      if (!this.courseId) {
+        this.discussionList = []
+        return
+      }
+      this.discussionLoading = true
+      listCourseDiscussions(this.courseId).then(res => {
+        this.discussionList = res.data || []
+      }).finally(() => {
+        this.discussionLoading = false
+      })
+    },
+    submitDiscussion() {
+      const content = (this.discussionForm.content || "").trim()
+      if (!content) {
+        this.$modal.msgWarning("请输入讨论内容")
+        return
+      }
+      this.discussionSubmitting = true
+      addCourseDiscussion(this.courseId, { content }).then(() => {
+        this.$modal.msgSuccess("发表成功")
+        this.discussionForm.content = ""
+        this.loadCourseDiscussions()
+      }).finally(() => {
+        this.discussionSubmitting = false
+      })
+    },
+    getDiscussionAvatarText(item) {
+      const name = item.studentName || "同学"
+      return name.slice(0, 1)
+    },
     handleOpenContent(item) {
       if (String(item.contentType) === "5") {
         if (!item.examId) {
@@ -295,6 +393,7 @@ export default {
 .online-learning-topbar,
 .summary-card,
 .content-card,
+.discussion-panel,
 .side-card {
   border-radius: 24px;
   border: 1px solid rgba(148, 163, 184, 0.12);
@@ -406,6 +505,95 @@ export default {
   line-height: 1.8;
 }
 
+.discussion-panel {
+  margin-top: 18px;
+  padding: 22px;
+}
+
+.discussion-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.discussion-panel__head h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 20px;
+}
+
+.discussion-panel__head p {
+  margin: 8px 0 0;
+  color: #64748b;
+  line-height: 1.7;
+}
+
+.discussion-editor {
+  padding: 14px;
+  border: 1px solid #e6edf5;
+  border-radius: 14px;
+  background: #f8fbff;
+}
+
+.discussion-editor__actions {
+  margin-top: 12px;
+  text-align: right;
+}
+
+.discussion-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.discussion-item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.discussion-item__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.discussion-item__body {
+  padding: 14px 16px;
+  border: 1px solid #e6edf5;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.discussion-item__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #8a97aa;
+  font-size: 12px;
+}
+
+.discussion-item__meta strong {
+  color: #172033;
+  font-size: 14px;
+}
+
+.discussion-item__body p {
+  margin: 10px 0 0;
+  color: #4b5565;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
 .side-card h3 {
   margin: 0 0 14px;
   color: #0f172a;
@@ -438,7 +626,9 @@ export default {
 @media screen and (max-width: 768px) {
   .online-learning-topbar__actions,
   .content-card__header,
-  .content-card__footer {
+  .content-card__footer,
+  .discussion-panel__head,
+  .discussion-item__meta {
     flex-direction: column;
     align-items: flex-start;
   }

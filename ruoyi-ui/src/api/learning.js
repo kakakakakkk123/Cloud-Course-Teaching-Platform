@@ -41,6 +41,7 @@ export function startStudentExam(examId) {
   })
 }
 
+/**
  * 查询考试内容
  */
 export function getStudentExamContent(recordId) {
@@ -97,6 +98,34 @@ export function importExamWrongQuestions(recordId) {
 export function getStudentExamResult(recordId) {
   return request({
     url: "/student/learning/exam-records/" + recordId + "/result",
+    method: "get"
+  })
+}
+
+/**
+ * 查询课程讨论
+ */
+export function listCourseDiscussions(courseId) {
+  return request({
+    url: "/student/learning/courses/" + courseId + "/discussions",
+    method: "get"
+  })
+}
+
+export function addCourseDiscussion(courseId, data) {
+  return request({
+    url: "/student/learning/courses/" + courseId + "/discussions",
+    method: "post",
+    data
+  })
+}
+
+/**
+ * 查询我的讨论
+ */
+export function listMyDiscussions() {
+  return request({
+    url: "/student/learning/discussions",
     method: "get"
   })
 }
