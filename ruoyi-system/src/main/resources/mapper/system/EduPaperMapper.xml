@@ -48,7 +48,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                 and p.creator_id = #{creatorId}
             </if>
             <if test="courseId != null">
-                and p.course_id = #{courseId}
+                and (p.course_id = #{courseId}
+                     or exists (select 1 from edu_paper_course pc where pc.paper_id = p.paper_id and pc.course_id = #{courseId}))
             </if>
             <if test="bankId != null">
                 and p.bank_id = #{bankId}
@@ -96,6 +97,35 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <foreach collection="array" item="paperId" open="(" separator="," close=")">
             #{paperId}
         </foreach>
+    </update>
+
+    <!-- 试卷多课程关联相关SQL -->
+    <select id="selectCourseIdsByPaperId" parameterType="Long" resultType="Long">
+        select course_id from edu_paper_course where paper_id = #{paperId}
+    </select>
+
+    <select id="selectCourseNamesByPaperId" parameterType="Long" resultType="String">
+        select group_concat(c.course_name separator '、')
+        from edu_paper_course pc
+        join edu_course c on pc.course_id = c.course_id
+        where pc.paper_id = #{paperId}
+    </select>
+
+    <insert id="batchInsertPaperCourse">
+        insert into edu_paper_course (paper_id, course_id, create_time)
+        values
+        <foreach collection="courseIds" item="courseId" separator=",">
+            (#{paperId}, #{courseId}, sysdate())
+        </foreach>
+    </insert>
+
+    <delete id="deletePaperCourseByPaperId" parameterType="Long">
+        delete from edu_paper_course where paper_id = #{paperId}
+    </delete>
+
+    <update id="updatePaperCourseId">
+        update edu_paper set course_id = #{courseId}, update_time = sysdate()
+        where paper_id = #{paperId}
     </update>
 
 </mapper>

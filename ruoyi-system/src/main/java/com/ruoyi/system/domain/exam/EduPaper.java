@@ -1,6 +1,7 @@
 package com.ruoyi.system.domain.exam;
 
 import java.math.BigDecimal;
+import java.util.List;
 import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -21,8 +22,11 @@ public class EduPaper extends BaseEntity
     private String paperName;
     /** 创建教师ID */
     private Long creatorId;
-    /** 课程ID */
+    /** 课程ID（兼容旧版单课程绑定） */
     private Long courseId;
+
+    /** 关联课程ID列表（新版多课程绑定） */
+    private List<Long> courseIds;
     /** 题库ID */
     private Long bankId;
     /** 试卷说明 */
@@ -41,8 +45,10 @@ public class EduPaper extends BaseEntity
     private String delFlag;
     /** 组卷方式 */
     private String composeMode;
-    /** 课程名称 */
+    /** 课程名称（旧版单课程） */
     private String courseName;
+    /** 多课程名称，逗号分隔，用于列表展示 */
+    private String courseNames;
     /** 题库名称 */
     private String bankName;
 
@@ -85,6 +91,16 @@ public class EduPaper extends BaseEntity
     public void setCourseId(Long courseId)
     {
         this.courseId = courseId;
+    }
+
+    public List<Long> getCourseIds()
+    {
+        return courseIds;
+    }
+
+    public void setCourseIds(List<Long> courseIds)
+    {
+        this.courseIds = courseIds;
     }
 
     public Long getBankId()
@@ -185,6 +201,16 @@ public class EduPaper extends BaseEntity
     public void setCourseName(String courseName)
     {
         this.courseName = courseName;
+    }
+
+    public String getCourseNames()
+    {
+        return courseNames;
+    }
+
+    public void setCourseNames(String courseNames)
+    {
+        this.courseNames = courseNames;
     }
 
     public String getBankName()
