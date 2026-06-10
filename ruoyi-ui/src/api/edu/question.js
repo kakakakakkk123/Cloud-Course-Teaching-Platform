@@ -62,3 +62,18 @@ export function delQuestion(questionIds) {
     method: "delete"
   })
 }
+
+/**
+ * 批量导入试题
+ * @param {FormData} formData 包含 file 和 bankId
+ * @returns {Promise}
+ */
+export function importQuestions(formData) {
+  return request({
+    url: "/edu/exam/question/import",
+    method: "post",
+    data: formData,
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 120000
+  })
+}
