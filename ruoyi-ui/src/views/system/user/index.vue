@@ -75,6 +75,18 @@
         <el-col v-if="canManageAccounts" :span="1.5">
           <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport">导出</el-button>
         </el-col>
+        <el-col v-if="canManageAccounts" :span="1.5">
+          <div class="register-switch">
+            <span>学生注册</span>
+            <el-switch
+              v-model="registerEnabled"
+              :loading="registerLoading"
+              active-text="开启"
+              inactive-text="关闭"
+              @change="handleRegisterToggle"
+            />
+          </div>
+        </el-col>
         <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" />
       </el-row>
 
@@ -224,6 +236,7 @@ import ExcelImportDialog from "@/components/ExcelImportDialog"
 import UserViewDrawer from "./view"
 import passwordRule from "@/utils/passwordRule"
 import { mapGetters } from "vuex"
+import { getRegisterEnabled, setRegisterEnabled } from "@/api/account"
 
 export default {
   name: "User",
@@ -265,6 +278,8 @@ export default {
       single: true,
       multiple: true,
       showSearch: true,
+      registerEnabled: false,
+      registerLoading: false,
       total: 0,
       userList: [],
       title: "",
@@ -307,6 +322,7 @@ export default {
     this.applyRouteScope()
     this.getList()
     this.getDeptTree()
+    this.loadRegisterStatus()
     this.getConfigKey("sys.user.initPassword").then(response => {
       this.initPassword = response.msg
     })
@@ -433,6 +449,24 @@ export default {
         this.$refs.accountTreeRef.setCurrentKey(null)
       }
       this.handleQuery()
+    },
+    loadRegisterStatus() {
+      if (!this.canManageAccounts) {
+        return
+      }
+      getRegisterEnabled().then(res => {
+        this.registerEnabled = !!res.data
+      })
+    },
+    handleRegisterToggle(value) {
+      this.registerLoading = true
+      setRegisterEnabled(value ? "0" : "1").then(() => {
+        this.$modal.msgSuccess(value ? "学生自主注册已开启" : "学生自主注册已关闭")
+      }).catch(() => {
+        this.registerEnabled = !value
+      }).finally(() => {
+        this.registerLoading = false
+      })
     },
     isAdminAccount(row) {
       const identityName = row.identityName || ""
@@ -660,5 +694,18 @@ export default {
 
 .mb8 {
   margin-bottom: 8px;
+}
+
+.register-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  color: #606266;
+  font-size: 12px;
+  background: #fff;
 }
 </style>
