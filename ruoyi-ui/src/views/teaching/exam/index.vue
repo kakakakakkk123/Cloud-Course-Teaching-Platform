@@ -16,11 +16,13 @@
       <div class="exam-paper-banner">
         <div class="exam-paper-banner__main">
           <strong>{{ currentPaperName }}</strong>
-          <span>在这里配置考试时间、时长、及格线和答后展示策略，后续学生端可通过课程内容中的考试入口参与作答。</span>
+          <span v-if="currentBankName">题库：{{ currentBankName }}</span>
+          <span>在这里配置考试时间、时长、及格线和答后展示策略。</span>
         </div>
         <div class="exam-paper-banner__stats">
           <span>考试总数 {{ total }}</span>
           <span>试卷编号 {{ paperId || "-" }}</span>
+          <span v-if="currentBankName">题库编号 {{ bankId || "-" }}</span>
         </div>
       </div>
 
@@ -430,8 +432,11 @@ export default {
     },
     /** 返回试卷管理 */
     goBackPaperManage() {
+      const path = this.bankId
+        ? `/teaching/paper-manage/${this.bankId}`
+        : '/teaching/paper-manage'
       this.$router.push({
-        path: `/teaching/paper-manage/${this.bankId || ""}`,
+        path,
         query: { bankName: this.currentBankName }
       })
     },
