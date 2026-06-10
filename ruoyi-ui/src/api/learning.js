@@ -42,23 +42,12 @@ export function startStudentExam(examId) {
 }
 
 /**
- * 查询答题页
+ * 查询考试内容
  */
-export function getStudentExamPaper(recordId) {
+export function getStudentExamContent(recordId) {
   return request({
-    url: "/student/learning/exam-records/" + recordId + "/paper",
+    url: "/student/learning/exam-records/" + recordId + "/content",
     method: "get"
-  })
-}
-
-/**
- * 暂存考试答案
- */
-export function saveStudentExamAnswers(recordId, data) {
-  return request({
-    url: "/student/learning/exam-records/" + recordId + "/answers",
-    method: "post",
-    data
   })
 }
 
@@ -73,11 +62,11 @@ export function submitStudentExam(recordId) {
 }
 
 /**
- * 查询考试结果
+ * 导入考试错题到我的错题
  */
-export function getStudentExamResult(recordId) {
+export function importExamWrongQuestions(recordId) {
   return request({
-    url: "/student/learning/exam-records/" + recordId + "/result",
-    method: "get"
+    url: "/student/learning/exam-records/" + recordId + "/wrong-questions/import",
+    method: "post"
   })
 }

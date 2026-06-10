@@ -186,7 +186,11 @@ export default {
         startStudentExam(item.examId).then(res => {
           const record = res.data || {}
           markContentLearned(item.contentId).finally(() => {
-            this.$router.push(`/learning/exam/answer/${record.recordId}`)
+            if (record.recordId) {
+              this.$router.push(`/learning/exam/take/${record.recordId}`)
+              return
+            }
+            this.$router.push({ path: "/learning/exam", query: { examId: item.examId } })
           })
         })
         return
