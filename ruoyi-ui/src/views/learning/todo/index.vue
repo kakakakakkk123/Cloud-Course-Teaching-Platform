@@ -10,6 +10,7 @@
     :allow-quick-add="true"
     quick-add-button-text="添加学习任务"
     :show-raw-editor="false"
+    :todo-mode="true"
   />
 </template>
 
