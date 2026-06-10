@@ -192,7 +192,7 @@ export const dynamicRoutes = [
         path: ':paperId?',
         component: () => import('@/views/teaching/exam/index'),
         name: 'TeachingExamManage',
-        meta: { title: '考试发布', activeMenu: '/teaching/paper' }
+        meta: { title: '考试发布', activeMenu: '/teaching/exam' }
       }
     ]
   },
@@ -206,7 +206,7 @@ export const dynamicRoutes = [
         path: ':bankId?',
         component: () => import('@/views/teaching/paper/manage'),
         name: 'TeachingPaperManage',
-        meta: { title: '试卷管理', activeMenu: '/teaching/paper' }
+        meta: { title: '试卷管理', activeMenu: '/teaching/paper-manage' }
       }
     ]
   },
