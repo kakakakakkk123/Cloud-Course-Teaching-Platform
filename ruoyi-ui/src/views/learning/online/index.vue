@@ -49,7 +49,9 @@
               <article
                 v-for="item in contentList"
                 :key="item.contentId"
+                :ref="'contentCard' + item.contentId"
                 class="content-card"
+                :class="{ 'is-target': isTargetContent(item) }"
               >
                 <div class="content-card__header">
                   <div>
@@ -66,6 +68,44 @@
                   {{ item.summary || item.contentBody || "教师暂未补充该内容的说明信息。" }}
                 </p>
                 <course-content-resource :item="item" :show-actions="false" />
+
+                <div
+                  v-if="noteForms[item.contentId]"
+                  :ref="'contentNote' + item.contentId"
+                  class="content-note"
+                >
+                  <div class="content-note__head">
+                    <strong>学习笔记</strong>
+                    <span v-if="getNoteUpdatedAt(item)">最后编辑：{{ getNoteUpdatedAt(item) }}</span>
+                  </div>
+                  <el-input
+                    v-model="noteForms[item.contentId].content"
+                    type="textarea"
+                    :rows="4"
+                    maxlength="2000"
+                    show-word-limit
+                    placeholder="记录这段内容的重点、疑问或复习提示"
+                  />
+                  <div class="content-note__actions">
+                    <el-button
+                      v-if="hasLearningNote(item)"
+                      type="danger"
+                      plain
+                      round
+                      size="mini"
+                      :loading="noteDeletingMap[item.contentId]"
+                      @click="deleteLearningNote(item)"
+                    >删除笔记</el-button>
+                    <el-button
+                      type="success"
+                      plain
+                      round
+                      size="mini"
+                      :loading="noteSavingMap[item.contentId]"
+                      @click="saveLearningNote(item)"
+                    >保存笔记</el-button>
+                  </div>
+                </div>
 
                 <div class="content-card__footer">
                   <span>排序：{{ item.sortOrder || 0 }}</span>
@@ -176,7 +216,15 @@
 
 <script>
 import { getPortalCourseDetail } from "@/api/portal"
-import { addCourseDiscussion, listCourseDiscussions, markContentLearned, startStudentExam } from "@/api/learning"
+import {
+  addCourseDiscussion,
+  deleteContentLearningNote,
+  listCourseDiscussions,
+  listLearningNotes,
+  markContentLearned,
+  saveContentLearningNote,
+  startStudentExam
+} from "@/api/learning"
 import CourseContentResource from "@/components/CourseContentResource"
 
 export default {
@@ -192,6 +240,11 @@ export default {
       course: {},
       contentList: [],
       discussionList: [],
+      noteMap: {},
+      noteForms: {},
+      noteSavingMap: {},
+      noteDeletingMap: {},
+      highlightContentId: "",
       discussionForm: {
         content: ""
       }
@@ -224,10 +277,18 @@ export default {
           this.course = {}
           this.contentList = []
           this.discussionList = []
+          this.noteMap = {}
+          this.noteForms = {}
+          this.noteSavingMap = {}
+          this.noteDeletingMap = {}
+          this.highlightContentId = ""
           return
         }
         this.getDetail(value)
       }
+    },
+    "$route.query.contentId"() {
+      this.scrollToTargetContent()
     }
   },
   methods: {
@@ -238,9 +299,121 @@ export default {
         const data = res.data || {}
         this.course = data.course || {}
         this.contentList = data.contentList || []
+        this.initNoteForms()
+        this.loadLearningNotes()
         this.loadCourseDiscussions()
       }).finally(() => {
         this.loading = false
+      })
+    },
+    initNoteForms() {
+      this.noteMap = {}
+      this.noteForms = {}
+      this.noteSavingMap = {}
+      this.noteDeletingMap = {}
+      this.contentList.forEach(item => {
+        this.$set(this.noteForms, item.contentId, {
+          title: `${item.contentTitle || "课程内容"}学习笔记`,
+          content: ""
+        })
+        this.$set(this.noteSavingMap, item.contentId, false)
+        this.$set(this.noteDeletingMap, item.contentId, false)
+      })
+    },
+    loadLearningNotes() {
+      if (!this.courseId) {
+        this.noteMap = {}
+        return
+      }
+      listLearningNotes().then(res => {
+        const map = {}
+        ;(res.data || []).forEach(note => {
+          if (String(note.courseId) === String(this.courseId) && note.contentId) {
+            map[String(note.contentId)] = note
+          }
+        })
+        this.noteMap = map
+        this.contentList.forEach(item => {
+          const note = this.noteMap[String(item.contentId)]
+          if (note && this.noteForms[item.contentId]) {
+            this.noteForms[item.contentId].title = note.title || `${item.contentTitle || "课程内容"}学习笔记`
+            this.noteForms[item.contentId].content = note.content || note.note || ""
+          }
+        })
+        this.scrollToTargetContent()
+      })
+    },
+    isTargetContent(item) {
+      return String(item.contentId) === String(this.highlightContentId)
+    },
+    hasLearningNote(item) {
+      return !!this.noteMap[String(item.contentId)]
+    },
+    getNoteUpdatedAt(item) {
+      const note = this.noteMap[String(item.contentId)]
+      if (!note) {
+        return ""
+      }
+      return this.parseTime(note.lastEditTime || note.updatedAt || note.collectedAt)
+    },
+    saveLearningNote(item) {
+      const form = this.noteForms[item.contentId] || {}
+      const content = String(form.content || "").trim()
+      if (!content) {
+        this.$modal.msgWarning("请输入笔记内容")
+        return
+      }
+      this.$set(this.noteSavingMap, item.contentId, true)
+      saveContentLearningNote(item.contentId, {
+        title: form.title || `${item.contentTitle || "课程内容"}学习笔记`,
+        content
+      }).then(res => {
+        const note = res.data || {}
+        this.$set(this.noteMap, String(item.contentId), note)
+        this.$modal.msgSuccess("笔记已保存")
+      }).finally(() => {
+        this.$set(this.noteSavingMap, item.contentId, false)
+      })
+    },
+    deleteLearningNote(item) {
+      const note = this.noteMap[String(item.contentId)]
+      if (!note) {
+        this.$modal.msgWarning("当前内容暂无可删除的笔记")
+        return
+      }
+      this.$modal.confirm("确认删除这条学习笔记吗？").then(() => {
+        this.$set(this.noteDeletingMap, item.contentId, true)
+        return deleteContentLearningNote(item.contentId).then(() => {
+          this.$delete(this.noteMap, String(item.contentId))
+          if (this.noteForms[item.contentId]) {
+            this.noteForms[item.contentId].content = ""
+          }
+          this.$modal.msgSuccess("笔记已删除")
+        }).finally(() => {
+          this.$set(this.noteDeletingMap, item.contentId, false)
+        })
+      }).catch(() => {})
+    },
+    scrollToTargetContent() {
+      const contentId = this.$route.query.contentId
+      if (!contentId) {
+        this.highlightContentId = ""
+        return
+      }
+      this.highlightContentId = String(contentId)
+      this.$nextTick(() => {
+        const noteRef = this.$refs["contentNote" + contentId]
+        const cardRef = this.$refs["contentCard" + contentId]
+        const target = Array.isArray(noteRef) ? noteRef[0] : (noteRef || (Array.isArray(cardRef) ? cardRef[0] : cardRef))
+        if (target && target.scrollIntoView) {
+          target.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+        if (String(this.$route.query.edit || "") === "1" && target) {
+          const textarea = target.querySelector("textarea")
+          if (textarea) {
+            textarea.focus()
+          }
+        }
       })
     },
     /** 打开课程内容 */
@@ -475,6 +648,11 @@ export default {
   padding: 20px;
 }
 
+.content-card.is-target {
+  border-color: #22c55e;
+  box-shadow: 0 18px 38px rgba(34, 197, 94, 0.16);
+}
+
 .content-card__header,
 .content-card__footer {
   display: flex;
@@ -503,6 +681,37 @@ export default {
   margin: 0 0 18px;
   color: #64748b;
   line-height: 1.8;
+}
+
+.content-note {
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.content-note__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.content-note__head strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.content-note__head span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.content-note__actions {
+  margin-top: 10px;
+  text-align: right;
 }
 
 .discussion-panel {
@@ -627,10 +836,15 @@ export default {
   .online-learning-topbar__actions,
   .content-card__header,
   .content-card__footer,
+  .content-note__head,
   .discussion-panel__head,
   .discussion-item__meta {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .content-note__actions {
+    text-align: left;
   }
 
   .online-learning-summary {

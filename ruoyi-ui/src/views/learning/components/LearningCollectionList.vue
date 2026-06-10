@@ -229,7 +229,7 @@
       >
         <div class="collection-item__top">
           <el-tag size="mini" :type="tagType">{{ typeLabel }}</el-tag>
-          <span>{{ item.collectedAt || item.updatedAt || "未记录时间" }}</span>
+          <span>{{ formatItemTime(item) }}</span>
         </div>
         <h3>{{ item.title }}</h3>
         <div class="collection-item__course">
@@ -264,7 +264,8 @@
           <el-tag size="mini" :type="tagType">{{ typeLabel }}</el-tag>
           <span>{{ activeItem.courseName || "未关联课程" }}</span>
           <span v-if="activeItem.chapterTitle">{{ activeItem.chapterTitle }}</span>
-          <span v-if="activeItem.collectedAt">{{ activeItem.collectedAt }}</span>
+          <span v-if="activeItem.lastEditTime || activeItem.updatedAt">最后编辑：{{ activeItem.lastEditTime || activeItem.updatedAt }}</span>
+          <span v-else-if="activeItem.collectedAt">{{ activeItem.collectedAt }}</span>
         </div>
 
         <el-form
@@ -365,6 +366,12 @@
           </section>
           <section v-if="activeItem.courseId">
             <h4>课程操作</h4>
+            <el-button
+              v-if="canOpenLearningNoteSource"
+              type="success"
+              size="small"
+              @click="openLearningNoteSource(activeItem)"
+            >进入内容笔记</el-button>
             <el-button type="primary" size="small" @click="openCourse(activeItem.courseId)">查看课程</el-button>
           </section>
         </template>
@@ -531,6 +538,9 @@ export default {
     },
     canManageWrongQuestions() {
       return this.allowWrongQuestionAdd && this.field === "wrongQuestions"
+    },
+    canOpenLearningNoteSource() {
+      return this.field === "learningNotes" && this.activeItem && this.activeItem.courseId && this.activeItem.contentId
     }
   },
   created() {
@@ -644,6 +654,13 @@ export default {
       const now = new Date()
       const pad = value => String(value).padStart(2, "0")
       return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+    },
+    formatItemTime(item) {
+      const time = item.lastEditTime || item.updatedAt || item.collectedAt || item.createdAt
+      if (!time) {
+        return "未记录时间"
+      }
+      return item.lastEditTime || item.updatedAt ? `最后编辑：${time}` : time
     },
     normalizeTagList(tags) {
       return Array.isArray(tags)
@@ -899,6 +916,17 @@ export default {
     openCourse(courseId) {
       this.detailOpen = false
       this.$router.push(`/course/${courseId}`)
+    },
+    openLearningNoteSource(item) {
+      this.detailOpen = false
+      this.$router.push({
+        path: "/learning/online",
+        query: {
+          courseId: item.courseId,
+          contentId: item.contentId,
+          edit: "1"
+        }
+      })
     },
     openNoteAdd() {
       this.noteAddOpen = true
