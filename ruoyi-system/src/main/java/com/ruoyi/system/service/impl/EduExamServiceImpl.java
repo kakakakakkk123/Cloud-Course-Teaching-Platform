@@ -1,10 +1,14 @@
 package com.ruoyi.system.service.impl;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.system.domain.course.EduCourseContent;
 import com.ruoyi.system.domain.exam.EduExam;
@@ -77,6 +81,7 @@ public class EduExamServiceImpl implements IEduExamService
         fillExamDefaults(exam);
         assertPaperNotEmpty(exam.getPaperId());
         applyCourseIdFromCourseIds(exam);
+        List<Long> oldCourseIds = examMapper.selectCourseIdsByExamId(exam.getExamId());
         int rows = examMapper.updateEduExam(exam);
         syncExamCourses(exam);
         EduExam latest = examMapper.selectEduExamById(exam.getExamId());
@@ -87,10 +92,13 @@ public class EduExamServiceImpl implements IEduExamService
             latest.setUpdateBy(exam.getUpdateBy());
         }
         syncCourseExamContent(latest != null ? latest : exam, false);
+        // 清理已移除课程的考试内容记录，避免孤儿数据
+        cleanupOrphanExamContent(exam.getExamId(), oldCourseIds);
         return rows;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int deleteEduExamByIds(Long[] examIds)
     {
         for (Long examId : examIds)
@@ -196,6 +204,34 @@ public class EduExamServiceImpl implements IEduExamService
         existing.setUpdateBy(StringUtils.defaultString(exam.getUpdateBy(), exam.getCreateBy()));
         courseContentMapper.updateEduCourseContent(existing);
         courseService.refreshCourseContentStats(existing.getCourseId());
+    }
+
+    /**
+     * 清理已移除课程的考试内容记录
+     * 更新考试关联课程时，将不再绑定的课程的考试内容标记为下架
+     */
+    private void cleanupOrphanExamContent(Long examId, List<Long> oldCourseIds)
+    {
+        if (examId == null || oldCourseIds == null || oldCourseIds.isEmpty())
+        {
+            return;
+        }
+        List<Long> newCourseIds = examMapper.selectCourseIdsByExamId(examId);
+        Set<Long> newSet = new HashSet<>(newCourseIds != null ? newCourseIds : Collections.emptyList());
+        for (Long oldCourseId : oldCourseIds)
+        {
+            if (!newSet.contains(oldCourseId))
+            {
+                EduCourseContent existing = courseContentMapper.selectExamContentByCourseIdAndExamId(oldCourseId, examId);
+                if (existing != null && "1".equals(existing.getPublishStatus()))
+                {
+                    existing.setPublishStatus("0");
+                    existing.setUpdateBy(SecurityUtils.getUsername());
+                    courseContentMapper.updateEduCourseContent(existing);
+                    courseService.refreshCourseContentStats(oldCourseId);
+                }
+            }
+        }
     }
 
     private int defaultDurationSeconds(Integer minutes)

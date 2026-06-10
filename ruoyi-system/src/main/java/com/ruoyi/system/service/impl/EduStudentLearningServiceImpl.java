@@ -518,9 +518,12 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
             boolean showAnswer, boolean showScore)
     {
         Map<Long, EduExamAnswer> answerMap = new HashMap<>();
-        for (EduExamAnswer answer : answerList)
+        if (answerList != null)
         {
-            answerMap.put(answer.getQuestionId(), answer);
+            for (EduExamAnswer answer : answerList)
+            {
+                answerMap.put(answer.getQuestionId(), answer);
+            }
         }
 
         List<StudentExamQuestionVO> list = new ArrayList<>();
