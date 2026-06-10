@@ -602,9 +602,16 @@ export default {
       }).catch(() => {})
     },
     handleExport() {
-      this.download("system/user/export", {
+      const selectedIds = this.getManageRows(this.selectedRows).map(row => row.userId)
+      const exportParams = {
         ...this.queryParams
-      }, `user_${new Date().getTime()}.xlsx`)
+      }
+      if (selectedIds.length) {
+        exportParams.userIds = selectedIds.join(",")
+      }
+      this.download("system/user/export", {
+        ...exportParams
+      }, `user_${selectedIds.length ? "selected" : "all"}_${new Date().getTime()}.xlsx`)
     },
     handleViewData(row) {
       this.$refs.userViewRef.open(row.userId)
