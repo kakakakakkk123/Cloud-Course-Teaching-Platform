@@ -19,4 +19,13 @@ public interface IEduQuestionService
     public int updateEduQuestion(EduQuestion question);
 
     public int deleteEduQuestionByIds(Long[] questionIds);
+
+    /**
+     * 批量导入试题（Excel 解析 + 逐题校验 + 事务批量插入）
+     *
+     * @param file   Excel 文件
+     * @param bankId 目标题库ID
+     * @return 成功导入数量
+     */
+    public int batchImportQuestions(java.io.InputStream inputStream, String originalFilename, Long bankId);
 }
