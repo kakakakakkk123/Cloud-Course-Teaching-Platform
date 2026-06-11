@@ -183,6 +183,34 @@ export const dynamicRoutes = [
     ]
   },
   {
+    path: '/learning/exam/answer',
+    component: Layout,
+    hidden: true,
+    roles: ['student', 'admin'],
+    children: [
+      {
+        path: ':recordId(\\d+)',
+        component: () => import('@/views/learning/exam/answer'),
+        name: 'StudentExamAnswerRedirect',
+        meta: { title: '考试作答', activeMenu: '/learning/exam' }
+      }
+    ]
+  },
+  {
+    path: '/learning/exam/result',
+    component: Layout,
+    hidden: true,
+    roles: ['student', 'admin'],
+    children: [
+      {
+        path: ':recordId(\\d+)',
+        component: () => import('@/views/learning/exam/result'),
+        name: 'StudentExamResult',
+        meta: { title: '考试结果', activeMenu: '/learning/exam' }
+      }
+    ]
+  },
+  {
     path: '/teaching/exam',
     component: Layout,
     hidden: true,

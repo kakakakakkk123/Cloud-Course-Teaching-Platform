@@ -39,6 +39,7 @@ import com.ruoyi.system.domain.learning.StudentExamQuestionVO;
 import com.ruoyi.system.domain.learning.StudentExamResultVO;
 import com.ruoyi.system.domain.learning.StudentExamVO;
 import com.ruoyi.system.domain.learning.StudentExamWrongQuestionVO;
+import com.ruoyi.system.domain.learning.StudentLearningNoteBody;
 import com.ruoyi.system.domain.learning.StudentLearningOverview;
 import com.ruoyi.system.mapper.EduCourseContentMapper;
 import com.ruoyi.system.mapper.EduCourseEnrollMapper;
@@ -100,6 +101,132 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
         }
         overview.setPendingExamCount(studentLearningMapper.selectPendingExamCount(studentId));
         return overview;
+    }
+
+    @Override
+    public List<Map<String, Object>> selectLearningNoteList(Long studentId)
+    {
+        StudentProfile profile = studentAccountMapper.selectStudentProfileByUserId(studentId);
+        return parseStoredItems(profile == null ? null : profile.getLearningNotes(), "note");
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> saveContentLearningNote(Long contentId, Long studentId, StudentLearningNoteBody body)
+    {
+        EduCourseContent content = courseContentMapper.selectPublishedContentById(contentId);
+        if (StringUtils.isNull(content))
+        {
+            throw new ServiceException("课程内容不存在或尚未发布");
+        }
+        EduCourseEnroll enroll = courseEnrollMapper.selectEduCourseEnroll(content.getCourseId(), studentId);
+        if (StringUtils.isNull(enroll))
+        {
+            throw new ServiceException("请先注册该课程再做笔记");
+        }
+
+        String noteContent = StringUtils.trim(body == null ? null : body.getContent());
+        if (StringUtils.isEmpty(noteContent))
+        {
+            throw new ServiceException("笔记内容不能为空");
+        }
+        if (noteContent.length() > 2000)
+        {
+            throw new ServiceException("笔记内容不能超过2000个字符");
+        }
+
+        String title = StringUtils.trim(body == null ? null : body.getTitle());
+        if (StringUtils.isEmpty(title))
+        {
+            title = content.getContentTitle() + "学习笔记";
+        }
+        if (title.length() > 80)
+        {
+            throw new ServiceException("笔记标题不能超过80个字符");
+        }
+
+        StudentProfile profile = studentAccountMapper.selectStudentProfileByUserId(studentId);
+        List<Map<String, Object>> storedItems = parseStoredItems(profile == null ? null : profile.getLearningNotes(), "note");
+        String sourceKey = "course-content-" + contentId;
+        int index = findStoredItemIndex(storedItems, sourceKey, contentId);
+        String updatedAt = DateUtils.getTime();
+        Map<String, Object> item = index >= 0 ? new LinkedHashMap<>(storedItems.get(index)) : new LinkedHashMap<>();
+        if (index < 0)
+        {
+            item.put("id", "note-content-" + contentId + "-" + System.currentTimeMillis());
+            item.put("sourceType", "course-content");
+            item.put("sourceKey", sourceKey);
+            item.put("createdAt", updatedAt);
+            item.put("collectedAt", updatedAt);
+        }
+        item.put("courseId", content.getCourseId());
+        item.put("courseName", content.getCourseName());
+        item.put("contentId", content.getContentId());
+        item.put("contentTitle", content.getContentTitle());
+        item.put("title", title);
+        item.put("content", noteContent);
+        item.put("note", noteContent);
+        item.put("summary", noteContent);
+        item.put("updatedAt", updatedAt);
+        item.put("lastEditTime", updatedAt);
+
+        List<String> tags = new ArrayList<>();
+        tags.add("课程笔记");
+        item.put("tags", tags);
+
+        if (index >= 0)
+        {
+            storedItems.remove(index);
+        }
+        storedItems.add(0, item);
+
+        if (profile == null)
+        {
+            profile = new StudentProfile();
+            profile.setUserId(studentId);
+            profile.setCreateBy(String.valueOf(studentId));
+            profile.setLearningNotes(JSON.toJSONString(storedItems));
+            studentAccountMapper.insertStudentProfile(profile);
+        }
+        else
+        {
+            profile.setUpdateBy(String.valueOf(studentId));
+            profile.setLearningNotes(JSON.toJSONString(storedItems));
+            studentAccountMapper.updateStudentProfile(profile);
+        }
+        return item;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteContentLearningNote(Long contentId, Long studentId)
+    {
+        EduCourseContent content = courseContentMapper.selectPublishedContentById(contentId);
+        if (StringUtils.isNull(content))
+        {
+            throw new ServiceException("课程内容不存在或尚未发布");
+        }
+        EduCourseEnroll enroll = courseEnrollMapper.selectEduCourseEnroll(content.getCourseId(), studentId);
+        if (StringUtils.isNull(enroll))
+        {
+            throw new ServiceException("请先注册该课程再管理笔记");
+        }
+
+        StudentProfile profile = studentAccountMapper.selectStudentProfileByUserId(studentId);
+        if (profile == null)
+        {
+            throw new ServiceException("笔记不存在");
+        }
+        List<Map<String, Object>> storedItems = parseStoredItems(profile.getLearningNotes(), "note");
+        int index = findStoredItemIndex(storedItems, "course-content-" + contentId, contentId);
+        if (index < 0)
+        {
+            throw new ServiceException("笔记不存在");
+        }
+        storedItems.remove(index);
+        profile.setUpdateBy(String.valueOf(studentId));
+        profile.setLearningNotes(JSON.toJSONString(storedItems));
+        studentAccountMapper.updateStudentProfile(profile);
     }
 
     @Override
@@ -176,6 +303,11 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
         EduExam exam = getPublishedExam(record.getExamId());
         List<EduExamQuestion> questionList = examRuntimeMapper.selectExamQuestionList(exam.getExamId());
         List<EduExamAnswer> answerList = examRuntimeMapper.selectExamAnswerListByRecordId(recordId);
+        if (isExamExpired(record, exam))
+        {
+            finishExamRecord(record.getRecordId(), exam, questionList, answerList);
+            throw new ServiceException("考试时间已截止，系统已自动结束本次作答");
+        }
 
         StudentExamPaperVO vo = new StudentExamPaperVO();
         vo.setRecordId(record.getRecordId());
@@ -252,6 +384,56 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
         EduExam exam = getPublishedExam(record.getExamId());
         List<EduExamQuestion> questionList = examRuntimeMapper.selectExamQuestionList(exam.getExamId());
         List<EduExamAnswer> answerList = examRuntimeMapper.selectExamAnswerListByRecordId(recordId);
+        if (StringUtils.isEmpty(questionList) || StringUtils.isEmpty(answerList))
+        {
+            throw new ServiceException("当前考试缺少题目明细，无法提交");
+        }
+
+        Map<Long, EduExamQuestion> questionMap = new HashMap<>();
+        for (EduExamQuestion question : questionList)
+        {
+            questionMap.put(question.getQuestionId(), question);
+        }
+
+        BigDecimal objectiveScore = ZERO_SCORE;
+        boolean hasManualQuestion = false;
+        for (EduExamAnswer answer : answerList)
+        {
+            EduExamQuestion question = questionMap.get(answer.getQuestionId());
+            if (question == null)
+            {
+                continue;
+            }
+            if (!"1".equals(question.getAutoMarking()) || "5".equals(question.getQuestionType()))
+            {
+                hasManualQuestion = true;
+                continue;
+            }
+
+            boolean correct = judgeAnswer(question, answer.getStudentAnswer());
+            BigDecimal actualScore = correct ? defaultScore(question.getQuestionScore()) : ZERO_SCORE;
+            answer.setIsCorrect(correct ? "1" : "0");
+            answer.setActualScore(actualScore);
+            examRuntimeMapper.updateStudentAnswer(answer);
+            objectiveScore = objectiveScore.add(actualScore);
+        }
+
+        EduExamRecord finishRecord = new EduExamRecord();
+        finishRecord.setRecordId(recordId);
+        finishRecord.setObjectiveScore(objectiveScore);
+        finishRecord.setSubjectiveScore(ZERO_SCORE);
+        finishRecord.setTotalScore(objectiveScore);
+        finishRecord.setResultStatus(comparePassFlag(objectiveScore, exam.getPassScore()));
+        finishRecord.setCheckedFlag(hasManualQuestion ? "0" : "1");
+        finishRecord.setRecordStatus(hasManualQuestion ? "2" : "3");
+        if (studentLearningMapper.finishExamRecord(finishRecord) <= 0)
+        {
+            throw new ServiceException("考试记录不存在或已提交");
+        }
+    }
+
+    private void finishExamRecord(Long recordId, EduExam exam, List<EduExamQuestion> questionList, List<EduExamAnswer> answerList)
+    {
         if (StringUtils.isEmpty(questionList) || StringUtils.isEmpty(answerList))
         {
             throw new ServiceException("当前考试缺少题目明细，无法提交");
@@ -569,6 +751,12 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
         return remaining > 0 ? (int) remaining : 0;
     }
 
+    private boolean isExamExpired(EduExamRecord record, EduExam exam)
+    {
+        int totalSeconds = defaultInt(exam.getDurationMinutes()) * 60;
+        return totalSeconds > 0 && calculateRemainingSeconds(record, exam) <= 0;
+    }
+
     private boolean judgeAnswer(EduExamQuestion question, String studentAnswer)
     {
         String standard = StringUtils.trimToEmpty(question.getStandardAnswer());
@@ -771,6 +959,79 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
             throw new ServiceException("课程不存在或尚未发布");
         }
         ensureStudentEnrolled(courseId, studentId);
+    }
+
+    private List<Map<String, Object>> parseStoredItems(String raw, String legacyPrefix)
+    {
+        List<Map<String, Object>> items = new ArrayList<>();
+        if (StringUtils.isEmpty(raw))
+        {
+            return items;
+        }
+        try
+        {
+            Object parsed = JSON.parse(raw);
+            if (parsed instanceof JSONArray)
+            {
+                appendStoredItems(items, (JSONArray) parsed);
+            }
+            else if (parsed instanceof JSONObject)
+            {
+                Object nestedItems = ((JSONObject) parsed).get("items");
+                if (nestedItems instanceof JSONArray)
+                {
+                    appendStoredItems(items, (JSONArray) nestedItems);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Map<String, Object> legacyItem = new LinkedHashMap<>();
+            legacyItem.put("id", legacyPrefix + "-legacy-" + System.currentTimeMillis());
+            legacyItem.put("title", "历史记录");
+            legacyItem.put("detail", raw);
+            legacyItem.put("summary", raw);
+            List<String> tags = new ArrayList<>();
+            tags.add("历史文本");
+            legacyItem.put("tags", tags);
+            items.add(legacyItem);
+        }
+        return items;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void appendStoredItems(List<Map<String, Object>> items, JSONArray array)
+    {
+        for (Object item : array)
+        {
+            if (item instanceof Map)
+            {
+                items.add(new LinkedHashMap<>((Map<String, Object>) item));
+            }
+        }
+    }
+
+    private int findStoredItemIndex(List<Map<String, Object>> storedItems, String sourceKey, Long contentId)
+    {
+        for (int i = 0; i < storedItems.size(); i++)
+        {
+            Map<String, Object> item = storedItems.get(i);
+            Object itemSourceKey = item.get("sourceKey");
+            if (sourceKey.equals(String.valueOf(itemSourceKey)))
+            {
+                return i;
+            }
+            Object itemContentId = item.get("contentId");
+            if (contentId != null && itemContentId != null && String.valueOf(contentId).equals(String.valueOf(itemContentId)))
+            {
+                Object sourceType = item.get("sourceType");
+                if (sourceType == null || "course-content".equals(String.valueOf(sourceType)))
+                {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     private List<Map<String, Object>> parseWrongQuestionItems(String raw)
