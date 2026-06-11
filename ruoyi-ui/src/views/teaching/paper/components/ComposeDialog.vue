@@ -47,7 +47,7 @@
           size="small"
           @selection-change="onBankSelectionChange"
         >
-          <el-table-column type="selection" width="42" />
+          <el-table-column type="selection" width="42" :selectable="checkSelectable" />
           <el-table-column label="题目" prop="questionTitle" min-width="200" show-overflow-tooltip />
           <el-table-column label="题型" width="80" align="center">
             <template slot-scope="scope">
@@ -284,6 +284,10 @@ export default {
       const arr = this.paperQuestions
       const item = arr.splice(index, 1)[0]
       arr.splice(index + 1, 0, item)
+    },
+    /** 已加入试卷的题目不可重复选取 */
+    checkSelectable(row) {
+      return !this.paperQuestions.some(q => q.questionId === row.questionId)
     },
     onBankSelectionChange(selection) {
       this.bankSelection = selection
