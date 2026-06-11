@@ -117,7 +117,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectPendingExamCount" parameterType="Long" resultType="int">
         select count(1)
         from edu_exam e
-        inner join edu_course_enroll ce on e.course_id = ce.course_id and ce.student_id = #{studentId} and ce.enroll_status = '1'
+        inner join edu_course_enroll ce on ce.student_id = #{studentId} and ce.enroll_status = '1'
+          and (e.course_id = ce.course_id
+               or exists (select 1 from edu_exam_course ec where ec.exam_id = e.exam_id and ec.course_id = ce.course_id))
         where e.del_flag = '0'
           and e.status = '1'
           and (e.end_time is null or e.end_time >= sysdate())
@@ -142,7 +144,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                lr.exam_status as record_status, lr.total_score as student_score,
                lr.pass_flag as result_status, lr.checked_flag
         from edu_exam e
-        inner join edu_course_enroll ce on e.course_id = ce.course_id and ce.student_id = #{studentId} and ce.enroll_status = '1'
+        inner join edu_course_enroll ce on ce.student_id = #{studentId} and ce.enroll_status = '1'
+          and (e.course_id = ce.course_id
+               or exists (select 1 from edu_exam_course ec where ec.exam_id = e.exam_id and ec.course_id = ce.course_id))
         left join edu_course c on e.course_id = c.course_id
         left join edu_paper p on e.paper_id = p.paper_id
         left join (
@@ -184,6 +188,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and exam_status = '1'
         order by record_id desc
         limit 1
+    </select>
+
+    <select id="selectRunningExamRecords" resultMap="EduExamRecordResult">
+        select record_id, exam_id, paper_id, course_id, student_id, attempt_no, start_time,
+               submit_time, duration_seconds, exam_status as record_status, total_score,
+               pass_flag as result_status, checked_flag
+        from edu_exam_record
+        where exam_id = #{examId}
+          and student_id = #{studentId}
+          and exam_status = '1'
+        order by record_id desc
     </select>
 
     <select id="selectStudentExamByRecordId" resultMap="StudentExamResult">

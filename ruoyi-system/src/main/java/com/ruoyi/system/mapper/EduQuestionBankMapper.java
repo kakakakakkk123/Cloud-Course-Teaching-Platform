@@ -75,4 +75,9 @@ public interface EduQuestionBankMapper
      * @return 结果
      */
     public int batchInsertBankCourse(@Param("bankId") Long bankId, @Param("courseIds") List<Long> courseIds);
+
+    /**
+     * 按课程ID批量删除题库课程关联
+     */
+    public int deleteBankCourseByCourseIds(Long[] courseIds);
 }

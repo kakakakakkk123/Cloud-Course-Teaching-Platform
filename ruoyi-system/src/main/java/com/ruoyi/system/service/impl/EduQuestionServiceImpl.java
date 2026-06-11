@@ -21,6 +21,7 @@ import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.system.domain.exam.EduQuestion;
 import com.ruoyi.system.domain.exam.EduQuestionOption;
+import com.ruoyi.system.mapper.EduPaperMapper;
 import com.ruoyi.system.mapper.EduQuestionMapper;
 import com.ruoyi.system.service.IEduQuestionBankService;
 import com.ruoyi.system.service.IEduQuestionService;
@@ -38,6 +39,9 @@ public class EduQuestionServiceImpl implements IEduQuestionService
 
     @Autowired
     private IEduQuestionBankService bankService;
+
+    @Autowired
+    private EduPaperMapper paperMapper;
 
     /**
      * 查询试题
@@ -100,6 +104,12 @@ public class EduQuestionServiceImpl implements IEduQuestionService
     @Transactional(rollbackFor = Exception.class)
     public int deleteEduQuestionByIds(Long[] questionIds)
     {
+        // 检查是否有试卷引用这些试题
+        int refCount = paperMapper.countPaperRefByQuestionIds(questionIds);
+        if (refCount > 0)
+        {
+            throw new ServiceException("所选试题中有 " + refCount + " 份试卷正在使用，请先从试卷中移除后再删除");
+        }
         for (Long questionId : questionIds)
         {
             questionMapper.deleteOptionByQuestionId(questionId);
