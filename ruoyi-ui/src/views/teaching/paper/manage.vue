@@ -134,7 +134,11 @@
           <template slot-scope="scope">
             <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">修改</el-button>
             <el-button size="mini" type="text" icon="el-icon-s-operation" @click="handleCompose(scope.row)">组卷</el-button>
-            <el-button size="mini" type="text" icon="el-icon-s-order" @click="handleExamPublish(scope.row)">发布考试</el-button>
+            <el-tooltip :content="publishDisabledTip(scope.row)" placement="top" :disabled="canPublish(scope.row)">
+              <span style="display:inline-block">
+                <el-button size="mini" type="text" icon="el-icon-s-order" :disabled="!canPublish(scope.row)" @click="handleExamPublish(scope.row)">发布考试</el-button>
+              </span>
+            </el-tooltip>
             <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
@@ -475,6 +479,16 @@ export default {
         this.$modal.msgSuccess("删除成功")
         this.getList()
       }).catch(() => {})
+    },
+    /** 是否可以发布考试（已组卷且状态为启用） */
+    canPublish(row) {
+      return (row.questionCount || 0) > 0 && row.status === "1"
+    },
+    /** 发布考试按钮禁用时的提示 */
+    publishDisabledTip(row) {
+      if ((row.questionCount || 0) <= 0) return "请先组卷添加题目"
+      if (row.status !== "1") return "请先将试卷状态改为启用"
+      return ""
     },
     /** 进入考试发布 */
     handleExamPublish(row) {
