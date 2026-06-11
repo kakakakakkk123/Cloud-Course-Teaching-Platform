@@ -107,6 +107,8 @@ export default {
       answers: {},
       remainingSeconds: 0,
       timer: null,
+      autoSaveTimer: null,
+      dirty: false,
       leavingConfirmed: false
     }
   },
@@ -150,6 +152,17 @@ export default {
       next()
     })
   },
+  watch: {
+    answers: {
+      deep: true,
+      handler() {
+        this.dirty = true
+      }
+    }
+  },
+  beforeDestroy() {
+    this.stopAutoSave()
+  },
   methods: {
     load() {
       if (!this.recordId) {
@@ -165,6 +178,7 @@ export default {
         this.remainingSeconds = Number(this.exam.remainingSeconds || this.exam.durationSeconds || 0)
         this.initAnswers()
         this.startTimer()
+        this.startAutoSave()
       }).catch(() => {
         this.leavingConfirmed = true
         this.goBack()
@@ -237,6 +251,29 @@ export default {
         clearInterval(this.timer)
         this.timer = null
       }
+      this.stopAutoSave()
+    },
+    startAutoSave() {
+      this.stopAutoSave()
+      this.autoSaveTimer = setInterval(() => {
+        if (this.dirty && !this.submitting) {
+          this.dirty = false
+          this.autoSave()
+        }
+      }, 30000)
+    },
+    stopAutoSave() {
+      if (this.autoSaveTimer) {
+        clearInterval(this.autoSaveTimer)
+        this.autoSaveTimer = null
+      }
+    },
+    autoSave() {
+      if (!this.recordId || this.submitting) {
+        return
+      }
+      const payload = this.buildAnswerPayload()
+      saveStudentExamAnswers(this.recordId, { answers: payload }).catch(() => {})
     },
     handleTimeUp() {
       if (this.submitting || this.leavingConfirmed) {

@@ -108,4 +108,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </insert>
 
+    <delete id="deleteBankCourseByCourseIds">
+        delete from edu_question_bank_course where course_id in
+        <foreach collection="array" item="courseId" open="(" separator="," close=")">#{courseId}</foreach>
+    </delete>
+
 </mapper>

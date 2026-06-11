@@ -292,6 +292,14 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
         record.setStudentId(studentId);
         record.setAttemptNo(attemptCount + 1);
         studentLearningMapper.insertExamRecord(record);
+
+        // 防并发：插入后再次检查，如果出现重复进行中记录则回滚
+        List<EduExamRecord> dupCheck = studentLearningMapper.selectRunningExamRecords(examId, studentId);
+        if (dupCheck != null && dupCheck.size() > 1)
+        {
+            throw new ServiceException("操作过于频繁，请稍后重试");
+        }
+
         bootstrapExamAnswersIfNeeded(record);
         return studentLearningMapper.selectExamRecordById(record.getRecordId(), studentId);
     }
@@ -648,7 +656,7 @@ public class EduStudentLearningServiceImpl implements IEduStudentLearningService
         for (EduPaperQuestion relation : paperQuestionList)
         {
             EduQuestion question = questionMapper.selectEduQuestionById(relation.getQuestionId());
-            if (question == null || !"1".equals(question.getStatus()))
+            if (question == null || !"0".equals(question.getStatus()))
             {
                 continue;
             }

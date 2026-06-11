@@ -102,4 +102,9 @@ public interface EduCourseContentMapper
      * @return 结果
      */
     public int deleteEduCourseContentByCourseIds(Long[] courseIds);
+
+    /**
+     * 按考试ID删除课程内容中的考试入口记录
+     */
+    public int deleteExamContentByExamId(Long examId);
 }

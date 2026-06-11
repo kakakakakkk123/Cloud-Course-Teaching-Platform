@@ -125,6 +125,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from edu_paper_course where paper_id = #{paperId}
     </delete>
 
+    <delete id="deletePaperCourseByCourseIds">
+        delete from edu_paper_course where course_id in
+        <foreach collection="array" item="courseId" open="(" separator="," close=")">#{courseId}</foreach>
+    </delete>
+
+    <update id="clearPaperCourseRef">
+        update edu_paper set course_id = null, update_time = sysdate()
+        where course_id in
+        <foreach collection="array" item="courseId" open="(" separator="," close=")">#{courseId}</foreach>
+    </update>
+
     <update id="updatePaperCourseId">
         update edu_paper set course_id = #{courseId}, update_time = sysdate()
         where paper_id = #{paperId}
@@ -186,5 +197,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.update_time = sysdate()
         where p.paper_id = #{paperId}
     </update>
+
+    <select id="countByBankId" parameterType="Long" resultType="int">
+        select count(1) from edu_paper
+        where bank_id = #{bankId}
+          and del_flag = '0'
+    </select>
+
+    <select id="countPaperRefByQuestionIds" resultType="int">
+        select count(distinct paper_id) from edu_paper_question
+        where question_id in
+        <foreach collection="array" item="questionId" open="(" separator="," close=")">#{questionId}</foreach>
+    </select>
 
 </mapper>

@@ -86,6 +86,16 @@ public interface EduPaperMapper
     public int deletePaperCourseByPaperId(Long paperId);
 
     /**
+     * 按课程ID批量删除试卷课程关联
+     */
+    public int deletePaperCourseByCourseIds(Long[] courseIds);
+
+    /**
+     * 按课程ID清空试卷旧版 course_id
+     */
+    public int clearPaperCourseRef(Long[] courseIds);
+
+    /**
      * 仅更新试卷的旧版 course_id 字段（兼容用）
      *
      * @param paperId 试卷ID
@@ -93,6 +103,16 @@ public interface EduPaperMapper
      * @return 结果
      */
     public int updatePaperCourseId(@Param("paperId") Long paperId, @Param("courseId") Long courseId);
+
+    /**
+     * 按题库ID统计试卷数量
+     */
+    public int countByBankId(Long bankId);
+
+    /**
+     * 按试题ID统计引用的试卷数量（用于判断试题是否被试卷使用）
+     */
+    public int countPaperRefByQuestionIds(Long[] questionIds);
 
     // ==================== 试卷题目关联 ====================
 

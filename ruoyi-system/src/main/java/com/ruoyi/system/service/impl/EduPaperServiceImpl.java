@@ -109,6 +109,12 @@ public class EduPaperServiceImpl implements IEduPaperService
         }
         Long bankId = paper.getBankId();
 
+        // 校验题目列表不能为空
+        if (questions == null || questions.isEmpty())
+        {
+            throw new ServiceException("试卷至少需要包含一道题目");
+        }
+
         // 逐题从数据库校验：题目存在、属于当前题库、题型/难度以数据库为准
         int order = 1;
         for (EduPaperQuestion pq : questions)

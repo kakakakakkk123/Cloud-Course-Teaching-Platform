@@ -169,4 +169,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 
+    <delete id="deleteExamContentByExamId" parameterType="Long">
+        delete from edu_course_content
+        where content_type = '5' and exam_id = #{examId}
+    </delete>
+
 </mapper>
