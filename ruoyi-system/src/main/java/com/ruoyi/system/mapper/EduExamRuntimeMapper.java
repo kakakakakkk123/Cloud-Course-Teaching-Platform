@@ -25,4 +25,10 @@ public interface EduExamRuntimeMapper
     public int batchInsertExamAnswer(List<EduExamAnswer> list);
 
     public int updateStudentAnswer(EduExamAnswer answer);
+
+    public int deleteExamQuestionByExamId(Long examId);
+
+    public int deleteExamAnswerByExamId(Long examId);
+
+    public int deleteExamRecordByExamId(Long examId);
 }

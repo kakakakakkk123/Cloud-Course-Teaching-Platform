@@ -13,6 +13,9 @@ import com.ruoyi.system.mapper.EduCourseEnrollMapper;
 import com.ruoyi.system.mapper.EduCourseFavoriteMapper;
 import com.ruoyi.system.mapper.EduCourseLikeMapper;
 import com.ruoyi.system.mapper.EduCourseMapper;
+import com.ruoyi.system.mapper.EduExamMapper;
+import com.ruoyi.system.mapper.EduPaperMapper;
+import com.ruoyi.system.mapper.EduQuestionBankMapper;
 import com.ruoyi.system.service.IEduCourseService;
 
 /**
@@ -48,6 +51,15 @@ public class EduCourseServiceImpl implements IEduCourseService
 
     @Autowired
     private EduCourseFavoriteMapper favoriteMapper;
+
+    @Autowired
+    private EduPaperMapper paperMapper;
+
+    @Autowired
+    private EduExamMapper examMapper;
+
+    @Autowired
+    private EduQuestionBankMapper questionBankMapper;
 
     /**
      * 查询课程
@@ -130,11 +142,22 @@ public class EduCourseServiceImpl implements IEduCourseService
     @Transactional(rollbackFor = Exception.class)
     public int deleteEduCourseByIds(Long[] courseIds)
     {
+        // 清理课程内容
         contentMapper.deleteEduCourseContentByCourseIds(courseIds);
+        // 清理注册/点赞/收藏
         enrollMapper.deleteEduCourseEnrollByCourseIds(courseIds);
         likeMapper.deleteEduCourseLikeByCourseIds(courseIds);
         favoriteMapper.deleteEduCourseFavoriteByCourseIds(courseIds);
         courseMapper.clearBannerCourseRef(courseIds);
+        // 清理试卷关联（多课程中间表 + 旧版单字段引用）
+        paperMapper.deletePaperCourseByCourseIds(courseIds);
+        paperMapper.clearPaperCourseRef(courseIds);
+        // 清理考试关联（多课程中间表 + 旧版单字段引用）
+        examMapper.deleteExamCourseByCourseIds(courseIds);
+        examMapper.clearExamCourseRef(courseIds);
+        // 清理题库关联
+        questionBankMapper.deleteBankCourseByCourseIds(courseIds);
+        // 逻辑删除课程本身
         return courseMapper.deleteEduCourseByIds(courseIds);
     }
 

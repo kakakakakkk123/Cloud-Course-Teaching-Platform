@@ -102,6 +102,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </insert>
 
+    <delete id="deleteExamQuestionByExamId" parameterType="Long">
+        delete from edu_exam_question where exam_id = #{examId}
+    </delete>
+
+    <delete id="deleteExamAnswerByExamId" parameterType="Long">
+        delete from edu_exam_answer where exam_id = #{examId}
+    </delete>
+
+    <delete id="deleteExamRecordByExamId" parameterType="Long">
+        delete from edu_exam_record where exam_id = #{examId}
+    </delete>
+
     <update id="updateStudentAnswer" parameterType="com.ruoyi.system.domain.exam.EduExamAnswer">
         update edu_exam_answer
         <set>

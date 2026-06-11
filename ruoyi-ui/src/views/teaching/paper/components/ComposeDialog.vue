@@ -232,7 +232,7 @@ export default {
         questionTitle: this.bankQuery.questionTitle || undefined,
         questionType: this.bankQuery.questionType,
         difficultyLevel: this.bankQuery.difficultyLevel,
-        status: "1"
+        status: "0"
       }).then(res => {
         this.bankQuestions = res.rows || []
         this.bankTotal = res.total || 0
@@ -302,9 +302,7 @@ export default {
     /** 保存组卷 */
     handleSave() {
       if (this.paperQuestions.length === 0) {
-        this.$modal.confirm("试卷中没有题目，确定保存为空试卷吗？").then(() => {
-          return this.doSave()
-        }).catch(() => {})
+        this.$message.warning("试卷中还没有题目，请先从左侧题库添加题目后再保存")
         return
       }
       this.doSave()

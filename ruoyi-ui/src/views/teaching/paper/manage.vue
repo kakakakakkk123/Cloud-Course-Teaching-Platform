@@ -437,7 +437,6 @@ export default {
         path: `/teaching/exam/${row.paperId}`,
         query: {
           paperName: row.paperName,
-          courseId: row.courseId,
           totalScore: row.totalScore,
           bankId: this.bankId,
           bankName: this.currentBankName

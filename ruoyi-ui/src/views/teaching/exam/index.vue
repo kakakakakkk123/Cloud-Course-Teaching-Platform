@@ -326,6 +326,20 @@ export default {
         examName: [
           { required: true, message: "请输入考试名称", trigger: "blur" }
         ],
+        startTime: [
+          { required: true, message: "请选择开始时间", trigger: "change" }
+        ],
+        endTime: [
+          { required: true, message: "请选择结束时间", trigger: "change" },
+          { validator: this.validateEndTime, trigger: "change" }
+        ],
+        durationMinutes: [
+          { required: true, message: "请输入考试时长", trigger: "blur" },
+          { type: "number", min: 1, message: "考试时长必须大于0", trigger: "blur" }
+        ],
+        passScore: [
+          { type: "number", min: 0, message: "及格分不能为负数", trigger: "blur" }
+        ],
         status: [
           { required: true, message: "请选择发布状态", trigger: "change" }
         ]
@@ -355,11 +369,6 @@ export default {
     /** 当前试卷名称 */
     currentPaperName() {
       return this.$route.query.paperName || "未命名试卷"
-    },
-    /** 当前试卷所属课程编号 */
-    currentCourseId() {
-      const value = this.$route.query.courseId
-      return value ? Number(value) : undefined
     },
     /** 当前试卷总分 */
     currentPaperTotalScore() {
@@ -428,6 +437,14 @@ export default {
     /** 获取状态标签样式 */
     getStatusTag(value) {
       return this.getOptionTagType(this.statusOptions, value)
+    },
+    /** 校验结束时间必须晚于开始时间 */
+    validateEndTime(rule, value, callback) {
+      if (this.form.startTime && value && new Date(value) <= new Date(this.form.startTime)) {
+        callback(new Error("结束时间必须晚于开始时间"))
+      } else {
+        callback()
+      }
     },
     /** 选择行变化 */
     handleSelectionChange(selection) {

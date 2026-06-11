@@ -148,4 +148,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from edu_exam_course where exam_id = #{examId}
     </delete>
 
+    <delete id="deleteExamCourseByCourseIds">
+        delete from edu_exam_course where course_id in
+        <foreach collection="array" item="courseId" open="(" separator="," close=")">#{courseId}</foreach>
+    </delete>
+
+    <update id="clearExamCourseRef">
+        update edu_exam set course_id = null, update_time = sysdate()
+        where course_id in
+        <foreach collection="array" item="courseId" open="(" separator="," close=")">#{courseId}</foreach>
+    </update>
+
 </mapper>

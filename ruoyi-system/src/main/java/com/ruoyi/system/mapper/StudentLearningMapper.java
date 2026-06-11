@@ -24,6 +24,8 @@ public interface StudentLearningMapper
 
     public EduExamRecord selectRunningExamRecord(@Param("examId") Long examId, @Param("studentId") Long studentId);
 
+    public List<EduExamRecord> selectRunningExamRecords(@Param("examId") Long examId, @Param("studentId") Long studentId);
+
     public Integer selectExamAttemptCount(@Param("examId") Long examId, @Param("studentId") Long studentId);
 
     public int insertExamRecord(EduExamRecord record);

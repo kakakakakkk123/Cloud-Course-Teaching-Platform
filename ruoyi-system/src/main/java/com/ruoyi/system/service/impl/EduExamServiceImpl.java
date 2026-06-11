@@ -15,6 +15,7 @@ import com.ruoyi.system.domain.exam.EduExam;
 import com.ruoyi.system.domain.exam.EduPaper;
 import com.ruoyi.system.mapper.EduCourseContentMapper;
 import com.ruoyi.system.mapper.EduExamMapper;
+import com.ruoyi.system.mapper.EduExamRuntimeMapper;
 import com.ruoyi.system.mapper.EduPaperMapper;
 import com.ruoyi.system.service.IEduCourseService;
 import com.ruoyi.system.service.IEduExamService;
@@ -36,6 +37,9 @@ public class EduExamServiceImpl implements IEduExamService
 
     @Autowired
     private EduPaperMapper paperMapper;
+
+    @Autowired
+    private EduExamRuntimeMapper examRuntimeMapper;
 
     @Override
     public EduExam selectEduExamById(Long examId)
@@ -67,6 +71,7 @@ public class EduExamServiceImpl implements IEduExamService
     {
         fillExamDefaults(exam);
         assertPaperNotEmpty(exam.getPaperId());
+        assertExamTimeValid(exam);
         applyCourseIdFromCourseIds(exam);
         int rows = examMapper.insertEduExam(exam);
         syncExamCourses(exam);
@@ -80,6 +85,7 @@ public class EduExamServiceImpl implements IEduExamService
     {
         fillExamDefaults(exam);
         assertPaperNotEmpty(exam.getPaperId());
+        assertExamTimeValid(exam);
         applyCourseIdFromCourseIds(exam);
         List<Long> oldCourseIds = examMapper.selectCourseIdsByExamId(exam.getExamId());
         int rows = examMapper.updateEduExam(exam);
@@ -103,7 +109,16 @@ public class EduExamServiceImpl implements IEduExamService
     {
         for (Long examId : examIds)
         {
+            // 清理考试课程关联
             examMapper.deleteExamCourseByExamId(examId);
+            // 清理课程内容中的考试入口
+            courseContentMapper.deleteExamContentByExamId(examId);
+            // 清理考试题目快照
+            examRuntimeMapper.deleteExamQuestionByExamId(examId);
+            // 清理学生答题记录
+            examRuntimeMapper.deleteExamAnswerByExamId(examId);
+            // 清理学生考试记录
+            examRuntimeMapper.deleteExamRecordByExamId(examId);
         }
         return examMapper.deleteEduExamByIds(examIds);
     }
@@ -256,6 +271,33 @@ public class EduExamServiceImpl implements IEduExamService
         if (paper.getQuestionCount() == null || paper.getQuestionCount() <= 0)
         {
             throw new ServiceException("试卷「" + paper.getPaperName() + "」尚未组卷，请先添加题目后再发布考试");
+        }
+        if (!"1".equals(paper.getStatus()))
+        {
+            throw new ServiceException("试卷「" + paper.getPaperName() + "」当前状态不允许发布考试，请先将试卷状态改为启用");
+        }
+    }
+
+    /**
+     * 校验考试时间有效性
+     */
+    private void assertExamTimeValid(EduExam exam)
+    {
+        if (exam.getStartTime() == null)
+        {
+            throw new ServiceException("请设置考试开始时间");
+        }
+        if (exam.getEndTime() == null)
+        {
+            throw new ServiceException("请设置考试结束时间");
+        }
+        if (!exam.getEndTime().after(exam.getStartTime()))
+        {
+            throw new ServiceException("考试结束时间必须晚于开始时间");
+        }
+        if (exam.getDurationMinutes() == null || exam.getDurationMinutes() <= 0)
+        {
+            throw new ServiceException("考试时长必须大于0分钟");
         }
     }
 
